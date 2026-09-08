@@ -162,3 +162,57 @@ class QuickCreateCustomerView(PermissionRequiredMixin, View):
             'message': f"Customer '{customer.company_name}' {'registered' if created else 'updated'} successfully."
         })
 
+
+class CreatePaymentTermOptionView(PermissionRequiredMixin, View):
+    """
+    AJAX endpoint to dynamically create a new custom payment term on the fly.
+    """
+    permission_required = ('customers.create', 'customers.update')
+    match_all_permissions = False
+
+    def post(self, request):
+        from apps.customers.models import PaymentTermOption
+        if request.content_type == 'application/json':
+            try:
+                data = json.loads(request.body.decode('utf-8'))
+            except Exception:
+                data = {}
+        else:
+            data = request.POST
+
+        name = data.get('name', '').strip()
+        description = data.get('description', '').strip()
+
+        if not name:
+            return JsonResponse({'success': False, 'error': 'Payment term name is required.'}, status=400)
+
+        try:
+            term = PaymentTermOption.add_custom_term(name=name, description=description)
+            return JsonResponse({
+                'success': True,
+                'term': {
+                    'code': term.code,
+                    'name': term.name,
+                },
+                'message': f"Payment term '{term.name}' added successfully."
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+class PaymentTermOptionsAPIView(PermissionRequiredMixin, View):
+    """
+    Returns list of all active payment term options.
+    """
+    permission_required = ('customers.view', 'quotations.create', 'orders.create')
+    match_all_permissions = False
+
+    def get(self, request):
+        from apps.customers.models import PaymentTermOption
+        terms = [
+            {'code': t.code, 'name': t.name}
+            for t in PaymentTermOption.get_all_terms()
+        ]
+        return JsonResponse({'terms': terms, 'count': len(terms)})
+
+

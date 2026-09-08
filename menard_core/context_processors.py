@@ -8,20 +8,22 @@ def branding_context(request):
     from apps.quotes.models import Quotation
     from apps.logistics.models import LogisticsJob
     from apps.billing.models import Invoice
-    from apps.customers.models import Customer
+    from apps.customers.models import Customer, PaymentTermOption
 
     try:
         orders_count = PurchaseOrder.objects.count()
         quotes_count = Quotation.objects.filter(status__in=[Quotation.Status.DRAFT, Quotation.Status.SENT]).count()
         jobs_count = LogisticsJob.objects.exclude(status=LogisticsJob.Status.CLOSED).count()
         invoices_count = Invoice.objects.exclude(status='CANCELLED').count()
-        global_customers = list(Customer.objects.all().order_by('company_name')[:50])
+        global_customers = list(Customer.objects.all().order_by('company_name')[:100])
+        global_payment_terms = list(PaymentTermOption.get_all_terms())
     except Exception:
         orders_count = 0
         quotes_count = 0
         jobs_count = 0
         invoices_count = 0
         global_customers = []
+        global_payment_terms = []
 
     try:
         from apps.accounts.models import AdminNotification
@@ -50,5 +52,6 @@ def branding_context(request):
         },
         'recent_notifications': recent_notifications,
         'global_customers': global_customers,
+        'global_payment_terms': global_payment_terms,
     }
 

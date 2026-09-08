@@ -56,7 +56,63 @@
 </div>
 
 <!-- MODAL 2: REGISTER NEW CUSTOMER -->
-<div x-show="activeModal === 'create_customer_modal'" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4" x-cloak>
+<div x-show="activeModal === 'create_customer_modal'" 
+     x-data="{
+       paymentTerms: [
+         {% for t in global_payment_terms %}
+         { code: '{{ t.code|escapejs }}', name: '{{ t.name|escapejs }}' }{% if not forloop.last %},{% endif %}
+         {% endfor %}
+       ],
+       selectedTerm: '50_DEPOSIT_50_POD',
+       showAddTerm: false,
+       newTermName: '',
+       isAddingTerm: false,
+       termError: '',
+       async addCustomTerm() {
+         if (!this.newTermName.trim()) {
+           this.termError = 'Please enter a payment term name.';
+           return;
+         }
+         this.isAddingTerm = true;
+         this.termError = '';
+         try {
+           const csrf = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+           const res = await fetch('{% url 'create_payment_term_option' %}', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+             body: JSON.stringify({ name: this.newTermName.trim() })
+           });
+           const data = await res.json();
+           if (data.success && data.term) {
+             const newT = data.term;
+             if (!this.paymentTerms.some(t => t.code === newT.code)) {
+               this.paymentTerms.push(newT);
+             }
+             this.selectedTerm = newT.code;
+             this.newTermName = '';
+             this.showAddTerm = false;
+             if (window.Swal) {
+               Swal.fire({
+                 icon: 'success',
+                 title: 'Payment Term Added!',
+                 text: `&quot;${newT.name}&quot; is now available and selected.`,
+                 timer: 2000,
+                 showConfirmButton: false,
+                 toast: true,
+                 position: 'top-end'
+               });
+             }
+           } else {
+             this.termError = data.error || 'Failed to add payment term.';
+           }
+         } catch (e) {
+           this.termError = 'Network error saving payment term.';
+         } finally {
+           this.isAddingTerm = false;
+         }
+       }
+     }"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4" x-cloak>
   <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 sm:p-7 max-w-lg w-full shadow-2xl space-y-5 border border-slate-200">
     <div class="flex justify-between items-start border-b border-slate-100 pb-4">
       <div>
@@ -97,12 +153,35 @@
           <input type="text" name="vat_number" placeholder="4000000000" class="form-input font-mono text-xs">
         </div>
         <div>
-          <label class="form-label">Payment Terms <span class="text-rose-500">*</span></label>
-          <select name="payment_terms" class="form-input font-semibold">
-            <option value="50_DEPOSIT_50_POD">50% Deposit / 50% on Delivery</option>
-            <option value="100_UPFRONT">100% Upfront</option>
-            <option value="30_DEPOSIT_70_POD">30% Deposit / 70% on Delivery</option>
-            <option value="30_DAYS_NET">30 Days Net</option>
+          <div class="flex justify-between items-center mb-1">
+            <label class="form-label mb-0">Payment Terms <span class="text-rose-500">*</span></label>
+            <button type="button" @click="showAddTerm = !showAddTerm; if (showAddTerm) { $nextTick(() => $refs.newCustTermInput.focus()); }" 
+                    class="text-xs font-bold text-[#b47828] hover:text-[#8a5818] flex items-center gap-1 hover:underline cursor-pointer"
+                    title="Add custom payment term">
+              <svg class="w-3.5 h-3.5 text-[#b47828]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+              <span>+ Add Term</span>
+            </button>
+          </div>
+
+          <!-- Dynamic Add Term Inline Popover -->
+          <div x-show="showAddTerm" x-transition class="mb-2 p-2.5 bg-amber-50/90 border border-amber-200 rounded-xl space-y-1.5 shadow-sm">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-extrabold text-slate-800">Add New Payment Term</span>
+              <button type="button" @click="showAddTerm = false" class="text-slate-400 hover:text-slate-600 text-xs font-bold leading-none">&times;</button>
+            </div>
+            <div x-show="termError" class="text-[11px] text-rose-600 font-medium" x-text="termError"></div>
+            <div class="flex gap-1.5">
+              <input type="text" x-ref="newCustTermInput" x-model="newTermName" @keydown.enter.prevent="addCustomTerm()" placeholder="e.g. 25% Deposit / 75% on Delivery or 60 Days Net" class="form-input text-xs py-1 flex-1">
+              <button type="button" @click="addCustomTerm()" :disabled="isAddingTerm" class="btn-primary text-xs py-1 px-2.5 shrink-0">
+                <span x-text="isAddingTerm ? 'Saving...' : 'Save'"></span>
+              </button>
+            </div>
+          </div>
+
+          <select name="payment_terms" x-model="selectedTerm" class="form-input font-semibold text-xs">
+            <template x-for="t in paymentTerms" :key="t.code">
+              <option :value="t.code" x-text="t.name" :selected="selectedTerm === t.code"></option>
+            </template>
           </select>
         </div>
       </div>
@@ -137,6 +216,11 @@
          }{% if not forloop.last %},{% endif %}
          {% endfor %}
        ],
+       paymentTerms: [
+         {% for t in global_payment_terms %}
+         { code: '{{ t.code|escapejs }}', name: '{{ t.name|escapejs }}' }{% if not forloop.last %},{% endif %}
+         {% endfor %}
+       ],
        selectedId: '',
        selectedCustomer: null,
        dropdownOpen: false,
@@ -144,6 +228,10 @@
        showQuickAdd: false,
        isSavingClient: false,
        quickAddError: '',
+       showAddTerm: false,
+       newTermName: '',
+       isAddingTerm: false,
+       termError: '',
        quickForm: {
          company_name: '',
          contact_name: '',
@@ -178,14 +266,59 @@
            contact_name: '',
            email: '',
            phone: '',
-           payment_terms: '50_DEPOSIT_50_POD'
+           payment_terms: this.paymentTerms.length > 0 ? this.paymentTerms[0].code : '50_DEPOSIT_50_POD'
          };
          this.quickAddError = '';
+         this.showAddTerm = false;
+         this.newTermName = '';
          this.dropdownOpen = false;
          this.showQuickAdd = true;
          this.$nextTick(() => {
            if (this.$refs.quickCompanyName) this.$refs.quickCompanyName.focus();
          });
+       },
+       async addCustomTerm() {
+         if (!this.newTermName.trim()) {
+           this.termError = 'Please enter a payment term name.';
+           return;
+         }
+         this.isAddingTerm = true;
+         this.termError = '';
+         try {
+           const csrf = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+           const res = await fetch('{% url 'create_payment_term_option' %}', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+             body: JSON.stringify({ name: this.newTermName.trim() })
+           });
+           const data = await res.json();
+           if (data.success && data.term) {
+             const newT = data.term;
+             if (!this.paymentTerms.some(t => t.code === newT.code)) {
+               this.paymentTerms.push(newT);
+             }
+             this.quickForm.payment_terms = newT.code;
+             this.newTermName = '';
+             this.showAddTerm = false;
+             if (window.Swal) {
+               Swal.fire({
+                 icon: 'success',
+                 title: 'Payment Term Added!',
+                 text: `&quot;${newT.name}&quot; is now available and selected.`,
+                 timer: 2000,
+                 showConfirmButton: false,
+                 toast: true,
+                 position: 'top-end'
+               });
+             }
+           } else {
+             this.termError = data.error || 'Failed to add payment term.';
+           }
+         } catch (e) {
+           this.termError = 'Network error saving payment term.';
+         } finally {
+           this.isAddingTerm = false;
+         }
        },
        async submitQuickAdd() {
          if (!this.quickForm.company_name.trim()) {
@@ -292,14 +425,46 @@
       </div>
 
       <div>
-        <label class="form-label text-[11px] mb-1">Payment Terms</label>
+        <div class="flex justify-between items-center mb-1">
+          <label class="form-label text-[11px] mb-0">Payment Terms</label>
+          <button type="button" @click="showAddTerm = !showAddTerm; if (showAddTerm) { $nextTick(() => $refs.newQuickTermInput.focus()); }" 
+                  class="text-[11px] font-bold text-[#b47828] hover:text-[#8a5818] flex items-center gap-1 hover:underline cursor-pointer"
+                  title="Add custom payment term">
+            <svg class="w-3.5 h-3.5 text-[#b47828]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+            <span>+ Add Term</span>
+          </button>
+        </div>
+
+        <!-- Dynamic Add Term Inline Popover in Quick Add -->
+        <div x-show="showAddTerm" x-transition class="mb-2 p-2 bg-amber-100/70 border border-amber-200 rounded-xl space-y-1 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-extrabold text-slate-800">Add Payment Term</span>
+            <button type="button" @click="showAddTerm = false" class="text-slate-400 hover:text-slate-600 text-xs font-bold leading-none">&times;</button>
+          </div>
+          <div x-show="termError" class="text-[10px] text-rose-600 font-medium" x-text="termError"></div>
+          <div class="flex gap-1.5">
+            <input type="text" x-ref="newQuickTermInput" x-model="newTermName" @keydown.enter.prevent="addCustomTerm()" placeholder="e.g. 20% Deposit / 80% on Delivery" class="form-input text-xs py-1 flex-1">
+            <button type="button" @click="addCustomTerm()" :disabled="isAddingTerm" class="btn-primary text-xs py-1 px-2 shrink-0">
+              <span x-text="isAddingTerm ? '...' : 'Save'"></span>
+            </button>
+          </div>
+        </div>
+
         <select x-model="quickForm.payment_terms" class="form-input text-xs py-1.5 font-semibold">
-          <option value="50_DEPOSIT_50_POD">50% Deposit / 50% on POD</option>
-          <option value="100_UPFRONT">100% Upfront</option>
-          <option value="30_DEPOSIT_70_POD">30% Deposit / 70% on POD</option>
-          <option value="30_DAYS_NET">30 Days Net</option>
+          <template x-for="t in paymentTerms" :key="t.code">
+            <option :value="t.code" x-text="t.name" :selected="quickForm.payment_terms === t.code"></option>
+          </template>
         </select>
       </div>
+
+      <div class="flex justify-end items-center gap-2 pt-2 border-t border-amber-200/60">
+        <button type="button" @click="showQuickAdd = false" class="btn-outline text-xs py-1.5 px-3">Cancel</button>
+        <button type="button" @click="submitQuickAdd()" :disabled="isSavingClient" class="btn-secondary text-xs py-1.5 px-3">
+          <svg x-show="isSavingClient" class="animate-spin -ml-1 mr-1.5 h-3.5 w-3.5 text-slate-950 inline" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          <span x-text="isSavingClient ? 'Saving Client...' : 'Save & Select Client'"></span>
+        </button>
+      </div>
+    </div>
 
       <div class="flex justify-end items-center gap-2 pt-2 border-t border-amber-200/60">
         <button type="button" @click="showQuickAdd = false" class="btn-outline text-xs py-1.5 px-3">Cancel</button>

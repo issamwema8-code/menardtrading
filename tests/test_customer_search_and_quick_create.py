@@ -147,3 +147,35 @@ class CustomerSearchAndQuickCreateTests(TestCase):
         self.assertIsNotNone(quote)
         self.assertEqual(quote.customer.company_name, 'BHP Billiton Freight')
         self.assertEqual(quote.subtotal, 25000.00)
+
+    def test_create_dynamic_payment_term_option(self):
+        url = reverse('create_payment_term_option')
+        payload = {
+            'name': '25% Deposit / 75% on Delivery'
+        }
+        response = self.client.post(url, data=json.dumps(payload), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertEqual(data['term']['name'], '25% Deposit / 75% on Delivery')
+        term_code = data['term']['code']
+
+        # Verify customer can be saved with this custom term
+        cust = Customer.objects.create(
+            company_name='Glencore Mining',
+            contact_name='Chris Botha',
+            email='chris.botha@glencore.com',
+            phone='+27 11 772 0600',
+            physical_address='Rustenburg',
+            payment_terms=term_code
+        )
+        self.assertEqual(cust.get_payment_terms_display(), '25% Deposit / 75% on Delivery')
+
+    def test_payment_term_options_api_list(self):
+        url = reverse('payment_term_options_api')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn('terms', data)
+        self.assertGreaterEqual(len(data['terms']), 8)
+
