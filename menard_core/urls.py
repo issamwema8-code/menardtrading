@@ -3,6 +3,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+from django.http import HttpResponse
 from django.views.generic import RedirectView
 from menard_core.views import (
     DashboardOverviewView,
@@ -158,6 +159,7 @@ urlpatterns = [
     path('system/sync-inbox/', SyncInboxView.as_view(), name='sync_inbox'),
     path('system/email-queue-status/', EmailQueueStatusView.as_view(), name='email_queue_status'),
     path('system/notifications/<int:pk>/read/', MarkNotificationReadView.as_view(), name='mark_notification_read'),
+    path('service-worker.js', lambda r: HttpResponse('// Menard Trading CC Service Worker\nself.addEventListener("install", () => self.skipWaiting());', content_type='application/javascript'), name='service_worker'),
 
     # Brevo Inbound Webhook Listener
     path('api/webhooks/brevo/', BrevoInboundWebhookView.as_view(), name='brevo_inbound_webhook'),
