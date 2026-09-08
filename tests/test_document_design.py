@@ -252,3 +252,85 @@ class DocumentDesignSystemTestCase(TestCase):
         self.assertEqual(invoice.balance_due, Decimal('11385.00'))
         self.assertEqual(invoice.status, 'ISSUED')
 
+    def test_quotation_data_api(self):
+        """Test the JSON data endpoint for a quotation."""
+        url = reverse('quote_data_api', kwargs={'pk': self.quote.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertEqual(data['quote_number'], 'QT-2026-TEST01')
+        self.assertEqual(data['customer_id'], self.customer.id)
+        self.assertEqual(len(data['items']), 2)
+
+    def test_update_quotation(self):
+        """Test editing a quotation: modifying customer, notes, status, and replacing line items."""
+        # Create a new draft quote
+        new_quote = Quotation.objects.create(
+            customer=self.customer,
+            quote_number='QT-EDIT-001',
+            status='DRAFT'
+        )
+        QuoteLineItem.objects.create(
+            quote=new_quote,
+            description='Original Item',
+            quantity=Decimal('1.00'),
+            unit_price=Decimal('1000.00'),
+            total_price=Decimal('1000.00')
+        )
+        new_quote.recalculate_totals()
+
+        url = reverse('update_quotation', kwargs={'pk': new_quote.id})
+        data = {
+            'customer_id': self.customer.id,
+            'notes': 'Updated quotation terms with special discounts.',
+            'status': 'SENT',
+            'validity_days': '30',
+            'descriptions[]': ['Custom Front Door', 'Double Glazed Window 1500x1200'],
+            'quantities[]': ['2.00', '4.00'],
+            'unit_prices[]': ['3500.00', '1500.00']
+        }
+        response = self.client.post(url, data, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        new_quote.refresh_from_db()
+        self.assertEqual(new_quote.status, 'SENT')
+        self.assertIn('special discounts', new_quote.notes)
+        self.assertEqual(new_quote.line_items.count(), 2)
+        # Expected subtotal: (2 * 3500) + (4 * 1500) = 7000 + 6000 = 13000
+        self.assertEqual(new_quote.subtotal, Decimal('13000.00'))
+        # VAT 15% of 13000 = 1950.00, Total = 14950.00
+        self.assertEqual(new_quote.vat_amount, Decimal('1950.00'))
+        self.assertEqual(new_quote.total_amount, Decimal('14950.00'))
+
+    def test_delete_quotation(self):
+        """Test deleting a standalone quotation without linked jobs."""
+        standalone_quote = Quotation.objects.create(
+            customer=self.customer,
+            quote_number='QT-DEL-001',
+            status='DRAFT'
+        )
+        QuoteLineItem.objects.create(
+            quote=standalone_quote,
+            description='Temporary Item to delete',
+            quantity=Decimal('1.00'),
+            unit_price=Decimal('500.00'),
+            total_price=Decimal('500.00')
+        )
+        quote_id = standalone_quote.id
+
+        url = reverse('delete_quotation', kwargs={'pk': quote_id})
+        response = self.client.post(url, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Quotation.objects.filter(id=quote_id).exists())
+        self.assertFalse(QuoteLineItem.objects.filter(quote_id=quote_id).exists())
+
+    def test_delete_quotation_with_active_job_protected(self):
+        """Test that deleting a quote with an active logistics job is blocked."""
+        url = reverse('delete_quotation', kwargs={'pk': self.quote.id})
+        response = self.client.post(url, follow=True)
+        self.assertEqual(response.status_code, 200)
+        # Quote must still exist because self.job is linked
+        self.assertTrue(Quotation.objects.filter(id=self.quote.id).exists())
+
+

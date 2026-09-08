@@ -234,3 +234,173 @@ class QuotationPreviewView(PermissionRequiredMixin, View):
             'active_tab': 'quotes'
         })
 
+
+class QuotationDataAPIView(PermissionRequiredMixin, View):
+    """
+    Returns full JSON representation of a quotation and its line items for interactive edit modals.
+    """
+    permission_required = ('quotes.view', 'quotations.view')
+
+    def get(self, request, pk):
+        quote = get_object_or_404(Quotation, pk=pk)
+        items = []
+        for item in quote.line_items.all():
+            items.append({
+                'id': item.id,
+                'description': item.description,
+                'quantity': str(item.quantity),
+                'unit_price': str(item.unit_price),
+                'total_price': str(item.total_price),
+                'item_type': item.item_type,
+            })
+        return JsonResponse({
+            'success': True,
+            'id': quote.id,
+            'quote_number': quote.quote_number,
+            'customer_id': quote.customer_id,
+            'customer_name': quote.customer.company_name,
+            'customer_email': quote.customer.email,
+            'customer_phone': quote.customer.phone or '',
+            'status': quote.status,
+            'status_display': quote.get_status_display(),
+            'valid_until': quote.valid_until.strftime('%Y-%m-%d') if quote.valid_until else '',
+            'notes': quote.notes or '',
+            'subtotal': str(quote.subtotal),
+            'vat_rate': str(quote.vat_rate),
+            'vat_amount': str(quote.vat_amount),
+            'total_amount': str(quote.total_amount),
+            'items': items,
+        })
+
+
+class UpdateQuotationView(PermissionRequiredMixin, View):
+    """
+    Updates an existing quotation: customer, validity, status, notes, and dynamic line items.
+    Recalculates subtotals, VAT, and regenerates the branded PDF.
+    """
+    permission_required = ('quotes.create', 'quotations.create')
+
+    def post(self, request, pk):
+        quote = get_object_or_404(Quotation, pk=pk)
+        from apps.customers.models import Customer
+        from apps.quotes.models import QuoteLineItem
+        from apps.accounts.audit import log_audit_event
+        from decimal import Decimal
+        import datetime
+
+        customer_id = request.POST.get('customer_id') or request.POST.get('customer')
+        if customer_id:
+            customer = get_object_or_404(Customer, pk=customer_id)
+            quote.customer = customer
+
+        if 'notes' in request.POST:
+            quote.notes = request.POST.get('notes', '')
+
+        if request.POST.get('valid_until'):
+            try:
+                quote.valid_until = datetime.datetime.strptime(request.POST.get('valid_until'), '%Y-%m-%d').date()
+            except Exception:
+                pass
+        elif request.POST.get('validity_days') or request.POST.get('valid_days'):
+            valid_days = int(request.POST.get('validity_days') or request.POST.get('valid_days') or 14)
+            quote.valid_until = timezone.now().date() + timezone.timedelta(days=valid_days)
+
+        new_status = request.POST.get('status')
+        if new_status and new_status in Quotation.Status.values:
+            quote.status = new_status
+
+        quote.save()
+
+        # Update Line Items if provided
+        descriptions = request.POST.getlist('descriptions[]') or request.POST.getlist('description')
+        quantities = request.POST.getlist('quantities[]') or request.POST.getlist('quantity')
+        unit_prices = request.POST.getlist('unit_prices[]') or request.POST.getlist('unit_price')
+        item_types = request.POST.getlist('item_types[]') or request.POST.getlist('item_type')
+
+        if descriptions:
+            quote.line_items.all().delete()
+            items_created = 0
+            for idx, desc in enumerate(descriptions):
+                desc_str = str(desc).strip()
+                if not desc_str:
+                    continue
+                qty_raw = quantities[idx] if idx < len(quantities) else '1.00'
+                price_raw = unit_prices[idx] if idx < len(unit_prices) else '0.00'
+                itype = item_types[idx] if idx < len(item_types) else QuoteLineItem.ItemType.OTHER
+                try:
+                    qty = Decimal(str(qty_raw).strip() or '1.00')
+                except Exception:
+                    qty = Decimal('1.00')
+                try:
+                    price = Decimal(str(price_raw).strip() or '0.00')
+                except Exception:
+                    price = Decimal('0.00')
+
+                QuoteLineItem.objects.create(
+                    quote=quote,
+                    description=desc_str,
+                    quantity=qty,
+                    unit_price=price,
+                    item_type=itype if itype in QuoteLineItem.ItemType.values else QuoteLineItem.ItemType.OTHER
+                )
+                items_created += 1
+
+        quote.recalculate_totals()
+        generate_quotation_pdf(quote)
+
+        log_audit_event(
+            request=request,
+            user=request.user,
+            action='QUOTATION_UPDATED',
+            resource_type='Quotation',
+            resource_id=quote.quote_number,
+            details={'customer': quote.customer.company_name, 'total_amount': str(quote.total_amount)},
+            result='SUCCESS'
+        )
+
+        messages.success(request, f"Quotation #{quote.quote_number} updated successfully (Total: N$ {quote.total_amount}).")
+        
+        redirect_to = request.POST.get('next') or request.META.get('HTTP_REFERER') or 'quotes_list'
+        if 'preview' in str(redirect_to):
+            return redirect('quote_preview', pk=quote.id)
+        return redirect('quotes_list')
+
+
+class DeleteQuotationView(PermissionRequiredMixin, View):
+    """
+    Permanently deletes a quotation record and its line items.
+    Prevents deletion if linked to an active logistics job.
+    """
+    permission_required = ('quotes.delete', 'quotations.delete', 'quotes.create')
+
+    def post(self, request, pk):
+        quote = get_object_or_404(Quotation, pk=pk)
+        from apps.accounts.audit import log_audit_event
+        
+        if quote.jobs.exists():
+            messages.error(request, f"Cannot delete Quotation #{quote.quote_number} because it is linked to an active Logistics Job.")
+            return redirect('quotes_list')
+
+        if quote.invoices.exists():
+            messages.error(request, f"Cannot delete Quotation #{quote.quote_number} because it has associated Invoices.")
+            return redirect('quotes_list')
+
+        quote_num = quote.quote_number
+        cust_name = quote.customer.company_name
+
+        quote.delete()
+
+        log_audit_event(
+            request=request,
+            user=request.user,
+            action='QUOTATION_DELETED',
+            resource_type='Quotation',
+            resource_id=quote_num,
+            details={'customer': cust_name},
+            result='SUCCESS'
+        )
+
+        messages.success(request, f"Quotation #{quote_num} for {cust_name} has been permanently deleted.")
+        return redirect('quotes_list')
+
+

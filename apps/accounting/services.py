@@ -15,7 +15,7 @@ def parse_date_range(start_date_str=None, end_date_str=None, default_days=30):
     """
     Parses start and end date parameters safely with sensible business defaults.
     """
-    today = timezone.now().date()
+    today = timezone.localdate()
     if not end_date_str:
         end_date = today
     elif isinstance(end_date_str, date):
@@ -48,7 +48,7 @@ def get_ar_summary():
     Calculates unified Accounts Receivable metrics and aging distribution.
     Reconciles 100% with Invoice model balance_due.
     """
-    today = timezone.now().date()
+    today = timezone.localdate()
     
     # Active unpaid invoices
     unpaid_invoices = Invoice.objects.filter(
@@ -133,7 +133,7 @@ def get_ap_summary():
     """
     Calculates unified Accounts Payable metrics and vendor aging.
     """
-    today = timezone.now().date()
+    today = timezone.localdate()
     
     unpaid_bills = SupplierBill.objects.filter(
         status__in=[SupplierBill.Status.ISSUED, SupplierBill.Status.PARTIALLY_PAID, SupplierBill.Status.OVERDUE],
@@ -315,7 +315,7 @@ def get_balance_sheet(as_of_date=None):
     Verifies Assets = Liabilities + Equity.
     """
     if not as_of_date:
-        as_of_date = timezone.now().date()
+        as_of_date = timezone.localdate()
     elif isinstance(as_of_date, str):
         as_of_date = date.fromisoformat(as_of_date)
 
@@ -613,7 +613,7 @@ def get_financial_dashboard_kpis():
     """
     Consolidated executive KPI summary for the Accounts Overview page.
     """
-    today = timezone.now().date()
+    today = timezone.localdate()
     start_of_month = today.replace(day=1)
     
     # Receivables & Payables
@@ -646,7 +646,7 @@ def get_financial_analytics(period='year'):
     """
     Returns monthly time-series analytics for revenue, expenses, and profitability.
     """
-    today = timezone.now().date()
+    today = timezone.localdate()
     months_count = 12 if period == 'year' else 6
     monthly_series = []
 

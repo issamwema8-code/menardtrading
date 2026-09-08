@@ -31,6 +31,9 @@ from apps.quotes.views import (
     SendQuoteEmailView,
     CreateQuotationView,
     QuotationPreviewView,
+    QuotationDataAPIView,
+    UpdateQuotationView,
+    DeleteQuotationView,
 )
 from apps.logistics.views import (
     UpdateJobStatusView,
@@ -122,6 +125,9 @@ urlpatterns = [
     # 3. Quotations Page & Actions
     path('quotes/', QuotationsListView.as_view(), name='quotes_list'),
     path('quotes/create/', CreateQuotationView.as_view(), name='create_quotation'),
+    path('quotes/<int:pk>/data/', QuotationDataAPIView.as_view(), name='quote_data_api'),
+    path('quotes/<int:pk>/edit/', UpdateQuotationView.as_view(), name='update_quotation'),
+    path('quotes/<int:pk>/delete/', DeleteQuotationView.as_view(), name='delete_quotation'),
     path('quotes/<int:pk>/preview/', QuotationPreviewView.as_view(), name='quote_preview'),
     path('quotes/<int:pk>/send/', SendQuoteEmailView.as_view(), name='send_quote_email'),
     path('quotes/<int:pk>/pdf/', QuotationPDFDownloadView.as_view(), name='quote_pdf_download'),

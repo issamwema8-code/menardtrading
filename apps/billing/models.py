@@ -87,7 +87,7 @@ class Invoice(models.Model):
         db_index=True
     )
 
-    issue_date = models.DateField(default=timezone.now)
+    issue_date = models.DateField(default=timezone.localdate)
     due_date = models.DateField()
 
     subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
@@ -200,7 +200,7 @@ class PaymentReceipt(models.Model):
         choices=PaymentMethod.choices,
         default=PaymentMethod.EFT
     )
-    payment_date = models.DateField(default=timezone.now)
+    payment_date = models.DateField(default=timezone.localdate)
     transaction_reference = models.CharField(max_length=100, help_text="e.g. Bank Statement Reference or POP Code")
     receipt_pdf = models.FileField(upload_to='receipts/%Y/%m/', null=True, blank=True)
     notes = models.TextField(blank=True)

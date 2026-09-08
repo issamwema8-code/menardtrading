@@ -22,20 +22,34 @@
       </div>
     </div>
 
-    <!-- Actions: Print, PDF, Approval Portal -->
+    <!-- Actions: Print, Edit, Delete, PDF, Approval Portal -->
     <div class="flex flex-wrap items-center gap-2">
-      <button onclick="window.print()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition">
+      <button onclick="window.print()" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition">
         <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
         Print
       </button>
-      <a href="{% url 'quote_pdf_download' quote.id %}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm transition">
+
+      <button type="button" @click="$dispatch('open-edit-quote', { id: {{ quote.id }} })" 
+              class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-slate-800 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 rounded-xl transition cursor-pointer">
+        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        Edit Quote
+      </button>
+
+      <a href="{% url 'quote_pdf_download' quote.id %}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm transition">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
         Download PDF
       </a>
+
       <a href="{% url 'quote_portal' quote.approval_token %}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl shadow-sm transition">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-        Customer Approval Portal &rarr;
+        Approval Portal &rarr;
       </a>
+
+      <button type="button" onclick="confirmDeleteQuote({{ quote.id }}, '{{ quote.quote_number|escapejs }}')" 
+              class="inline-flex items-center gap-1 px-2.5 py-2 text-xs font-semibold bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/60 rounded-xl transition cursor-pointer" title="Delete Quotation">
+        <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+        Delete
+      </button>
     </div>
   </div>
 
@@ -46,4 +60,52 @@
     </div>
   </div>
 </div>
+
+<script>
+  function confirmDeleteQuote(quoteId, quoteNum) {
+    if (window.Swal) {
+      Swal.fire({
+        title: `Delete Quotation ${quoteNum}?`,
+        text: "This action cannot be undone. All line items and quotation documents will be permanently removed.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e11d48',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Yes, Delete Permanently',
+        cancelButtonText: 'Cancel',
+        customClass: {
+          popup: 'rounded-2xl shadow-2xl border border-slate-200'
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = `/quotes/${quoteId}/delete/`;
+          const csrf = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'csrfmiddlewaretoken';
+          input.value = csrf;
+          form.appendChild(input);
+          document.body.appendChild(form);
+          form.submit();
+        }
+      });
+    } else {
+      if (confirm(`Are you sure you want to permanently delete Quotation ${quoteNum}?`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/quotes/${quoteId}/delete/`;
+        const csrf = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'csrfmiddlewaretoken';
+        input.value = csrf;
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+      }
+    }
+  }
+</script>
 {% endblock %}
