@@ -332,6 +332,25 @@
           </div>
 
           <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Default VAT Rate (%) <span class="text-rose-500">*</span></label>
+            <div class="relative">
+              <input 
+                type="number" 
+                step="0.01"
+                min="0"
+                max="100"
+                name="vat_rate" 
+                value="{{ company_settings.vat_rate|default:'15.00' }}" 
+                {% if not can_edit %}disabled{% endif %}
+                class="w-full pl-4 pr-10 py-2.5 rounded-xl border border-slate-300 text-sm font-bold font-mono text-slate-900 focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition"
+                placeholder="15.00"
+              >
+              <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400 font-bold text-sm">%</div>
+            </div>
+            <p class="text-[11px] text-slate-500 mt-1.5">Applies dynamically to newly generated Quotations, Invoices, and Tax documents (e.g. 15 for 15%, 0 for VAT-exempt / 0%, 10 for 10%).</p>
+          </div>
+
+          <div>
             <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Company / CC Registration Number (Optional)</label>
             <input 
               type="text" 

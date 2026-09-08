@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.customers.models import Customer
 from apps.orders.models import PurchaseOrder
@@ -105,7 +106,7 @@ class AccountingFinancialsTests(TestCase):
             amount_paid=Decimal('4000.00'),
             balance_due=Decimal('7500.00'),
             status='PARTIALLY_PAID',
-            due_date=datetime.date.today() + datetime.timedelta(days=15)
+            due_date=timezone.now().date() + datetime.timedelta(days=15)
         )
         self.payment = PaymentReceipt.objects.create(
             invoice=self.invoice,
@@ -113,7 +114,7 @@ class AccountingFinancialsTests(TestCase):
             receipt_number='RCP-TEST-001',
             amount_paid=Decimal('4000.00'),
             payment_method='EFT_BANK_TRANSFER',
-            payment_date=datetime.date.today()
+            payment_date=timezone.now().date()
         )
 
     def test_expense_creation_and_vat_calculation(self):
@@ -123,7 +124,7 @@ class AccountingFinancialsTests(TestCase):
             vendor=self.vendor,
             payee=self.vendor.name,
             subtotal=Decimal('2000.00'),
-            date=datetime.date.today(),
+            date=timezone.now().date(),
             status='PAID'
         )
         self.assertTrue(expense.expense_number.startswith('EXP-'))
@@ -142,8 +143,8 @@ class AccountingFinancialsTests(TestCase):
         bill = SupplierBill.objects.create(
             vendor=self.vendor,
             supplier_reference='BILL-ENGEN-101',
-            issue_date=datetime.date.today(),
-            due_date=datetime.date.today() + datetime.timedelta(days=30),
+            issue_date=timezone.now().date(),
+            due_date=timezone.now().date() + datetime.timedelta(days=30),
             subtotal=Decimal('5000.00'),
             status='ISSUED'
         )
@@ -151,7 +152,7 @@ class AccountingFinancialsTests(TestCase):
         SupplierBillPayment.objects.create(
             bill=bill,
             amount_paid=Decimal('2000.00'),
-            payment_date=datetime.date.today()
+            payment_date=timezone.now().date()
         )
         bill.refresh_from_db()
         self.assertEqual(bill.balance_due, Decimal('3750.00'))
@@ -166,7 +167,7 @@ class AccountingFinancialsTests(TestCase):
             category=self.fuel_cat, # Cost of sales
             payee='Engen',
             subtotal=Decimal('2000.00'),
-            date=datetime.date.today(),
+            date=timezone.now().date(),
             status='PAID'
         )
         # Operating overhead
@@ -174,10 +175,9 @@ class AccountingFinancialsTests(TestCase):
             category=self.rent_cat, # Operating overhead
             payee='Prime Properties Windhoek',
             subtotal=Decimal('1000.00'),
-            date=datetime.date.today(),
+            date=timezone.now().date(),
             status='PAID'
         )
-
         pnl = get_profit_and_loss()
         self.assertEqual(pnl['sales_revenue'], Decimal('10000.00')) # Invoiced subtotal
         self.assertEqual(pnl['cost_of_sales'], Decimal('2000.00'))
@@ -192,7 +192,7 @@ class AccountingFinancialsTests(TestCase):
             category=self.fuel_cat,
             payee='Engen',
             subtotal=Decimal('2000.00'),
-            date=datetime.date.today(),
+            date=timezone.now().date(),
             status='PAID'
         )
         bs = get_balance_sheet()
@@ -205,7 +205,7 @@ class AccountingFinancialsTests(TestCase):
             category=self.fuel_cat,
             payee='Engen',
             subtotal=Decimal('2000.00'),
-            date=datetime.date.today(),
+            date=timezone.now().date(),
             status='PAID'
         )
         cf = get_cash_flow()
@@ -228,7 +228,7 @@ class AccountingFinancialsTests(TestCase):
             category=self.fuel_cat,
             payee='Engen',
             subtotal=Decimal('2000.00'),
-            date=datetime.date.today(),
+            date=timezone.now().date(),
             status='PAID'
         )
         vat = get_vat_report()

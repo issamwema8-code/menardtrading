@@ -1,4 +1,5 @@
 import json
+from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 from django.contrib.auth import authenticate, login, logout
@@ -1014,6 +1015,13 @@ class CompanySettingsView(LoginRequiredMixin, View):
         # Tax & Legal
         settings_obj.vat_number = request.POST.get('vat_number', '').strip()
         settings_obj.company_reg_number = request.POST.get('company_reg_number', '').strip()
+        
+        vat_rate_raw = request.POST.get('vat_rate', '').strip()
+        if vat_rate_raw != '':
+            try:
+                settings_obj.vat_rate = Decimal(vat_rate_raw)
+            except Exception:
+                pass
 
         # Contact Details
         settings_obj.email = request.POST.get('email', '').strip()

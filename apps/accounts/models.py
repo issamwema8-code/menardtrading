@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -334,6 +335,7 @@ class CompanySettings(models.Model):
     
     # Legal & Tax Registration (Empty by default unless explicitly configured)
     vat_number = models.CharField(max_length=100, blank=True, default="", help_text="Official VAT Registration Number")
+    vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('15.00'), help_text="Default VAT Rate Percentage (e.g. 15.00, 0, 10)")
     company_reg_number = models.CharField(max_length=100, blank=True, default="", help_text="Company / Close Corporation Registration Number")
     
     # Contact & Communication
@@ -385,6 +387,7 @@ class CompanySettings(models.Model):
                 country="NAMIBIA",
                 physical_address="",
                 vat_number="",
+                vat_rate=Decimal('15.00'),
                 company_reg_number="",
                 phone="",
                 mobile="",
@@ -449,6 +452,9 @@ class CompanySettings(models.Model):
             except Exception:
                 pass
 
+        vat_rate_val = self.vat_rate if self.vat_rate is not None else Decimal('15.00')
+        pct_str = f"{vat_rate_val:.2f}%" if (vat_rate_val % 1 != 0) else f"{int(vat_rate_val)}%"
+
         return {
             'brand_name': self.company_name or 'MENARD TRADING CC',
             'company_name': self.company_name or 'MENARD TRADING CC',
@@ -463,6 +469,8 @@ class CompanySettings(models.Model):
             'country': self.country or '',
             'company_address': self.get_formatted_address(),
             'vat_number': self.vat_number or '',
+            'vat_rate': vat_rate_val,
+            'vat_percentage': pct_str,
             'company_reg_number': self.company_reg_number or '',
             'support_email': self.email or self.orders_email or 'info@menardtrading.com',
             'orders_email': self.orders_email or self.email or 'orders@menardtrading.com',

@@ -108,10 +108,34 @@ class Invoice(models.Model):
         verbose_name = 'Invoice'
         verbose_name_plural = 'Invoices'
 
-    def __str__(self):
-        return f"{self.invoice_number} ({self.get_invoice_type_display()}) - R{self.total_amount} [{self.get_status_display()}]"
+    def save(self, *args, **kwargs):
+        is_new = self._state.adding
+        if is_new:
+            try:
+                from apps.accounts.models import CompanySettings
+                settings_vat = CompanySettings.get_settings().vat_rate
+                if self.quote and self.quote.vat_rate is not None:
+                    if self.vat_rate == Decimal('15.00') or self.vat_rate is None:
+                        self.vat_rate = self.quote.vat_rate
+                elif settings_vat is not None:
+                    if self.vat_rate == Decimal('15.00') or self.vat_rate is None:
+                        self.vat_rate = settings_vat
+            except Exception:
+                pass
+        super().save(*args, **kwargs)
 
     def recalculate_totals(self):
+        if self.vat_rate is None:
+            try:
+                from apps.accounts.models import CompanySettings
+                if self.quote and self.quote.vat_rate is not None:
+                    self.vat_rate = self.quote.vat_rate
+                else:
+                    settings_vat = CompanySettings.get_settings().vat_rate
+                    self.vat_rate = settings_vat if settings_vat is not None else Decimal('15.00')
+            except Exception:
+                self.vat_rate = Decimal('15.00')
+
         items_total = sum((item.total_price for item in self.line_items.all()), Decimal('0.00'))
         self.subtotal = items_total
         self.vat_amount = (self.subtotal * (self.vat_rate / Decimal('100.00'))).quantize(Decimal('0.01'))
@@ -121,7 +145,7 @@ class Invoice(models.Model):
             self.status = self.Status.PAID
         elif self.amount_paid > 0:
             self.status = self.Status.PARTIALLY_PAID
-        self.save()
+        self.save(update_fields=['vat_rate', 'subtotal', 'vat_amount', 'total_amount', 'balance_due', 'status'])
 
 
 class InvoiceLineItem(models.Model):

@@ -375,7 +375,7 @@
           </tr>
           <tr>
             <td class="totals-label">VAT RATE</td>
-            <td class="totals-value font-mono">15.00%</td>
+            <td class="totals-value font-mono">{{ invoice.vat_rate|floatformat:2 }}%</td>
           </tr>
           <tr>
             <td class="totals-label">VAT / TAX AMOUNT</td>

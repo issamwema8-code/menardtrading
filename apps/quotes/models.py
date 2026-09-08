@@ -76,12 +76,34 @@ class Quotation(models.Model):
     def __str__(self):
         return f"{self.quote_number} - {self.customer.company_name} (R{self.total_amount})"
 
+    def save(self, *args, **kwargs):
+        is_new = self._state.adding
+        if is_new:
+            try:
+                from apps.accounts.models import CompanySettings
+                settings_vat = CompanySettings.get_settings().vat_rate
+                if settings_vat is not None:
+                    # If vat_rate is still default 15.00, apply configured company settings rate
+                    if self.vat_rate == Decimal('15.00') or self.vat_rate is None:
+                        self.vat_rate = settings_vat
+            except Exception:
+                pass
+        super().save(*args, **kwargs)
+
     def recalculate_totals(self):
+        if self.vat_rate is None:
+            try:
+                from apps.accounts.models import CompanySettings
+                settings_vat = CompanySettings.get_settings().vat_rate
+                self.vat_rate = settings_vat if settings_vat is not None else Decimal('15.00')
+            except Exception:
+                self.vat_rate = Decimal('15.00')
+
         items_total = sum((item.total_price for item in self.line_items.all()), Decimal('0.00'))
         self.subtotal = items_total
         self.vat_amount = (self.subtotal * (self.vat_rate / Decimal('100.00'))).quantize(Decimal('0.01'))
         self.total_amount = self.subtotal + self.vat_amount
-        self.save(update_fields=['subtotal', 'vat_amount', 'total_amount'])
+        self.save(update_fields=['vat_rate', 'subtotal', 'vat_amount', 'total_amount'])
 
 
 class QuoteLineItem(models.Model):

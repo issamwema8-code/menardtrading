@@ -295,3 +295,98 @@ class CompanySettingsTestCase(TestCase):
         self.assertIn('login_bg_3.jpg', branding['login_bg_image_1'])
         self.assertIn('login_bg_3.jpg', branding['login_bg_image_2'])
         self.assertIn('login_bg_3.jpg', branding['login_bg_image_3'])
+
+    def test_dynamic_vat_rate_configuration_and_document_reflection(self):
+        """
+        Verify that changing VAT rate in CompanySettings dynamically updates
+        newly generated Quotations, Invoices, Line Items, and PDF documents (e.g. 10%, 0% VAT exempt).
+        """
+        self.client.force_login(self.admin_user)
+
+        # 1. Update company settings to 10% VAT
+        post_data = {
+            'company_name': 'MENARD TRADING CC',
+            'tagline': 'ALWAYS ON TIME',
+            'postal_address': 'P O BOX 497-19001,',
+            'city': 'RUNDU',
+            'country': 'NAMIBIA',
+            'email': 'info@menardtrading.com',
+            'orders_email': 'orders@menardtrading.com',
+            'quotes_email': 'quotes@menardtrading.com',
+            'accounts_email': 'accounts@menardtrading.com',
+            'vat_rate': '10.00',
+        }
+        resp = self.client.post(reverse('administration-company-settings'), post_data, follow=True)
+        self.assertEqual(resp.status_code, 200)
+
+        settings_obj = CompanySettings.get_settings()
+        self.assertEqual(settings_obj.vat_rate, Decimal('10.00'))
+        self.assertEqual(settings_obj.as_branding_dict()['vat_rate'], Decimal('10.00'))
+
+        # 2. Create Quotation and check 10% VAT calculation
+        quote = Quotation.objects.create(
+            customer=self.customer,
+            valid_until=timezone.now().date() + datetime.timedelta(days=14),
+        )
+        self.assertEqual(quote.vat_rate, Decimal('10.00'))
+
+        QuoteLineItem.objects.create(
+            quote=quote,
+            description='10-Ton Cargo Rundu to Windhoek',
+            quantity=Decimal('1.00'),
+            unit_price=Decimal('20000.00')
+        )
+        quote.refresh_from_db()
+        self.assertEqual(quote.subtotal, Decimal('20000.00'))
+        self.assertEqual(quote.vat_rate, Decimal('10.00'))
+        self.assertEqual(quote.vat_amount, Decimal('2000.00'))
+        self.assertEqual(quote.total_amount, Decimal('22000.00'))
+
+        # 3. Create standalone Invoice and verify 10% calculation
+        inv = Invoice.objects.create(
+            customer=self.customer,
+            due_date=timezone.now().date() + datetime.timedelta(days=30),
+        )
+        self.assertEqual(inv.vat_rate, Decimal('10.00'))
+
+        InvoiceLineItem.objects.create(
+            invoice=inv,
+            description='Freight Haulage Service',
+            quantity=Decimal('1.00'),
+            unit_price=Decimal('50000.00')
+        )
+        inv.refresh_from_db()
+        self.assertEqual(inv.subtotal, Decimal('50000.00'))
+        self.assertEqual(inv.vat_rate, Decimal('10.00'))
+        self.assertEqual(inv.vat_amount, Decimal('5000.00'))
+        self.assertEqual(inv.total_amount, Decimal('55000.00'))
+        self.assertEqual(inv.balance_due, Decimal('55000.00'))
+
+        # 4. Generate PDFs and verify dynamic VAT percentage is rendered
+        quote_pdf = generate_quotation_pdf(quote)
+        self.assertIsNotNone(quote_pdf)
+
+        inv_pdf = generate_invoice_pdf(inv)
+        self.assertIsNotNone(inv_pdf)
+
+        # 5. Test 0% VAT (VAT-Exempt) setting
+        post_data['vat_rate'] = '0.00'
+        resp = self.client.post(reverse('administration-company-settings'), post_data, follow=True)
+        self.assertEqual(resp.status_code, 200)
+
+        quote_zero = Quotation.objects.create(
+            customer=self.customer,
+            valid_until=timezone.now().date() + datetime.timedelta(days=7),
+        )
+        QuoteLineItem.objects.create(
+            quote=quote_zero,
+            description='VAT Exempt Cross-Border Transit',
+            quantity=Decimal('1.00'),
+            unit_price=Decimal('10000.00')
+        )
+        quote_zero.refresh_from_db()
+        self.assertEqual(quote_zero.vat_rate, Decimal('0.00'))
+        self.assertEqual(quote_zero.subtotal, Decimal('10000.00'))
+        self.assertEqual(quote_zero.vat_amount, Decimal('0.00'))
+        self.assertEqual(quote_zero.total_amount, Decimal('10000.00'))
+
