@@ -137,7 +137,7 @@
          }{% if not forloop.last %},{% endif %}
          {% endfor %}
        ],
-       selectedId: '{{ global_customers.0.id|default:"" }}',
+       selectedId: '',
        selectedCustomer: null,
        dropdownOpen: false,
        searchQuery: '',
@@ -152,10 +152,9 @@
          payment_terms: '50_DEPOSIT_50_POD'
        },
        init() {
-         if (this.customers.length > 0) {
-           this.selectedCustomer = this.customers[0];
-           this.selectedId = this.customers[0].id;
-         }
+         // Intentionally leave empty so no customer is auto-selected by default
+         this.selectedId = '';
+         this.selectedCustomer = null;
        },
        get filteredCustomers() {
          const q = this.searchQuery.toLowerCase().trim();
@@ -312,7 +311,9 @@
     </div>
 
     <!-- CREATE QUOTATION FORM -->
-    <form method="POST" action="{% url 'create_quotation' %}" class="space-y-4">
+    <form method="POST" action="{% url 'create_quotation' %}" 
+          @submit="if (!selectedId) { $event.preventDefault(); dropdownOpen = true; if (window.Swal) { Swal.fire({ icon: 'warning', title: 'Customer Required', text: 'Please select or add a client to create this quotation.', timer: 2500, showConfirmButton: false, toast: true, position: 'top-end' }); } return false; }"
+          class="space-y-4">
       {% csrf_token %}
       
       <!-- SEARCHABLE CUSTOMER SELECT & SHORTCUT -->
@@ -332,18 +333,32 @@
         <div class="relative" @click.away="dropdownOpen = false">
           <!-- Trigger Card -->
           <div @click="dropdownOpen = !dropdownOpen; if (dropdownOpen) { $nextTick(() => $refs.customerSearchInput.focus()); }"
-               class="w-full border border-slate-300 hover:border-amber-400 bg-slate-50/70 p-2.5 rounded-xl flex items-center justify-between cursor-pointer transition shadow-sm select-none">
+               class="w-full border border-slate-300 hover:border-amber-400 bg-slate-50/70 p-2.5 rounded-xl flex items-center justify-between cursor-pointer transition shadow-sm select-none"
+               :class="!selectedId ? 'border-dashed' : 'border-solid'">
             <div class="flex items-center gap-2.5 overflow-hidden">
-              <div class="w-7 h-7 rounded-lg bg-amber-100 text-[#b47828] flex items-center justify-center font-bold text-xs shrink-0">
-                <span x-text="selectedCustomer ? selectedCustomer.company_name.charAt(0).toUpperCase() : '?'"></span>
-              </div>
+              <template x-if="selectedCustomer">
+                <div class="w-7 h-7 rounded-lg bg-amber-100 text-[#b47828] flex items-center justify-center font-bold text-xs shrink-0">
+                  <span x-text="selectedCustomer.company_name.charAt(0).toUpperCase()"></span>
+                </div>
+              </template>
+              <template x-if="!selectedCustomer">
+                <div class="w-7 h-7 rounded-lg bg-slate-200/80 text-slate-500 flex items-center justify-center shrink-0">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                </div>
+              </template>
+
               <div class="truncate text-left">
-                <div class="font-bold text-xs text-slate-900 truncate" x-text="selectedCustomer ? selectedCustomer.company_name : 'Select or search a client...'"></div>
+                <div class="font-bold text-xs truncate" :class="selectedCustomer ? 'text-slate-900' : 'text-slate-500 font-medium'" x-text="selectedCustomer ? selectedCustomer.company_name : 'Select or search a client...'"></div>
                 <div class="text-[11px] text-slate-500 font-mono truncate" x-show="selectedCustomer" x-text="selectedCustomer ? (selectedCustomer.contact_name + ' &bull; ' + selectedCustomer.email) : ''"></div>
+                <div class="text-[10px] text-slate-400 truncate" x-show="!selectedCustomer">Click to search directory or click + Add New Client</div>
               </div>
             </div>
-            <div class="flex items-center gap-1 text-slate-400 shrink-0 ml-2">
-              <span class="text-[10px] uppercase font-semibold tracking-wider text-slate-400 hidden sm:inline" x-text="dropdownOpen ? 'Close' : 'Search'"></span>
+            
+            <div class="flex items-center gap-1.5 text-slate-400 shrink-0 ml-2">
+              <button type="button" x-show="selectedCustomer" @click.stop="selectedId = ''; selectedCustomer = null;" title="Clear selection" class="p-1 rounded-md text-slate-400 hover:text-rose-500 hover:bg-slate-200/60 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+              <span class="text-[10px] uppercase font-semibold tracking-wider text-slate-400 hidden sm:inline" x-text="dropdownOpen ? 'Close' : 'Choose'"></span>
               <svg class="w-4 h-4 transition-transform duration-200" :class="dropdownOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
             </div>
           </div>
