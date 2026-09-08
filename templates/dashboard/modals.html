@@ -124,7 +124,127 @@
 </div>
 
 <!-- MODAL 3: CREATE QUOTATION -->
-<div x-show="activeModal === 'create_quote_modal'" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4" x-cloak>
+<div x-show="activeModal === 'create_quote_modal'" 
+     x-data="{
+       customers: [
+         {% for c in global_customers %}
+         { 
+           id: {{ c.id }}, 
+           company_name: '{{ c.company_name|escapejs }}', 
+           contact_name: '{{ c.contact_name|escapejs }}', 
+           email: '{{ c.email|escapejs }}', 
+           phone: '{{ c.phone|escapejs }}' 
+         }{% if not forloop.last %},{% endif %}
+         {% endfor %}
+       ],
+       selectedId: '{{ global_customers.0.id|default:"" }}',
+       selectedCustomer: null,
+       dropdownOpen: false,
+       searchQuery: '',
+       showQuickAdd: false,
+       isSavingClient: false,
+       quickAddError: '',
+       quickForm: {
+         company_name: '',
+         contact_name: '',
+         email: '',
+         phone: '',
+         payment_terms: '50_DEPOSIT_50_POD'
+       },
+       init() {
+         if (this.customers.length > 0) {
+           this.selectedCustomer = this.customers[0];
+           this.selectedId = this.customers[0].id;
+         }
+       },
+       get filteredCustomers() {
+         const q = this.searchQuery.toLowerCase().trim();
+         if (!q) return this.customers;
+         return this.customers.filter(c => 
+           (c.company_name && c.company_name.toLowerCase().includes(q)) ||
+           (c.contact_name && c.contact_name.toLowerCase().includes(q)) ||
+           (c.email && c.email.toLowerCase().includes(q)) ||
+           (c.phone && c.phone.toLowerCase().includes(q))
+         );
+       },
+       selectCustomer(c) {
+         this.selectedId = c.id;
+         this.selectedCustomer = c;
+         this.dropdownOpen = false;
+         this.searchQuery = '';
+       },
+       openQuickAdd(prefillName = '') {
+         this.quickForm = {
+           company_name: prefillName || this.searchQuery.trim() || '',
+           contact_name: '',
+           email: '',
+           phone: '',
+           payment_terms: '50_DEPOSIT_50_POD'
+         };
+         this.quickAddError = '';
+         this.dropdownOpen = false;
+         this.showQuickAdd = true;
+         this.$nextTick(() => {
+           if (this.$refs.quickCompanyName) this.$refs.quickCompanyName.focus();
+         });
+       },
+       async submitQuickAdd() {
+         if (!this.quickForm.company_name.trim()) {
+           this.quickAddError = 'Company name is required.';
+           return;
+         }
+         if (!this.quickForm.email.trim()) {
+           this.quickAddError = 'Email address is required.';
+           return;
+         }
+         this.isSavingClient = true;
+         this.quickAddError = '';
+         try {
+           const csrf = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+           const res = await fetch('{% url 'quick_create_customer' %}', {
+             method: 'POST',
+             headers: {
+               'Content-Type': 'application/json',
+               'X-CSRFToken': csrf
+             },
+             body: JSON.stringify(this.quickForm)
+           });
+           const data = await res.json();
+           if (data.success && data.customer) {
+             const newCust = data.customer;
+             const existingIdx = this.customers.findIndex(c => c.id === newCust.id);
+             if (existingIdx >= 0) {
+               this.customers[existingIdx] = newCust;
+             } else {
+               this.customers.unshift(newCust);
+             }
+             this.selectCustomer(newCust);
+             this.showQuickAdd = false;
+             if (window.Swal) {
+               Swal.fire({
+                 icon: 'success',
+                 title: 'Customer Created!',
+                 text: `${newCust.company_name} selected for quotation.`,
+                 timer: 2000,
+                 showConfirmButton: false,
+                 toast: true,
+                 position: 'top-end'
+               });
+             }
+             this.$nextTick(() => {
+               if (this.$refs.quoteDescription) this.$refs.quoteDescription.focus();
+             });
+           } else {
+             this.quickAddError = data.error || 'Failed to save customer.';
+           }
+         } catch (err) {
+           this.quickAddError = 'Network error while saving customer.';
+         } finally {
+           this.isSavingClient = false;
+         }
+       }
+     }"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4" x-cloak>
   <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 sm:p-7 max-w-lg w-full shadow-2xl space-y-5 border border-slate-200">
     <div class="flex justify-between items-start border-b border-slate-100 pb-4">
       <div>
@@ -135,20 +255,160 @@
       <button @click="activeModal = null" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition text-lg font-bold leading-none">&times;</button>
     </div>
 
+    <!-- INLINE QUICK ADD CUSTOMER CARD -->
+    <div x-show="showQuickAdd" x-transition class="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 space-y-3.5 shadow-sm">
+      <div class="flex justify-between items-center border-b border-amber-200/60 pb-2">
+        <div class="flex items-center gap-2">
+          <span class="badge-gold text-[10px]">Quick Add</span>
+          <h4 class="text-xs font-extrabold text-slate-900">Register New Client</h4>
+        </div>
+        <button type="button" @click="showQuickAdd = false" class="text-xs text-slate-500 hover:text-slate-800 font-semibold flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          <span>Cancel</span>
+        </button>
+      </div>
+
+      <div x-show="quickAddError" class="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium" x-text="quickAddError"></div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="form-label text-[11px] mb-1">Company Name <span class="text-rose-500">*</span></label>
+          <input type="text" x-ref="quickCompanyName" x-model="quickForm.company_name" placeholder="e.g. Anglo American Freight" class="form-input text-xs py-1.5 font-bold">
+        </div>
+        <div>
+          <label class="form-label text-[11px] mb-1">Contact Person <span class="text-rose-500">*</span></label>
+          <input type="text" x-model="quickForm.contact_name" placeholder="e.g. Sipho Ndlovu" class="form-input text-xs py-1.5">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="form-label text-[11px] mb-1">Email Address <span class="text-rose-500">*</span></label>
+          <input type="email" x-model="quickForm.email" placeholder="sipho@anglo.com" class="form-input text-xs py-1.5 font-mono">
+        </div>
+        <div>
+          <label class="form-label text-[11px] mb-1">Phone Number</label>
+          <input type="text" x-model="quickForm.phone" placeholder="+27 11 000 0000" class="form-input text-xs py-1.5 font-mono">
+        </div>
+      </div>
+
+      <div>
+        <label class="form-label text-[11px] mb-1">Payment Terms</label>
+        <select x-model="quickForm.payment_terms" class="form-input text-xs py-1.5 font-semibold">
+          <option value="50_DEPOSIT_50_POD">50% Deposit / 50% on POD</option>
+          <option value="100_UPFRONT">100% Upfront</option>
+          <option value="30_DEPOSIT_70_POD">30% Deposit / 70% on POD</option>
+          <option value="30_DAYS_NET">30 Days Net</option>
+        </select>
+      </div>
+
+      <div class="flex justify-end items-center gap-2 pt-2 border-t border-amber-200/60">
+        <button type="button" @click="showQuickAdd = false" class="btn-outline text-xs py-1.5 px-3">Cancel</button>
+        <button type="button" @click="submitQuickAdd()" :disabled="isSavingClient" class="btn-secondary text-xs py-1.5 px-3">
+          <svg x-show="isSavingClient" class="animate-spin -ml-1 mr-1.5 h-3.5 w-3.5 text-slate-950 inline" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          <span x-text="isSavingClient ? 'Saving Client...' : 'Save & Select Client'"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- CREATE QUOTATION FORM -->
     <form method="POST" action="{% url 'create_quotation' %}" class="space-y-4">
       {% csrf_token %}
+      
+      <!-- SEARCHABLE CUSTOMER SELECT & SHORTCUT -->
       <div>
-        <label class="form-label">Customer <span class="text-rose-500">*</span></label>
-        <select name="customer_id" required class="form-input font-bold">
-          {% for c in global_customers %}
-          <option value="{{ c.id }}">{{ c.company_name }} ({{ c.email }})</option>
-          {% endfor %}
-        </select>
+        <div class="flex justify-between items-center mb-1.5">
+          <label class="form-label mb-0">Customer <span class="text-rose-500">*</span></label>
+          <button type="button" @click="openQuickAdd()" class="text-xs font-bold text-[#b47828] hover:text-[#8a5818] flex items-center gap-1 hover:underline transition cursor-pointer">
+            <svg class="w-3.5 h-3.5 text-[#b47828]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <span>+ Add New Client</span>
+          </button>
+        </div>
+
+        <!-- Hidden Input for Form Submission -->
+        <input type="hidden" name="customer_id" :value="selectedId" required>
+
+        <!-- Searchable Select Trigger & Combobox -->
+        <div class="relative" @click.away="dropdownOpen = false">
+          <!-- Trigger Card -->
+          <div @click="dropdownOpen = !dropdownOpen; if (dropdownOpen) { $nextTick(() => $refs.customerSearchInput.focus()); }"
+               class="w-full border border-slate-300 hover:border-amber-400 bg-slate-50/70 p-2.5 rounded-xl flex items-center justify-between cursor-pointer transition shadow-sm select-none">
+            <div class="flex items-center gap-2.5 overflow-hidden">
+              <div class="w-7 h-7 rounded-lg bg-amber-100 text-[#b47828] flex items-center justify-center font-bold text-xs shrink-0">
+                <span x-text="selectedCustomer ? selectedCustomer.company_name.charAt(0).toUpperCase() : '?'"></span>
+              </div>
+              <div class="truncate text-left">
+                <div class="font-bold text-xs text-slate-900 truncate" x-text="selectedCustomer ? selectedCustomer.company_name : 'Select or search a client...'"></div>
+                <div class="text-[11px] text-slate-500 font-mono truncate" x-show="selectedCustomer" x-text="selectedCustomer ? (selectedCustomer.contact_name + ' &bull; ' + selectedCustomer.email) : ''"></div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1 text-slate-400 shrink-0 ml-2">
+              <span class="text-[10px] uppercase font-semibold tracking-wider text-slate-400 hidden sm:inline" x-text="dropdownOpen ? 'Close' : 'Search'"></span>
+              <svg class="w-4 h-4 transition-transform duration-200" :class="dropdownOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+          </div>
+
+          <!-- Dropdown Search Panel -->
+          <div x-show="dropdownOpen" x-transition 
+               class="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden max-h-72 flex flex-col">
+            <!-- Search Filter Bar -->
+            <div class="p-2.5 border-b border-slate-100 bg-slate-50/80 sticky top-0 z-10">
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <input type="text" 
+                       x-ref="customerSearchInput" 
+                       x-model="searchQuery" 
+                       placeholder="Search by company, contact, or email..." 
+                       class="w-full pl-8 pr-8 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500">
+                <button type="button" x-show="searchQuery" @click="searchQuery = ''; $refs.customerSearchInput.focus()" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Customer List -->
+            <div class="overflow-y-auto max-h-48 p-1.5 space-y-1 divide-y divide-slate-50">
+              <template x-for="c in filteredCustomers" :key="c.id">
+                <div @click="selectCustomer(c)" 
+                     class="p-2 rounded-xl flex items-center justify-between cursor-pointer transition hover:bg-amber-50/80 group"
+                     :class="selectedId === c.id ? 'bg-amber-50/60 border border-amber-200/60' : 'border border-transparent'">
+                  <div class="min-w-0 pr-2">
+                    <div class="font-bold text-xs text-slate-900 group-hover:text-amber-950 truncate" x-text="c.company_name"></div>
+                    <div class="text-[11px] text-slate-500 font-mono truncate" x-text="(c.contact_name ? c.contact_name + ' &bull; ' : '') + c.email"></div>
+                  </div>
+                  <div x-show="selectedId === c.id" class="shrink-0 text-[#b47828]">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                  </div>
+                </div>
+              </template>
+
+              <!-- Empty Results -->
+              <div x-show="filteredCustomers.length === 0" class="p-4 text-center space-y-2">
+                <p class="text-xs text-slate-500">No customers found matching "<span class="font-semibold text-slate-800" x-text="searchQuery"></span>"</p>
+                <button type="button" @click="openQuickAdd(searchQuery)" class="btn-secondary text-xs py-1.5 px-3">
+                  <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                  <span>+ Create "<span x-text="searchQuery"></span>"</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Footer Shortcut in Dropdown -->
+            <div class="p-2 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
+              <span class="text-[10px] text-slate-400 font-mono" x-text="filteredCustomers.length + ' client' + (filteredCustomers.length === 1 ? '' : 's')"></span>
+              <button type="button" @click="openQuickAdd(searchQuery)" class="text-[11px] font-bold text-[#b47828] hover:text-[#8a5818] flex items-center gap-1 hover:underline">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                <span>+ Add New Customer</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div>
         <label class="form-label">Description <span class="text-rose-500">*</span></label>
-        <input type="text" name="description" required placeholder="e.g. 34-Ton Long Haul Freight JHB to Cape Town" class="form-input font-medium">
+        <input type="text" x-ref="quoteDescription" name="description" required placeholder="e.g. 34-Ton Long Haul Freight JHB to Cape Town" class="form-input font-medium">
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">

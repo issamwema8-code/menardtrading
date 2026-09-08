@@ -17,7 +17,7 @@ from menard_core.views import (
     MarkNotificationReadView,
 )
 from apps.orders.views import UploadPurchaseOrderView, PurchaseOrderDetailView, ReplyPurchaseOrderView
-from apps.customers.views import CreateCustomerView
+from apps.customers.views import CreateCustomerView, CustomerSearchAPIView, QuickCreateCustomerView
 from apps.quotes.views import (
     CustomerQuotePortalView,
     CustomerApproveQuoteView,
@@ -141,6 +141,8 @@ urlpatterns = [
     # 7. Customer Directory Page & Actions
     path('customers/', CustomersListView.as_view(), name='customers_list'),
     path('customers/create/', CreateCustomerView.as_view(), name='create_customer'),
+    path('customers/api/search/', CustomerSearchAPIView.as_view(), name='customer_search_api'),
+    path('customers/api/quick-create/', QuickCreateCustomerView.as_view(), name='quick_create_customer'),
 
     # System Utilities & Email Queue Monitoring
     path('system/sync-inbox/', SyncInboxView.as_view(), name='sync_inbox'),
