@@ -339,9 +339,9 @@ class CompanySettings(models.Model):
     company_reg_number = models.CharField(max_length=100, blank=True, default="", help_text="Company / Close Corporation Registration Number")
     
     # Contact & Communication
-    phone = models.CharField(max_length=50, blank=True, default="", help_text="Primary telephone number")
-    mobile = models.CharField(max_length=50, blank=True, default="", help_text="Direct / Mobile number")
-    email = models.EmailField(blank=True, default="info@menardtrading.com", help_text="General company email")
+    phone = models.CharField(max_length=50, blank=True, default="+264 81 445 5188", help_text="Primary telephone number")
+    mobile = models.CharField(max_length=50, blank=True, default="+264 81 445 5188", help_text="Direct / Mobile number")
+    email = models.EmailField(blank=True, default="support@menardtrading.com", help_text="General company email")
     orders_email = models.EmailField(blank=True, default="orders@menardtrading.com", help_text="Orders & POs mailbox")
     quotes_email = models.EmailField(blank=True, default="quotes@menardtrading.com", help_text="Quotations mailbox")
     accounts_email = models.EmailField(blank=True, default="accounts@menardtrading.com", help_text="Accounts & Billing mailbox")
@@ -389,9 +389,9 @@ class CompanySettings(models.Model):
                 vat_number="",
                 vat_rate=Decimal('15.00'),
                 company_reg_number="",
-                phone="",
-                mobile="",
-                email="info@menardtrading.com",
+                phone="+264 81 445 5188",
+                mobile="+264 81 445 5188",
+                email="support@menardtrading.com",
                 orders_email="orders@menardtrading.com",
                 quotes_email="quotes@menardtrading.com",
                 accounts_email="accounts@menardtrading.com",

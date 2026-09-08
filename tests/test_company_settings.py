@@ -98,10 +98,10 @@ class CompanySettingsTestCase(TestCase):
         self.assertEqual(settings_obj.tagline, "ALWAYS ON TIME")
         self.assertIn("P O BOX 497-19001, RUNDU - NAMIBIA", settings_obj.get_formatted_address())
         
-        # Verify no invented numbers by default
+        # Verify defaults
         self.assertEqual(settings_obj.vat_number, "")
         self.assertEqual(settings_obj.company_reg_number, "")
-        self.assertEqual(settings_obj.phone, "")
+        self.assertEqual(settings_obj.phone, "+264 81 445 5188")
 
     def test_rbac_protection_on_company_settings(self):
         """Unauthorized users cannot view or edit company settings."""

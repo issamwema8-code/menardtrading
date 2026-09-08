@@ -304,7 +304,8 @@
 
     <!-- Footer -->
     <div class="doc-footer">
-      {{ branding.brand_name|default:branding.company_name|default:"MENARD TRADING CC" }} &bull; {{ branding.tagline|default:"ALWAYS ON TIME" }} &bull; {{ branding.company_address|default:"P O BOX 497-19001, RUNDU - NAMIBIA" }}
+      {{ branding.brand_name|default:branding.company_name|default:"MENARD TRADING CC" }} &bull; {{ branding.tagline|default:"ALWAYS ON TIME" }}<br>
+      {{ branding.company_address|default:"P O BOX 497-19001, RUNDU - NAMIBIA" }} &bull; Email: {{ branding.support_email|default:"support@menardtrading.com" }} &bull; Tel: {{ branding.phone|default:"+264 81 445 5188" }}
     </div>
   </div> <!-- end .doc-bottom-section -->
 </div> <!-- end .doc-page-wrapper -->

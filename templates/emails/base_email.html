@@ -265,7 +265,7 @@
           <span class="footer-tagline">{{ branding.tagline|default:"ALWAYS ON TIME" }}</span>
         </div>
         <div style="margin-top: 6px;">
-          {{ branding.company_address|default:"P O BOX 497-19001, RUNDU - NAMIBIA" }} &bull; Email: <a href="mailto:{{ branding.support_email|default:'info@menardtrading.com' }}">{{ branding.support_email|default:'info@menardtrading.com' }}</a>{% if branding.phone %} &bull; Tel: {{ branding.phone }}{% endif %}
+          {{ branding.company_address|default:"P O BOX 497-19001, RUNDU - NAMIBIA" }} &bull; Email: <a href="mailto:{{ branding.support_email|default:'support@menardtrading.com' }}">{{ branding.support_email|default:'support@menardtrading.com' }}</a> &bull; Tel: {{ branding.phone|default:"+264 81 445 5188" }}
         </div>
         {% if branding.company_reg_number or branding.vat_number %}
         <div class="footer-meta">
