@@ -1,0 +1,542 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+
+{% block title %}Company &amp; Business Settings — Menard Trading CC{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-6xl mx-auto pb-16">
+
+  <!-- Header Banner -->
+  <div class="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
+    <div class="absolute -right-12 -top-12 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+      <div>
+        <div class="flex items-center gap-2 text-xs text-amber-400 font-semibold uppercase tracking-wider mb-2">
+          <span>Administration</span>
+          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+          <span class="text-slate-300">Company Settings</span>
+        </div>
+        <h1 class="text-lg sm:text-xl font-semibold text-white tracking-tight">Company &amp; Business Information</h1>
+        <p class="text-xs text-slate-400 mt-1 max-w-2xl">
+          Configure centralized business details, branding assets, addresses, and settlement banking.
+          All customer-facing quotations, invoices, receipts, and emails dynamically reflect these settings.
+        </p>
+      </div>
+
+      <!-- Quick Action / Status Badge -->
+      <div class="flex items-center gap-3">
+        {% if can_edit %}
+        <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-medium">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          Admin Edit Authorized
+        </span>
+        {% else %}
+        <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-medium">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          View Only Mode
+        </span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Settings Form -->
+  <form method="POST" action="{% url 'administration-company-settings' %}" enctype="multipart/form-data" class="space-y-8">
+    {% csrf_token %}
+
+    <!-- 1. Brand Identity & Logo Card -->
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-700 flex items-center justify-center font-bold">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Brand Identity &amp; Visual Lockup</h2>
+            <p class="text-xs text-slate-500">Official company name, tagline, and corporate logo image</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-6 space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Company / Business Name <span class="text-rose-500">*</span></label>
+            <input 
+              type="text" 
+              name="company_name" 
+              value="{{ company_settings.company_name }}" 
+              required
+              {% if not can_edit %}disabled{% endif %}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition"
+              placeholder="MENARD TRADING CC"
+            >
+            <p class="text-[11px] text-slate-500 mt-1.5">Official registered entity name displayed on all headers and documents.</p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Brand Tagline <span class="text-rose-500">*</span></label>
+            <input 
+              type="text" 
+              name="tagline" 
+              value="{{ company_settings.tagline }}" 
+              required
+              {% if not can_edit %}disabled{% endif %}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-amber-700 uppercase tracking-wider focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition"
+              placeholder="ALWAYS ON TIME"
+            >
+            <p class="text-[11px] text-slate-500 mt-1.5">Displayed directly beneath the company name, matching its visual width.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100 items-start">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Website URL</label>
+            <input 
+              type="url" 
+              name="website" 
+              value="{{ company_settings.website }}" 
+              {% if not can_edit %}disabled{% endif %}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition"
+              placeholder="https://menardtrading.com"
+            >
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Custom Logo Image (Optional)</label>
+            <div class="flex items-center gap-4">
+              <div class="w-24 h-14 bg-slate-900 rounded-xl flex items-center justify-center p-2 border border-slate-800 shadow-inner flex-shrink-0">
+                {% if company_settings.logo_image %}
+                <img src="{{ company_settings.logo_image.url }}" alt="Logo" class="max-h-full max-w-full object-contain">
+                {% else %}
+                <img src="{% static 'images/menard_emblem.svg' %}" alt="Default Emblem" class="max-h-full max-w-full object-contain">
+                {% endif %}
+              </div>
+              {% if can_edit %}
+              <div class="flex-1 min-w-0">
+                <input type="file" name="logo_image" accept="image/*" class="text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-800 hover:file:bg-slate-200 cursor-pointer w-full">
+                {% if company_settings.logo_image %}
+                <label class="inline-flex items-center gap-2 mt-2 text-xs text-rose-600 cursor-pointer">
+                  <input type="checkbox" name="remove_logo" value="1" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500">
+                  <span>Reset to default system emblem</span>
+                </label>
+                {% endif %}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Portal & Login Backgrounds -->
+        <div class="pt-6 border-t border-slate-100 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-800">Login &amp; Portal Background Images (Carousel)</h3>
+              <p class="text-[11px] text-slate-500 mt-0.5">Upload custom fleet/transport imagery to display on the login portal carousel and dashboard workflow banner.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold">
+                <svg class="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Auto Watermark Cleaner Active
+              </span>
+              <span class="px-2.5 py-0.5 rounded-full bg-amber-50 text-[#b47828] border border-[#fae3b4] text-[10px] font-semibold">3-Slide Carousel</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <!-- Background Image 1 -->
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+              <label class="block text-xs font-semibold uppercase text-slate-700">Background Image 1 (Slide 1)</label>
+              <div class="flex items-center gap-4">
+                <div class="w-24 h-16 bg-slate-900 rounded-xl overflow-hidden border border-slate-800 shadow-inner flex-shrink-0">
+                  {% if company_settings.login_bg_image_1 %}
+                  <img src="{{ company_settings.login_bg_image_1.url }}" alt="Background 1" class="w-full h-full object-cover">
+                  {% else %}
+                  <img src="{% static 'images/login_bg_3.jpg' %}" alt="Default Background 1" class="w-full h-full object-cover">
+                  {% endif %}
+                </div>
+                {% if can_edit %}
+                <div class="flex-1 min-w-0">
+                  <input type="file" name="login_bg_image_1" accept="image/*" class="text-xs text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-white file:border file:border-slate-300 file:text-slate-800 hover:file:bg-slate-100 cursor-pointer w-full">
+                  {% if company_settings.login_bg_image_1 %}
+                  <label class="inline-flex items-center gap-1.5 mt-1.5 text-[11px] text-rose-600 cursor-pointer">
+                    <input type="checkbox" name="remove_login_bg_1" value="1" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500">
+                    <span>Reset to default fleet image</span>
+                  </label>
+                  {% endif %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Background Image 2 -->
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+              <label class="block text-xs font-semibold uppercase text-slate-700">Background Image 2 (Slide 2 &amp; Banner)</label>
+              <div class="flex items-center gap-4">
+                <div class="w-24 h-16 bg-slate-900 rounded-xl overflow-hidden border border-slate-800 shadow-inner flex-shrink-0">
+                  {% if company_settings.login_bg_image_2 %}
+                  <img src="{{ company_settings.login_bg_image_2.url }}" alt="Background 2" class="w-full h-full object-cover">
+                  {% else %}
+                  <img src="{% static 'images/login_bg_3.jpg' %}" alt="Default Background 2" class="w-full h-full object-cover">
+                  {% endif %}
+                </div>
+                {% if can_edit %}
+                <div class="flex-1 min-w-0">
+                  <input type="file" name="login_bg_image_2" accept="image/*" class="text-xs text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-white file:border file:border-slate-300 file:text-slate-800 hover:file:bg-slate-100 cursor-pointer w-full">
+                  {% if company_settings.login_bg_image_2 %}
+                  <label class="inline-flex items-center gap-1.5 mt-1.5 text-[11px] text-rose-600 cursor-pointer">
+                    <input type="checkbox" name="remove_login_bg_2" value="1" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500">
+                    <span>Reset to default fleet image</span>
+                  </label>
+                  {% endif %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Background Image 3 -->
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+              <label class="block text-xs font-semibold uppercase text-slate-700">Background Image 3 (Slide 3)</label>
+              <div class="flex items-center gap-4">
+                <div class="w-24 h-16 bg-slate-900 rounded-xl overflow-hidden border border-slate-800 shadow-inner flex-shrink-0">
+                  {% if company_settings.login_bg_image_3 %}
+                  <img src="{{ company_settings.login_bg_image_3.url }}" alt="Background 3" class="w-full h-full object-cover">
+                  {% else %}
+                  <img src="{% static 'images/login_bg_3.jpg' %}" alt="Default Background 3" class="w-full h-full object-cover">
+                  {% endif %}
+                </div>
+                {% if can_edit %}
+                <div class="flex-1 min-w-0">
+                  <input type="file" name="login_bg_image_3" accept="image/*" class="text-xs text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-white file:border file:border-slate-300 file:text-slate-800 hover:file:bg-slate-100 cursor-pointer w-full">
+                  {% if company_settings.login_bg_image_3 %}
+                  <label class="inline-flex items-center gap-1.5 mt-1.5 text-[11px] text-rose-600 cursor-pointer">
+                    <input type="checkbox" name="remove_login_bg_3" value="1" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500">
+                    <span>Reset to default fleet image</span>
+                  </label>
+                  {% endif %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Address & Physical Location Card -->
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-sky-500/15 text-sky-700 flex items-center justify-center font-bold">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Address &amp; Location Details</h2>
+            <p class="text-xs text-slate-500">Postal and physical headquarters rendered on documents and tax invoices</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-6 space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Postal Address <span class="text-rose-500">*</span></label>
+            <input 
+              type="text" 
+              name="postal_address" 
+              value="{{ company_settings.postal_address }}" 
+              required
+              {% if not can_edit %}disabled{% endif %}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition"
+              placeholder="P O BOX 497-19001,"
+            >
+            <p class="text-[11px] text-slate-500 mt-1.5">Official postal box or private bag address.</p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Physical Depot / Street Address (Optional)</label>
+            <input 
+              type="text" 
+              name="physical_address" 
+              value="{{ company_settings.physical_address }}" 
+              {% if not can_edit %}disabled{% endif %}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition"
+              placeholder="e.g. Industrial Area, Plot 102"
+            >
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">City / Town <span class="text-rose-500">*</span></label>
+            <input 
+              type="text" 
+              name="city" 
+              value="{{ company_settings.city }}" 
+              required
+              {% if not can_edit %}disabled{% endif %}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition"
+              placeholder="RUNDU"
+            >
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Country <span class="text-rose-500">*</span></label>
+            <input 
+              type="text" 
+              name="country" 
+              value="{{ company_settings.country }}" 
+              required
+              {% if not can_edit %}disabled{% endif %}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 transition"
+              placeholder="NAMIBIA"
+            >
+          </div>
+        </div>
+
+        <div class="p-4 bg-sky-50/70 border border-sky-100 rounded-xl flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2.5 text-sky-900">
+            <svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span><strong>Formatted Document Address:</strong> {{ company_settings.get_formatted_address }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Legal, Tax & Contact Details Card -->
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-700 flex items-center justify-center font-bold">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Tax, Registration &amp; Contact Directory</h2>
+            <p class="text-xs text-slate-500">Official numbers and departmental contact inboxes</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-6 space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">VAT Registration Number (Optional)</label>
+            <input 
+              type="text" 
+              name="vat_number" 
+              value="{{ company_settings.vat_number }}" 
+              {% if not can_edit %}disabled{% endif %}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-mono text-slate-900 focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition"
+              placeholder="Leave blank if not VAT registered"
+            >
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Company / CC Registration Number (Optional)</label>
+            <input 
+              type="text" 
+              name="company_reg_number" 
+              value="{{ company_settings.company_reg_number }}" 
+              {% if not can_edit %}disabled{% endif %}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-mono text-slate-900 focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition"
+              placeholder="e.g. CC/2026/XXXXX"
+            >
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Primary Support / General Email</label>
+            <input 
+              type="email" 
+              name="email" 
+              value="{{ company_settings.email }}" 
+              {% if not can_edit %}disabled{% endif %}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition"
+              placeholder="info@menardtrading.com"
+            >
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Accounts &amp; Billing Email</label>
+            <input 
+              type="email" 
+              name="accounts_email" 
+              value="{{ company_settings.accounts_email }}" 
+              {% if not can_edit %}disabled{% endif %}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition"
+              placeholder="accounts@menardtrading.com"
+            >
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Orders Inbound Email</label>
+            <input 
+              type="email" 
+              name="orders_email" 
+              value="{{ company_settings.orders_email }}" 
+              {% if not can_edit %}disabled{% endif %}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition"
+              placeholder="orders@menardtrading.com"
+            >
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Quotations Email</label>
+            <input 
+              type="email" 
+              name="quotes_email" 
+              value="{{ company_settings.quotes_email }}" 
+              {% if not can_edit %}disabled{% endif %}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition"
+              placeholder="quotes@menardtrading.com"
+            >
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Telephone Number (Optional)</label>
+            <input 
+              type="text" 
+              name="phone" 
+              value="{{ company_settings.phone }}" 
+              {% if not can_edit %}disabled{% endif %}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition"
+              placeholder="Landline telephone number"
+            >
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Mobile / WhatsApp Number (Optional)</label>
+            <input 
+              type="text" 
+              name="mobile" 
+              value="{{ company_settings.mobile }}" 
+              {% if not can_edit %}disabled{% endif %}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition"
+              placeholder="Mobile dispatch or support line"
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Bank Settlement & Remittance Card -->
+    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-purple-500/15 text-purple-700 flex items-center justify-center font-bold">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Bank Settlement &amp; Remittance Details</h2>
+            <p class="text-xs text-slate-500">Official banking information rendered on Invoices and Statements for client EFT payments</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-6 space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Bank Name</label>
+            <input 
+              type="text" 
+              name="bank_name" 
+              value="{{ company_settings.bank_name }}" 
+              {% if not can_edit %}disabled{% endif %}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition"
+              placeholder="e.g. First National Bank (FNB)"
+            >
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Account Holder Name</label>
+            <input 
+              type="text" 
+              name="account_name" 
+              value="{{ company_settings.account_name }}" 
+              {% if not can_edit %}disabled{% endif %}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition"
+              placeholder="e.g. Menard Trading CC"
+            >
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Account Number</label>
+            <input 
+              type="text" 
+              name="account_number" 
+              value="{{ company_settings.account_number }}" 
+              {% if not can_edit %}disabled{% endif %}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-mono text-slate-900 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition"
+              placeholder="e.g. 62890000000"
+            >
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Account Type</label>
+            <input 
+              type="text" 
+              name="account_type" 
+              value="{{ company_settings.account_type }}" 
+              {% if not can_edit %}disabled{% endif %}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition"
+              placeholder="e.g. Business Cheque Account"
+            >
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Branch Code</label>
+            <input 
+              type="text" 
+              name="branch_code" 
+              value="{{ company_settings.branch_code }}" 
+              {% if not can_edit %}disabled{% endif %}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-mono text-slate-900 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition"
+              placeholder="e.g. 280172"
+            >
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Branch Name</label>
+            <input 
+              type="text" 
+              name="branch_name" 
+              value="{{ company_settings.branch_name }}" 
+              {% if not can_edit %}disabled{% endif %}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition"
+              placeholder="e.g. Rundu Branch / Commercial"
+            >
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">SWIFT / BIC Code (Optional)</label>
+            <input 
+              type="text" 
+              name="swift_code" 
+              value="{{ company_settings.swift_code }}" 
+              {% if not can_edit %}disabled{% endif %}
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-mono text-slate-900 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition"
+              placeholder="e.g. FIRNNANX"
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Save Bar -->
+    {% if can_edit %}
+    <div class="sticky bottom-6 z-40 bg-slate-950/90 backdrop-blur-md border border-slate-800 rounded-2xl p-4 shadow-2xl flex items-center justify-between">
+      <div class="text-xs text-slate-400">
+        Changes take effect immediately across all documents, PDF generators, and emails.
+      </div>
+      <button 
+        type="submit" 
+        class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 hover:from-amber-400 hover:to-amber-500 transition transform active:scale-95"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        <span>Save Company Settings</span>
+      </button>
+    </div>
+    {% endif %}
+  </form>
+
+</div>
+{% endblock %}

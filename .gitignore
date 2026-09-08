@@ -1,0 +1,50 @@
+# Python / Django
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# SQLite & Databases
+*.sqlite3
+*.db
+db.sqlite3
+
+# Environment Variables & Secrets
+.env
+.env.local
+
+# Media & User Uploads
+media/
+!media/.gitkeep
+
+# Large Binaries / Video / Archives
+*.mkv
+*.mp4
+*.zip
+*.tar.gz
+*.rar
+content/*.mkv
+content/*.zip
+static.zip
+
+# Temporary files & Office lock files
+~$*
+*.tmp
+*.log
+.coverage
+htmlcov/
+.pytest_cache/
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+Thumbs.db
+.DS_Store

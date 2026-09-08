@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Payment Receipt {{ receipt.receipt_number }} — Menard Trading CC</title>
+  <style>
+    @page {
+      size: a4 portrait;
+      margin: 1.2cm;
+    }
+    body {
+      font-family: Helvetica, Arial, sans-serif;
+      font-size: 9.5pt;
+      color: #1e293b;
+      line-height: 1.45;
+      margin: 0;
+      padding: 0;
+      background-color: #ffffff;
+    }
+    .header-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 12px;
+    }
+    .brand-title {
+      font-size: 11.5pt;
+      font-weight: 600;
+      color: #000000;
+      letter-spacing: 0.25px;
+      text-transform: uppercase;
+      line-height: 1.15;
+      margin: 0;
+      padding: 0;
+      white-space: nowrap;
+    }
+    .brand-subtitle {
+      font-size: 5.8pt;
+      color: #b47828;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2.75px;
+      margin-top: 2px;
+      line-height: 1;
+    }
+    .company-meta {
+      font-size: 8pt;
+      color: #64748b;
+      margin-top: 5px;
+      line-height: 1.35;
+    }
+    .doc-type {
+      text-align: right;
+      font-size: 22pt;
+      font-weight: bold;
+      color: #0f172a;
+      letter-spacing: 0.5px;
+    }
+    .receipt-badge {
+      display: inline-block;
+      background-color: #047857;
+      color: #ffffff;
+      font-size: 7.5pt;
+      font-weight: bold;
+      padding: 3px 8px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+    .meta-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    .party-title {
+      font-size: 8pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: #64748b;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 2px;
+    }
+    .party-box {
+      font-size: 9pt;
+      color: #334155;
+      line-height: 1.4;
+    }
+    .meta-card {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #f8fafc;
+      border: 1px solid #cbd5e1;
+    }
+    .meta-card td {
+      padding: 5px 8px;
+      border: 1px solid #e2e8f0;
+      font-size: 8.5pt;
+    }
+    .meta-card-label {
+      background-color: #f1f5f9;
+      font-weight: bold;
+      color: #475569;
+      text-transform: uppercase;
+      font-size: 7.5pt;
+      width: 38%;
+    }
+    .meta-card-value {
+      font-weight: bold;
+      color: #0f172a;
+    }
+    .amount-highlight-box {
+      background-color: #f0fdf4;
+      border: 1.5px solid #86efac;
+      border-left: 4px solid #047857;
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+    }
+    .amount-highlight-label {
+      font-size: 8pt;
+      font-weight: bold;
+      color: #166534;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .amount-highlight-val {
+      font-size: 18pt;
+      font-weight: bold;
+      color: #047857;
+      font-family: Courier, monospace;
+      margin-top: 2px;
+    }
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+      margin-bottom: 20px;
+    }
+    .items-table th {
+      background-color: #0f172a;
+      color: #ffffff;
+      text-align: left;
+      padding: 7px 9px;
+      font-size: 8pt;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border: 1px solid #0f172a;
+    }
+    .items-table td {
+      padding: 7px 9px;
+      border-bottom: 1px solid #e2e8f0;
+      border-left: 1px solid #f1f5f9;
+      border-right: 1px solid #f1f5f9;
+      font-size: 9pt;
+      vertical-align: middle;
+    }
+    .items-table tr:nth-child(even) td {
+      background-color: #fafbfc;
+    }
+    .text-right {
+      text-align: right;
+    }
+    .text-center {
+      text-align: center;
+    }
+    .font-mono {
+      font-family: Courier, monospace;
+    }
+    .notes-box {
+      background-color: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-left: 3px solid #047857;
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: 8.5pt;
+      color: #334155;
+      line-height: 1.45;
+    }
+    .doc-footer {
+      margin-top: 35px;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+      font-size: 7.5pt;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <table class="header-table">
+    <tr>
+      <td style="width: 58%; vertical-align: top;">
+        {% include 'pdfs/components/document_brand_header.html' %}
+        <div class="company-meta">
+          {{ branding.company_address|default:"P O BOX 497-19001, RUNDU - NAMIBIA" }}<br>
+          {% if branding.vat_number %}VAT Reg: <strong>{{ branding.vat_number }}</strong>{% endif %}{% if branding.vat_number and branding.company_reg_number %} &bull; {% endif %}{% if branding.company_reg_number %}Company Reg: {{ branding.company_reg_number }}{% endif %}{% if branding.vat_number or branding.company_reg_number %}<br>{% endif %}
+          Email: {{ branding.accounts_email|default:branding.support_email|default:"accounts@menardtrading.com" }}{% if branding.telephone and branding.mobile %} &bull; Tel: {{ branding.telephone }} &bull; Mob: {{ branding.mobile }}{% elif branding.phone %} &bull; Tel: {{ branding.phone }}{% endif %}
+        </div>
+      </td>
+      <td style="width: 42%; text-align: right; vertical-align: top;">
+        <div class="doc-type">OFFICIAL RECEIPT</div>
+        <div>
+          <span class="receipt-badge">Payment Received</span>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Metadata & Parties Grid -->
+  <table class="meta-table">
+    <tr>
+      <!-- RECEIVED FROM Block -->
+      <td style="width: 52%; vertical-align: top; padding-right: 15px;">
+        <div class="party-title">RECEIVED FROM</div>
+        <div class="party-box">
+          <strong style="font-size: 10pt; color: #0f172a;">{{ receipt.customer.company_name }}</strong><br>
+          {% if receipt.customer.contact_name %}Attn: {{ receipt.customer.contact_name }}<br>{% endif %}
+          {% if receipt.customer.billing_address %}{{ receipt.customer.billing_address|linebreaksbr }}<br>{% endif %}
+          {% if receipt.customer.phone %}Tel: {{ receipt.customer.phone }} &bull; {% endif %}Email: {{ receipt.customer.email|default:"N/A" }}<br>
+          {% if receipt.customer.vat_number %}Customer VAT No: <strong>{{ receipt.customer.vat_number }}</strong>{% endif %}
+        </div>
+      </td>
+
+      <!-- Receipt Key-Value Matrix -->
+      <td style="width: 48%; vertical-align: top;">
+        <table class="meta-card">
+          <tr>
+            <td class="meta-card-label">RECEIPT #</td>
+            <td class="meta-card-value font-mono">{{ receipt.receipt_number }}</td>
+          </tr>
+          <tr>
+            <td class="meta-card-label">PAYMENT DATE</td>
+            <td class="meta-card-value">{{ receipt.payment_date|date:"d M Y" }}</td>
+          </tr>
+          <tr>
+            <td class="meta-card-label">METHOD</td>
+            <td class="meta-card-value">{{ receipt.get_payment_method_display }}</td>
+          </tr>
+          <tr>
+            <td class="meta-card-label">BANK / POP REF</td>
+            <td class="meta-card-value font-mono">{{ receipt.transaction_reference|default:"Electronic Transfer" }}</td>
+          </tr>
+          <tr>
+            <td class="meta-card-label">INVOICE #</td>
+            <td class="meta-card-value font-mono">{{ receipt.invoice.invoice_number }}</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Prominent Amount Banner -->
+  <div class="amount-banner">
+    <div class="amount-banner-label">Total Amount Paid &amp; Credited</div>
+    <div class="amount-banner-value">N$ {{ receipt.amount_paid|floatformat:2 }}</div>
+  </div>
+
+  <!-- Invoice Settlement & Allocation Table -->
+  <table class="items-table">
+    <thead>
+      <tr>
+        <th style="width: 25%;">INVOICE NUMBER</th>
+        <th style="width: 20%;">INVOICE DATE</th>
+        <th style="width: 20%; text-align: right;">TOTAL BILLED</th>
+        <th style="width: 20%; text-align: right;">AMOUNT APPLIED</th>
+        <th style="width: 15%; text-align: right;">BALANCE DUE</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="font-mono" style="font-weight: bold; color: #0f172a;">{{ receipt.invoice.invoice_number }}</td>
+        <td>{{ receipt.invoice.issue_date|date:"d M Y" }}</td>
+        <td class="text-right font-mono">N$ {{ receipt.invoice.total_amount|floatformat:2 }}</td>
+        <td class="text-right font-mono" style="font-weight: bold; color: #16a34a;">N$ {{ receipt.amount_paid|floatformat:2 }}</td>
+        <td class="text-right font-mono" style="font-weight: bold; {% if receipt.invoice.balance_due > 0 %}color: #dc2626;{% else %}color: #16a34a;{% endif %}">
+          N$ {{ receipt.invoice.balance_due|floatformat:2 }}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Confirmation Notes & Remittance Notice -->
+  <div class="notes-box">
+    <strong style="color: #0f172a; text-transform: uppercase; font-size: 8pt; display: block; margin-bottom: 4px;">Official Payment Confirmation:</strong>
+    Thank you for your payment. This document confirms that the amount of <strong>N$ {{ receipt.amount_paid|floatformat:2 }}</strong> was successfully received and credited against Tax Invoice <strong>#{{ receipt.invoice.invoice_number }}</strong>.
+    {% if receipt.invoice.balance_due == 0 %}
+    <br><span style="color: #16a34a; font-weight: bold;">This invoice has been fully settled in our accounts ledger.</span>
+    {% else %}
+    <br><span style="color: #b45309; font-weight: bold;">The remaining balance due on this invoice is N$ {{ receipt.invoice.balance_due|floatformat:2 }}.</span>
+    {% endif %}
+  </div>
+
+  <!-- Footer -->
+  <div class="doc-footer">
+    {{ branding.brand_name|default:branding.company_name|default:"MENARD TRADING CC" }} &bull; {{ branding.tagline|default:"ALWAYS ON TIME" }} &bull; {{ branding.company_address|default:"P O BOX 497-19001, RUNDU - NAMIBIA" }}
+  </div>
+
+</body>
+</html>

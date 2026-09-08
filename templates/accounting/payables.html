@@ -1,0 +1,286 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+
+{% block content %}
+<div class="space-y-6" x-data="{ showBillModal: false, showBillPaymentModal: false, activeBillId: null, activeBillRef: '', activeBillBalance: 0 }">
+
+  <!-- Page Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+    <div>
+      <h1 class="text-xl font-semibold text-slate-900 tracking-tight">Accounts Payable (AP)</h1>
+      <p class="text-xs text-slate-500 mt-0.5">Supplier bills, payment obligations, vendor aging, and settlement history</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <button @click="showBillModal = true" class="btn-primary text-xs">
+        <svg class="w-3.5 h-3.5 text-slate-950 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        <span>Add Supplier Bill</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- AP Aging Summary Cards -->
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+    
+    <div class="card p-3.5 border-l-4 border-slate-900">
+      <span class="text-[11px] text-slate-500 font-medium">Total Payables</span>
+      <p class="text-lg font-bold text-slate-900 mt-1 font-mono">N$ {{ ap.total_payables|floatformat:2 }}</p>
+      <span class="text-[10px] text-slate-400">{{ ap.unpaid_count }} unpaid bill(s)</span>
+    </div>
+
+    <div class="card p-3.5 border-l-4 border-emerald-500">
+      <span class="text-[11px] text-slate-500 font-medium">Current (Not Due)</span>
+      <p class="text-lg font-bold text-emerald-600 mt-1 font-mono">N$ {{ ap.aging.current|floatformat:2 }}</p>
+      <span class="text-[10px] text-slate-400">Within payment terms</span>
+    </div>
+
+    <div class="card p-3.5 border-l-4 border-amber-400">
+      <span class="text-[11px] text-slate-500 font-medium">1–30 Days Overdue</span>
+      <p class="text-lg font-bold text-amber-600 mt-1 font-mono">N$ {{ ap.aging.days_1_30|floatformat:2 }}</p>
+      <span class="text-[10px] text-slate-400">Upcoming settlement</span>
+    </div>
+
+    <div class="card p-3.5 border-l-4 border-amber-600">
+      <span class="text-[11px] text-slate-500 font-medium">31–60 Days Overdue</span>
+      <p class="text-lg font-bold text-amber-700 mt-1 font-mono">N$ {{ ap.aging.days_31_60|floatformat:2 }}</p>
+      <span class="text-[10px] text-slate-400">Past due date</span>
+    </div>
+
+    <div class="card p-3.5 border-l-4 border-rose-500">
+      <span class="text-[11px] text-slate-500 font-medium">61–90 Days Overdue</span>
+      <p class="text-lg font-bold text-rose-600 mt-1 font-mono">N$ {{ ap.aging.days_61_90|floatformat:2 }}</p>
+      <span class="text-[10px] text-slate-400">Vendor escalation</span>
+    </div>
+
+    <div class="card p-3.5 border-l-4 border-rose-700 bg-rose-50/20">
+      <span class="text-[11px] text-rose-700 font-medium">91+ Days Overdue</span>
+      <p class="text-lg font-bold text-rose-700 mt-1 font-mono">N$ {{ ap.aging.days_91_plus|floatformat:2 }}</p>
+      <span class="text-[10px] text-rose-500">Critical overdue</span>
+    </div>
+
+  </div>
+
+  <!-- Supplier Bills Ledger -->
+  <div class="card overflow-hidden">
+    <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+      <h3 class="text-xs font-semibold text-slate-900 uppercase tracking-wider">Active Supplier Bills (Accounts Payable)</h3>
+      <span class="text-xs text-slate-500 font-mono">Total Balance: N$ {{ ap.total_payables|floatformat:2 }}</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs text-left">
+        <thead class="bg-slate-100 text-slate-700 text-[11px] uppercase tracking-wider border-b border-slate-200">
+          <tr>
+            <th class="py-3 px-3.5">Bill #</th>
+            <th class="py-3 px-3.5">Vendor / Supplier</th>
+            <th class="py-3 px-3.5">Supplier Ref</th>
+            <th class="py-3 px-3.5">Issue Date</th>
+            <th class="py-3 px-3.5">Due Date</th>
+            <th class="py-3 px-3.5 text-right">Subtotal</th>
+            <th class="py-3 px-3.5 text-right">VAT</th>
+            <th class="py-3 px-3.5 text-right">Total Bill</th>
+            <th class="py-3 px-3.5 text-right">Amount Paid</th>
+            <th class="py-3 px-3.5 text-right">Balance Due</th>
+            <th class="py-3 px-3.5 text-center">Status</th>
+            <th class="py-3 px-3.5 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for bill in ap.unpaid_bills %}
+          <tr class="hover:bg-slate-50">
+            <td class="py-3 px-3.5 font-mono font-semibold text-slate-900">{{ bill.bill_number }}</td>
+            <td class="py-3 px-3.5 font-medium text-slate-800">{{ bill.vendor.name }}</td>
+            <td class="py-3 px-3.5 font-mono text-slate-500">{{ bill.supplier_reference|default:"-" }}</td>
+            <td class="py-3 px-3.5 font-mono text-slate-500">{{ bill.issue_date|date:"Y-m-d" }}</td>
+            <td class="py-3 px-3.5 font-mono {% if bill.status == 'OVERDUE' %}text-rose-600 font-semibold{% else %}text-slate-700{% endif %}">
+              {{ bill.due_date|date:"Y-m-d" }}
+            </td>
+            <td class="py-3 px-3.5 text-right font-mono text-slate-700">N$ {{ bill.subtotal|floatformat:2 }}</td>
+            <td class="py-3 px-3.5 text-right font-mono text-slate-500">N$ {{ bill.vat_amount|floatformat:2 }}</td>
+            <td class="py-3 px-3.5 text-right font-mono font-bold text-slate-900">N$ {{ bill.total_amount|floatformat:2 }}</td>
+            <td class="py-3 px-3.5 text-right font-mono text-emerald-600">N$ {{ bill.amount_paid|floatformat:2 }}</td>
+            <td class="py-3 px-3.5 text-right font-mono font-bold {% if bill.balance_due > 0 %}text-purple-700{% else %}text-slate-400{% endif %}">
+              N$ {{ bill.balance_due|floatformat:2 }}
+            </td>
+            <td class="py-3 px-3.5 text-center">
+              {% if bill.status == 'OVERDUE' %}
+              <span class="badge-danger text-[10px]">Overdue</span>
+              {% elif bill.status == 'PARTIALLY_PAID' %}
+              <span class="badge-warning text-[10px]">Partially Paid</span>
+              {% elif bill.status == 'PAID' %}
+              <span class="badge-success text-[10px]">Paid</span>
+              {% else %}
+              <span class="px-2 py-0.5 rounded-full text-[10px] bg-purple-50 text-purple-700 font-medium">Issued</span>
+              {% endif %}
+            </td>
+            <td class="py-3 px-3.5 text-right space-x-1">
+              {% if bill.balance_due > 0 %}
+              <button 
+                @click="showBillPaymentModal = true; activeBillId = '{{ bill.pk }}'; activeBillRef = '{{ bill.bill_number }}'; activeBillBalance = '{{ bill.balance_due|floatformat:2 }}'"
+                class="btn-primary text-[11px] py-1 px-2.5"
+              >
+                Pay Bill &rarr;
+              </button>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="12" class="py-8 text-center text-slate-400">
+              No outstanding supplier bills recorded.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Create Supplier Bill Modal -->
+  <div 
+    x-show="showBillModal" 
+    x-transition:enter="transition ease-out duration-200"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm"
+    style="display: none;"
+  >
+    <div 
+      @click.outside="showBillModal = false"
+      class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg p-6 space-y-4"
+    >
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-sm font-semibold text-slate-900">Record Supplier Bill (Payable)</h3>
+        <button @click="showBillModal = false" class="text-slate-400 hover:text-slate-600">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <form method="POST" action="{% url 'accounting:bills_create' %}" enctype="multipart/form-data" class="space-y-3">
+        {% csrf_token %}
+
+        <div>
+          <label class="form-label text-slate-700">Vendor / Supplier <span class="text-rose-500">*</span></label>
+          <select name="vendor" required class="form-input text-xs w-full">
+            <option value="">Select Vendor</option>
+            {% for v in vendors %}
+            <option value="{{ v.id }}">{{ v.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="form-label text-slate-700">Supplier Reference #</label>
+            <input type="text" name="supplier_reference" placeholder="e.g. INV-98432" class="form-input text-xs w-full font-mono">
+          </div>
+          <div>
+            <label class="form-label text-slate-700">Due Date <span class="text-rose-500">*</span></label>
+            <input type="date" name="due_date" required class="form-input text-xs w-full">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="form-label text-slate-700">Subtotal (Excl VAT) <span class="text-rose-500">*</span></label>
+            <input type="number" step="0.01" name="subtotal" required placeholder="0.00" class="form-input text-xs w-full font-mono">
+          </div>
+          <div>
+            <label class="form-label text-slate-700">VAT Rate (%)</label>
+            <input type="number" step="0.01" name="vat_rate" value="15.00" class="form-input text-xs w-full font-mono">
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label text-slate-700">Supplier Invoice PDF / Scan</label>
+          <input type="file" name="bill_pdf" accept=".pdf,.png,.jpg,.jpeg" class="form-input text-xs w-full p-1.5">
+        </div>
+
+        <div>
+          <label class="form-label text-slate-700">Notes / Scope of Supply</label>
+          <textarea name="notes" rows="2" placeholder="Details of bill..." class="form-input text-xs w-full"></textarea>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+          <button type="button" @click="showBillModal = false" class="btn-secondary text-xs">
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary text-xs">
+            Save Bill
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Record Bill Payment Modal -->
+  <div 
+    x-show="showBillPaymentModal" 
+    x-transition:enter="transition ease-out duration-200"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm"
+    style="display: none;"
+  >
+    <div 
+      @click.outside="showBillPaymentModal = false"
+      class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-4"
+    >
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-sm font-semibold text-slate-900">Record Bill Settlement</h3>
+        <button @click="showBillPaymentModal = false" class="text-slate-400 hover:text-slate-600">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <form :action="'/accounts/bills/' + activeBillId + '/payment/'" method="POST" class="space-y-3">
+        {% csrf_token %}
+
+        <div class="p-3 rounded-xl bg-purple-50 text-xs border border-purple-100 text-purple-900">
+          Bill: <strong x-text="activeBillRef"></strong> &bull; Outstanding Balance: <strong class="font-mono">N$ <span x-text="activeBillBalance"></span></strong>
+        </div>
+
+        <div>
+          <label class="form-label text-slate-700">Payment Amount (N$) <span class="text-rose-500">*</span></label>
+          <input type="number" step="0.01" name="amount_paid" :max="activeBillBalance" required placeholder="0.00" class="form-input text-xs w-full font-mono">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="form-label text-slate-700">Payment Date</label>
+            <input type="date" name="payment_date" value="{% now 'Y-m-d' %}" class="form-input text-xs w-full">
+          </div>
+          <div>
+            <label class="form-label text-slate-700">Method</label>
+            <select name="payment_method" class="form-input text-xs w-full">
+              <option value="EFT_BANK_TRANSFER">EFT / Bank</option>
+              <option value="CREDIT_CARD">Card</option>
+              <option value="DIRECT_DEPOSIT">Direct Deposit</option>
+              <option value="CASH">Cash</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label text-slate-700">Bank Reference / POP Code</label>
+          <input type="text" name="transaction_reference" placeholder="e.g. FNB-EFT-99482" class="form-input text-xs w-full font-mono">
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+          <button type="button" @click="showBillPaymentModal = false" class="btn-secondary text-xs">
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary text-xs">
+            Confirm Payment
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,162 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}Balance Sheet — Menard Trading CC{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header with Date Filters -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold {% if balance_sheet.is_balanced %}bg-emerald-50 text-emerald-700 border border-emerald-200{% else %}bg-amber-50 text-amber-700 border border-amber-200{% endif %}">
+                    {% if balance_sheet.is_balanced %}Balanced (Assets = Liabilities + Equity){% else %}Reconciliation In Progress{% endif %}
+                </span>
+                <span class="text-xs text-slate-500">As at {{ balance_sheet.as_of_date|date:"d M Y" }}</span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-900 mt-1">Statement of Financial Position</h1>
+            <p class="text-sm text-slate-500">Balance sheet tracking assets, liabilities, and cumulative equity</p>
+        </div>
+        
+        <form method="get" class="flex items-center gap-2">
+            <div class="flex items-center gap-1 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                <label class="text-xs font-medium text-slate-500 pl-2">As of date:</label>
+                <input type="date" name="as_of_date" value="{{ balance_sheet.as_of_date|date:'Y-m-d' }}" class="px-2 py-1 text-xs bg-transparent border-0 text-slate-700 focus:ring-0">
+                <button type="submit" class="px-3 py-1 text-xs font-medium bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors">Update</button>
+            </div>
+            <a href="{% url 'accounting:reports_export' %}?report=balance_sheet&as_of_date={{ balance_sheet.as_of_date|date:'Y-m-d' }}" class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors">
+                <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Export CSV
+            </a>
+        </form>
+    </div>
+
+    <!-- Summary Pillars -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Assets Card -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm border-t-4 border-t-blue-600">
+            <div class="flex items-center justify-between">
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Assets</p>
+                <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+            </div>
+            <p class="text-3xl font-black text-slate-900 mt-3">N$ {{ balance_sheet.total_assets|floatformat:2 }}</p>
+            <p class="text-xs text-slate-500 mt-1">Cash funds + Accounts Receivable</p>
+        </div>
+
+        <!-- Liabilities Card -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm border-t-4 border-t-amber-600">
+            <div class="flex items-center justify-between">
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Liabilities</p>
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+            </div>
+            <p class="text-3xl font-black text-slate-900 mt-3">N$ {{ balance_sheet.total_liabilities|floatformat:2 }}</p>
+            <p class="text-xs text-slate-500 mt-1">Accounts Payable + Net Tax Obligations</p>
+        </div>
+
+        <!-- Equity Card -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm border-t-4 border-t-emerald-600">
+            <div class="flex items-center justify-between">
+                <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Equity</p>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            </div>
+            <p class="text-3xl font-black text-slate-900 mt-3">N$ {{ balance_sheet.total_equity|floatformat:2 }}</p>
+            <p class="text-xs text-slate-500 mt-1">Cumulative Retained Earnings</p>
+        </div>
+    </div>
+
+    <!-- Main Balance Sheet Detail Tables -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- ASSETS COLUMN -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
+            <div>
+                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                    <h2 class="text-base font-bold text-slate-900">Assets</h2>
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700">Current Assets</span>
+                </div>
+                <div class="p-6 space-y-4 text-sm">
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <div>
+                            <p class="font-medium text-slate-900">Cash & Recorded Bank Funds</p>
+                            <p class="text-xs text-slate-500">Inflows minus recorded expense disbursements</p>
+                        </div>
+                        <span class="font-bold text-slate-900">N$ {{ balance_sheet.cash_on_hand|floatformat:2 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <div>
+                            <p class="font-medium text-slate-900">Accounts Receivable (Trade Debtors)</p>
+                            <p class="text-xs text-slate-500">Outstanding client invoices due to Menard Trading CC</p>
+                        </div>
+                        <span class="font-bold text-slate-900">N$ {{ balance_sheet.accounts_receivable|floatformat:2 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100 text-slate-400">
+                        <div>
+                            <p class="font-medium">Other Non-Current Assets</p>
+                            <p class="text-xs">Property, logistics fleet & equipment (Fixed Asset Ledger)</p>
+                        </div>
+                        <span class="text-xs italic">Not tracked</span>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-slate-100 border-t border-slate-200 flex justify-between items-center">
+                <span class="font-bold text-slate-900">Total Assets</span>
+                <span class="text-lg font-black text-blue-700">N$ {{ balance_sheet.total_assets|floatformat:2 }}</span>
+            </div>
+        </div>
+
+        <!-- LIABILITIES & EQUITY COLUMN -->
+        <div class="space-y-6">
+            <!-- LIABILITIES SECTION -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                    <h2 class="text-base font-bold text-slate-900">Liabilities</h2>
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-700">Current Liabilities</span>
+                </div>
+                <div class="p-6 space-y-4 text-sm">
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <div>
+                            <p class="font-medium text-slate-900">Accounts Payable (Trade Creditors)</p>
+                            <p class="text-xs text-slate-500">Outstanding supplier and vendor obligations</p>
+                        </div>
+                        <span class="font-bold text-slate-900">N$ {{ balance_sheet.accounts_payable|floatformat:2 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <div>
+                            <p class="font-medium text-slate-900">Net Tax / VAT Obligation</p>
+                            <p class="text-xs text-slate-500">Output VAT on invoices minus Input VAT on expenses</p>
+                        </div>
+                        <span class="font-bold text-slate-900">N$ {{ balance_sheet.tax_liabilities|floatformat:2 }}</span>
+                    </div>
+                </div>
+                <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
+                    <span class="font-semibold text-slate-700">Total Liabilities</span>
+                    <span class="font-bold text-slate-900">N$ {{ balance_sheet.total_liabilities|floatformat:2 }}</span>
+                </div>
+            </div>
+
+            <!-- EQUITY SECTION -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                    <h2 class="text-base font-bold text-slate-900">Equity</h2>
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">Owners' Interest</span>
+                </div>
+                <div class="p-6 space-y-4 text-sm">
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <div>
+                            <p class="font-medium text-slate-900">Cumulative Retained Earnings</p>
+                            <p class="text-xs text-slate-500">All-time Net Profit (Revenue − Expenses)</p>
+                        </div>
+                        <span class="font-bold text-slate-900">N$ {{ balance_sheet.retained_earnings|floatformat:2 }}</span>
+                    </div>
+                </div>
+                <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
+                    <span class="font-semibold text-slate-700">Total Equity</span>
+                    <span class="font-bold text-slate-900">N$ {{ balance_sheet.total_equity|floatformat:2 }}</span>
+                </div>
+                <div class="px-6 py-4 bg-slate-100 border-t border-slate-200 flex justify-between items-center">
+                    <span class="font-bold text-slate-900">Total Liabilities & Equity</span>
+                    <span class="text-lg font-black text-emerald-700">N$ {{ balance_sheet.total_liabilities_and_equity|floatformat:2 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

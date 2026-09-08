@@ -1,0 +1,103 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Quotation #{{ quote.quote_number }} — Menard Trading CC{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+  <!-- Top Action Toolbar (No Print) -->
+  <div class="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900 text-white p-4 rounded-2xl shadow-lg border border-slate-800">
+    <div class="flex items-center gap-3">
+      {% if request.user.is_authenticated %}
+      <a href="{% url 'quotes_list' %}" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition" title="Back to Quotations">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+      </a>
+      {% endif %}
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold px-2 py-0.5 rounded-full {% if quote.status == 'APPROVED' %}bg-emerald-500/20 text-emerald-300 border border-emerald-500/30{% elif quote.status == 'SENT' %}bg-sky-500/20 text-sky-300 border border-sky-500/30{% else %}bg-amber-500/20 text-amber-300 border border-amber-500/30{% endif %}">
+            {{ quote.get_status_display }}
+          </span>
+          <span class="text-xs text-slate-400 font-mono font-bold">#{{ quote.quote_number }}</span>
+          {% if quote.valid_until %}
+          <span class="text-xs text-slate-500 hidden md:inline">&bull;</span>
+          <span class="text-xs text-slate-400 hidden md:inline">Valid Until: <strong class="text-slate-200 font-mono">{{ quote.valid_until|date:"d M Y" }}</strong></span>
+          {% endif %}
+        </div>
+        <h1 class="text-lg font-bold text-white mt-0.5">{{ quote.customer.company_name }}</h1>
+      </div>
+    </div>
+
+    <!-- Total Callout & Actions: Print, PDF, 1-Click Approve -->
+    <div class="flex flex-wrap items-center gap-2.5">
+      <div class="bg-slate-950 px-3.5 py-1.5 rounded-xl border border-slate-800 text-right mr-1">
+        <span class="text-[9px] text-slate-400 uppercase tracking-wider block">Total (Incl. VAT)</span>
+        <span class="text-base font-bold text-[#dca048] font-mono">N$ {{ quote.total_amount|floatformat:2 }}</span>
+      </div>
+
+      <button onclick="window.print()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition border border-slate-700">
+        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+        Print
+      </button>
+      <a href="{% url 'quote_pdf_download' quote.id %}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition border border-slate-700">
+        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+        Download PDF
+      </a>
+
+      {% if quote.status != 'APPROVED' %}
+      <form id="approve_quote_form" method="POST" action="{% url 'quote_approve' quote.approval_token %}" class="inline">
+        {% csrf_token %}
+        <button 
+          type="button" 
+          onclick="confirmQuoteApproval()" 
+          class="btn-primary py-2 px-4 text-xs font-bold shadow-lg shadow-amber-500/10 flex items-center gap-1.5"
+        >
+          <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+          <span>Approve Quotation</span>
+        </button>
+      </form>
+      {% else %}
+      <div class="px-3.5 py-2 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-xs flex items-center gap-1.5">
+        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+        <span>Approved on {{ quote.approved_at|date:"d M Y"|default:"Record" }}</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- A4 Document Canvas Container (Canonical Application Layout) -->
+  <div class="overflow-x-auto py-6 flex justify-center bg-slate-200/60 rounded-2xl border border-slate-300/80 p-2 sm:p-6">
+    <div class="bg-white rounded-lg shadow-2xl border border-slate-300 w-full max-w-[210mm] min-h-[297mm] p-[16mm_18mm] box-border text-[#1e293b] font-sans">
+      {% include 'pdfs/quotation_pdf.html' %}
+    </div>
+  </div>
+</div>
+
+<script>
+  function confirmQuoteApproval() {
+    Swal.fire({
+      title: 'Approve Quotation?',
+      html: '<div class="text-xs text-slate-600 text-left space-y-2 mt-2">' +
+            '<p>You are about to formally approve <strong>Quotation #{{ quote.quote_number }}</strong> for <strong>{{ quote.customer.company_name }}</strong>.</p>' +
+            '<div class="p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-center text-sm font-bold text-slate-900">Total: N$ {{ quote.total_amount|floatformat:2 }}</div>' +
+            '<p class="text-[11px] text-slate-500">Upon approval, our operations team will immediately allocate a dedicated logistics vehicle and schedule dispatch.</p>' +
+            '</div>',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#B47828',
+      cancelButtonColor: '#475569',
+      confirmButtonText: 'Yes, Approve Quotation',
+      cancelButtonText: 'Review Again',
+      customClass: {
+        popup: 'rounded-2xl shadow-2xl border border-slate-200',
+        confirmButton: 'text-slate-950 font-bold px-5 py-2.5 rounded-xl text-xs',
+        cancelButton: 'text-white font-semibold px-4 py-2.5 rounded-xl text-xs'
+      }
+    }).then((result) => {
+      if (result.isConfirmed) {
+        document.getElementById('approve_quote_form').submit();
+      }
+    });
+  }
+</script>
+{% endblock %}

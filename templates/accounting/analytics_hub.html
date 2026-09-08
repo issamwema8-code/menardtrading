@@ -1,0 +1,162 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}Financial & Operations Analytics — Menard Trading CC{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
+                    Executive Analytics
+                </span>
+                <span class="text-xs text-slate-500">6-Month Trend & Performance Analysis</span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-900 mt-1">Financial & Business Analytics</h1>
+            <p class="text-sm text-slate-500">Revenue growth, profit margins, client concentration, and operational metrics</p>
+        </div>
+        
+        <div class="flex items-center gap-3">
+            <a href="{% url 'accounting:reports_hub' %}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-sm rounded-xl transition-colors">
+                <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Open Reports Center
+            </a>
+        </div>
+    </div>
+
+    <!-- Monthly Revenue & Expense Trend Visual Grid -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-base font-bold text-slate-900">Monthly Revenue & Cash Inflow Trend (Last 6 Months)</h2>
+                <p class="text-xs text-slate-500">Monthly performance tracking across billing and collections</p>
+            </div>
+            <div class="flex items-center gap-4 text-xs font-medium">
+                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-blue-600"></span> Invoiced Revenue</span>
+                <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-emerald-500"></span> Cash Collected</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-2">
+            {% for m in analytics.monthly_revenue %}
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-3">
+                <div>
+                    <p class="text-xs font-bold text-slate-700 uppercase">{{ m.month }}</p>
+                    <div class="mt-2 space-y-1.5">
+                        <div>
+                            <p class="text-[10px] text-slate-500 uppercase">Revenue (Excl. VAT)</p>
+                            <p class="text-sm font-bold text-blue-700">N$ {{ m.revenue|floatformat:0 }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-slate-500 uppercase">Cash Collected</p>
+                            <p class="text-sm font-bold text-emerald-700">N$ {{ m.collections|floatformat:0 }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Two-Column Analytics Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Top Customers Table -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">Top Revenue Customers</h2>
+                    <p class="text-xs text-slate-500">Highest volume freight and transport clients</p>
+                </div>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700">Ranked by Volume</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-600">
+                    <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
+                        <tr>
+                            <th class="px-6 py-3">Customer</th>
+                            <th class="px-6 py-3 text-center">Invoices</th>
+                            <th class="px-6 py-3 text-right">Total Invoiced</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for c in analytics.top_customers %}
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-6 py-3.5 font-semibold text-slate-900">{{ c.customer__company_name }}</td>
+                            <td class="px-6 py-3.5 text-center text-slate-500">{{ c.invoice_count }}</td>
+                            <td class="px-6 py-3.5 text-right font-bold text-slate-900">N$ {{ c.total_revenue|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="px-6 py-6 text-center text-slate-400">No customer billing history available.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Top Expense Categories Table -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">Highest Expense Categories</h2>
+                    <p class="text-xs text-slate-500">Breakdown of operational and administrative expenditure</p>
+                </div>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-700">Ranked by Cost</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-600">
+                    <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
+                        <tr>
+                            <th class="px-6 py-3">Expense Category</th>
+                            <th class="px-6 py-3 text-center">Transactions</th>
+                            <th class="px-6 py-3 text-right">Total (Excl. VAT)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for exp in analytics.top_expense_categories %}
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-6 py-3.5 font-semibold text-slate-900">{{ exp.category__name|default:"Uncategorized" }}</td>
+                            <td class="px-6 py-3.5 text-center text-slate-500">{{ exp.count }}</td>
+                            <td class="px-6 py-3.5 text-right font-bold text-amber-700">N$ {{ exp.total|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="px-6 py-6 text-center text-slate-400">No expenses recorded yet.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Operations Pipeline & Efficiency KPI Strip -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+        <h2 class="text-base font-bold text-slate-900">Logistics Operations Lifecycle Pipeline</h2>
+        <div class="grid grid-cols-2 md:grid-cols-6 gap-3 text-center">
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <p class="text-xs text-slate-500 font-semibold uppercase">Purchase Orders</p>
+                <p class="text-2xl font-black text-slate-900 mt-1">{{ analytics.operations_funnel.purchase_orders }}</p>
+            </div>
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <p class="text-xs text-slate-500 font-semibold uppercase">Quotations</p>
+                <p class="text-2xl font-black text-slate-900 mt-1">{{ analytics.operations_funnel.quotations }}</p>
+            </div>
+            <div class="p-4 rounded-xl bg-blue-50 border border-blue-200">
+                <p class="text-xs text-blue-800 font-semibold uppercase">Jobs Dispatched</p>
+                <p class="text-2xl font-black text-blue-900 mt-1">{{ analytics.operations_funnel.jobs_dispatched }}</p>
+            </div>
+            <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200">
+                <p class="text-xs text-emerald-800 font-semibold uppercase">Deliveries (POD)</p>
+                <p class="text-2xl font-black text-emerald-900 mt-1">{{ analytics.operations_funnel.jobs_delivered }}</p>
+            </div>
+            <div class="p-4 rounded-xl bg-indigo-50 border border-indigo-200">
+                <p class="text-xs text-indigo-800 font-semibold uppercase">Invoices Issued</p>
+                <p class="text-2xl font-black text-indigo-900 mt-1">{{ analytics.operations_funnel.invoices_issued }}</p>
+            </div>
+            <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200">
+                <p class="text-xs text-emerald-800 font-semibold uppercase">Payments Settled</p>
+                <p class="text-2xl font-black text-emerald-900 mt-1">{{ analytics.operations_funnel.payments_received }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

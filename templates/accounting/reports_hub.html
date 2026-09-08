@@ -1,0 +1,310 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}Reports Center — Menard Trading CC{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header with Date Filters & Export Action -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                    Business Intelligence & Auditing
+                </span>
+                <span class="text-xs text-slate-500">Period: {{ start_date|date:"d M Y" }} – {{ end_date|date:"d M Y" }}</span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-900 mt-1">Management Reports Center</h1>
+            <p class="text-sm text-slate-500">Comprehensive operational, financial, and tax auditing reports</p>
+        </div>
+        
+        <form method="get" class="flex flex-wrap items-center gap-2">
+            <input type="hidden" name="tab" value="{{ active_tab }}">
+            <div class="flex items-center gap-1 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" class="px-2 py-1 text-xs bg-transparent border-0 text-slate-700 focus:ring-0">
+                <span class="text-slate-400 text-xs">to</span>
+                <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" class="px-2 py-1 text-xs bg-transparent border-0 text-slate-700 focus:ring-0">
+                <button type="submit" class="px-3 py-1 text-xs font-medium bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors">Apply</button>
+            </div>
+            {% if perms.reports.export %}
+            <a href="{% url 'accounting:reports_export' %}?report={{ active_tab }}&start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-sm transition-colors">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Export Tab to CSV
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="border-b border-slate-200">
+        <nav class="flex space-x-2 overflow-x-auto pb-1" aria-label="Reports Tabs">
+            <a href="?tab=sales&start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" class="px-4 py-2.5 text-sm font-semibold rounded-xl whitespace-nowrap transition-colors {% if active_tab == 'sales' %}bg-slate-900 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+                Sales & Revenue
+            </a>
+            <a href="?tab=payments&start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" class="px-4 py-2.5 text-sm font-semibold rounded-xl whitespace-nowrap transition-colors {% if active_tab == 'payments' %}bg-slate-900 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+                Payments Received
+            </a>
+            <a href="?tab=receivables&start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" class="px-4 py-2.5 text-sm font-semibold rounded-xl whitespace-nowrap transition-colors {% if active_tab == 'receivables' %}bg-slate-900 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+                Accounts Receivable
+            </a>
+            <a href="?tab=payables&start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" class="px-4 py-2.5 text-sm font-semibold rounded-xl whitespace-nowrap transition-colors {% if active_tab == 'payables' %}bg-slate-900 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+                Accounts Payable
+            </a>
+            <a href="?tab=expenses&start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" class="px-4 py-2.5 text-sm font-semibold rounded-xl whitespace-nowrap transition-colors {% if active_tab == 'expenses' %}bg-slate-900 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+                Expenses Audit
+            </a>
+            <a href="?tab=pnl&start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" class="px-4 py-2.5 text-sm font-semibold rounded-xl whitespace-nowrap transition-colors {% if active_tab == 'pnl' %}bg-slate-900 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+                Profit & Loss
+            </a>
+            <a href="?tab=vat&start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" class="px-4 py-2.5 text-sm font-semibold rounded-xl whitespace-nowrap transition-colors {% if active_tab == 'vat' %}bg-slate-900 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+                VAT / Tax Return
+            </a>
+            <a href="?tab=operations&start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" class="px-4 py-2.5 text-sm font-semibold rounded-xl whitespace-nowrap transition-colors {% if active_tab == 'operations' %}bg-slate-900 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+                Operations Logistics
+            </a>
+        </nav>
+    </div>
+
+    <!-- TAB 1: SALES & REVENUE -->
+    {% if active_tab == 'sales' %}
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <h2 class="text-base font-bold text-slate-900">Invoiced Sales Report</h2>
+            <span class="text-xs text-slate-500">{{ sales_invoices|length }} Invoices</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600">
+                <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
+                    <tr>
+                        <th class="px-6 py-3.5">Invoice #</th>
+                        <th class="px-6 py-3.5">Date</th>
+                        <th class="px-6 py-3.5">Customer</th>
+                        <th class="px-6 py-3.5 text-right">Subtotal</th>
+                        <th class="px-6 py-3.5 text-right">VAT (15%)</th>
+                        <th class="px-6 py-3.5 text-right">Total</th>
+                        <th class="px-6 py-3.5 text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for inv in sales_invoices %}
+                    <tr class="hover:bg-slate-50">
+                        <td class="px-6 py-4 font-mono font-medium text-slate-900">{{ inv.invoice_number }}</td>
+                        <td class="px-6 py-4">{{ inv.issue_date|date:"d M Y" }}</td>
+                        <td class="px-6 py-4 font-medium text-slate-900">{{ inv.customer.company_name }}</td>
+                        <td class="px-6 py-4 text-right">N$ {{ inv.subtotal|floatformat:2 }}</td>
+                        <td class="px-6 py-4 text-right">N$ {{ inv.vat_amount|floatformat:2 }}</td>
+                        <td class="px-6 py-4 text-right font-bold text-slate-900">N$ {{ inv.total_amount|floatformat:2 }}</td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="px-2.5 py-1 text-xs font-semibold rounded-full {% if inv.status == 'PAID' %}bg-emerald-50 text-emerald-700 border border-emerald-200{% else %}bg-amber-50 text-amber-700 border border-amber-200{% endif %}">
+                                {{ inv.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" class="px-6 py-8 text-center text-slate-400">No sales invoices in selected period.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 2: PAYMENTS RECEIVED -->
+    {% elif active_tab == 'payments' %}
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <h2 class="text-base font-bold text-slate-900">Payments Received Report</h2>
+            <span class="text-xs text-slate-500">{{ payments|length }} Receipts</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600">
+                <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
+                    <tr>
+                        <th class="px-6 py-3.5">Receipt #</th>
+                        <th class="px-6 py-3.5">Date</th>
+                        <th class="px-6 py-3.5">Invoice #</th>
+                        <th class="px-6 py-3.5">Customer</th>
+                        <th class="px-6 py-3.5">Method</th>
+                        <th class="px-6 py-3.5">Bank Reference</th>
+                        <th class="px-6 py-3.5 text-right">Amount Received</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for p in payments %}
+                    <tr class="hover:bg-slate-50">
+                        <td class="px-6 py-4 font-mono font-medium text-slate-900">{{ p.receipt_number }}</td>
+                        <td class="px-6 py-4">{{ p.payment_date|date:"d M Y" }}</td>
+                        <td class="px-6 py-4 font-mono text-slate-700">{{ p.invoice.invoice_number }}</td>
+                        <td class="px-6 py-4 font-medium text-slate-900">{{ p.customer.company_name }}</td>
+                        <td class="px-6 py-4 text-xs font-semibold uppercase text-slate-500">{{ p.payment_method }}</td>
+                        <td class="px-6 py-4 font-mono text-xs text-slate-500">{{ p.transaction_reference|default:"—" }}</td>
+                        <td class="px-6 py-4 text-right font-bold text-emerald-700">N$ {{ p.amount_paid|floatformat:2 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" class="px-6 py-8 text-center text-slate-400">No payments recorded in selected period.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 3: RECEIVABLES -->
+    {% elif active_tab == 'receivables' %}
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <p class="text-xs text-slate-500 uppercase font-semibold">Total Accounts Receivable</p>
+                <p class="text-2xl font-black text-slate-900 mt-1">N$ {{ ar_data.total_ar|floatformat:2 }}</p>
+            </div>
+            <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200">
+                <p class="text-xs text-emerald-800 uppercase font-semibold">Current (Not Overdue)</p>
+                <p class="text-2xl font-black text-emerald-900 mt-1">N$ {{ ar_data.current_ar|floatformat:2 }}</p>
+            </div>
+            <div class="p-4 rounded-xl bg-rose-50 border border-rose-200">
+                <p class="text-xs text-rose-800 uppercase font-semibold">Overdue Receivables</p>
+                <p class="text-2xl font-black text-rose-900 mt-1">N$ {{ ar_data.overdue_ar|floatformat:2 }}</p>
+            </div>
+        </div>
+        <div class="flex justify-end">
+            <a href="{% url 'accounting:receivables' %}" class="text-sm font-semibold text-blue-600 hover:underline">Open Full AR Aging & Customer Ledger &rarr;</a>
+        </div>
+    </div>
+
+    <!-- TAB 4: PAYABLES -->
+    {% elif active_tab == 'payables' %}
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <p class="text-xs text-slate-500 uppercase font-semibold">Total Accounts Payable</p>
+                <p class="text-2xl font-black text-slate-900 mt-1">N$ {{ ap_data.total_ap|floatformat:2 }}</p>
+            </div>
+            <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200">
+                <p class="text-xs text-emerald-800 uppercase font-semibold">Current Payables</p>
+                <p class="text-2xl font-black text-emerald-900 mt-1">N$ {{ ap_data.current_ap|floatformat:2 }}</p>
+            </div>
+            <div class="p-4 rounded-xl bg-rose-50 border border-rose-200">
+                <p class="text-xs text-rose-800 uppercase font-semibold">Overdue Payables</p>
+                <p class="text-2xl font-black text-rose-900 mt-1">N$ {{ ap_data.overdue_ap|floatformat:2 }}</p>
+            </div>
+        </div>
+        <div class="flex justify-end">
+            <a href="{% url 'accounting:payables' %}" class="text-sm font-semibold text-blue-600 hover:underline">Open Full AP Aging & Supplier Bills &rarr;</a>
+        </div>
+    </div>
+
+    <!-- TAB 5: EXPENSES AUDIT -->
+    {% elif active_tab == 'expenses' %}
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <h2 class="text-base font-bold text-slate-900">Expenses Audit Log</h2>
+            <span class="text-xs text-slate-500">{{ expenses|length }} Records</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-600">
+                <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
+                    <tr>
+                        <th class="px-6 py-3.5">Expense #</th>
+                        <th class="px-6 py-3.5">Date</th>
+                        <th class="px-6 py-3.5">Category</th>
+                        <th class="px-6 py-3.5">Payee / Vendor</th>
+                        <th class="px-6 py-3.5 text-right">Subtotal</th>
+                        <th class="px-6 py-3.5 text-right">VAT</th>
+                        <th class="px-6 py-3.5 text-right">Total</th>
+                        <th class="px-6 py-3.5 text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for exp in expenses %}
+                    <tr class="hover:bg-slate-50">
+                        <td class="px-6 py-4 font-mono font-medium text-slate-900">{{ exp.expense_number }}</td>
+                        <td class="px-6 py-4">{{ exp.expense_date|date:"d M Y" }}</td>
+                        <td class="px-6 py-4 font-medium">{{ exp.category.name }}</td>
+                        <td class="px-6 py-4">{{ exp.payee_name }}</td>
+                        <td class="px-6 py-4 text-right">N$ {{ exp.subtotal|floatformat:2 }}</td>
+                        <td class="px-6 py-4 text-right">N$ {{ exp.tax_amount|floatformat:2 }}</td>
+                        <td class="px-6 py-4 text-right font-bold text-slate-900">N$ {{ exp.total_amount|floatformat:2 }}</td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="px-2.5 py-1 text-xs font-semibold rounded-full {% if exp.status == 'PAID' %}bg-emerald-50 text-emerald-700 border border-emerald-200{% else %}bg-rose-50 text-rose-700 border border-rose-200{% endif %}">
+                                {{ exp.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="8" class="px-6 py-8 text-center text-slate-400">No expenses recorded in selected period.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TAB 6: P&L SUMMARY -->
+    {% elif active_tab == 'pnl' %}
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <p class="text-xs text-slate-500 uppercase font-semibold">Total Revenue (Excl. VAT)</p>
+                <p class="text-2xl font-black text-slate-900 mt-1">N$ {{ pnl_data.sales_revenue|floatformat:2 }}</p>
+            </div>
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <p class="text-xs text-slate-500 uppercase font-semibold">Cost of Sales</p>
+                <p class="text-2xl font-black text-slate-700 mt-1">N$ {{ pnl_data.cost_of_sales|floatformat:2 }}</p>
+            </div>
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <p class="text-xs text-slate-500 uppercase font-semibold">Operating Expenses</p>
+                <p class="text-2xl font-black text-amber-700 mt-1">N$ {{ pnl_data.operating_expenses|floatformat:2 }}</p>
+            </div>
+            <div class="p-4 rounded-xl {% if pnl_data.net_profit >= 0 %}bg-emerald-50 border-emerald-200{% else %}bg-rose-50 border-rose-200{% endif %}">
+                <p class="text-xs {% if pnl_data.net_profit >= 0 %}text-emerald-800{% else %}text-rose-800{% endif %} uppercase font-semibold">Net Profit</p>
+                <p class="text-2xl font-black {% if pnl_data.net_profit >= 0 %}text-emerald-900{% else %}text-rose-900{% endif %} mt-1">N$ {{ pnl_data.net_profit|floatformat:2 }}</p>
+            </div>
+        </div>
+        <div class="flex justify-end">
+            <a href="{% url 'accounting:profit_loss' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" class="text-sm font-semibold text-blue-600 hover:underline">Open Full Profit & Loss Statement &rarr;</a>
+        </div>
+    </div>
+
+    <!-- TAB 7: VAT SUMMARY -->
+    {% elif active_tab == 'vat' %}
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <p class="text-xs text-slate-500 uppercase font-semibold">Output VAT (Invoiced)</p>
+                <p class="text-2xl font-black text-slate-900 mt-1">N$ {{ vat_data.output_vat_invoiced|floatformat:2 }}</p>
+            </div>
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <p class="text-xs text-slate-500 uppercase font-semibold">Input VAT (Expenses)</p>
+                <p class="text-2xl font-black text-slate-900 mt-1">N$ {{ vat_data.input_vat_expenses|floatformat:2 }}</p>
+            </div>
+            <div class="p-4 rounded-xl bg-amber-50 border border-amber-200">
+                <p class="text-xs text-amber-800 uppercase font-semibold">Net VAT Position</p>
+                <p class="text-2xl font-black text-amber-900 mt-1">N$ {{ vat_data.net_vat_payable|floatformat:2 }}</p>
+            </div>
+        </div>
+        <div class="flex justify-end">
+            <a href="{% url 'accounting:vat_report' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" class="text-sm font-semibold text-blue-600 hover:underline">Open Full VAT Return Report &rarr;</a>
+        </div>
+    </div>
+
+    <!-- TAB 8: OPERATIONS -->
+    {% elif active_tab == 'operations' %}
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <p class="text-xs text-slate-500 uppercase font-semibold">Purchase Orders Received</p>
+                <p class="text-2xl font-black text-slate-900 mt-1">{{ operations_data.purchase_orders_count }}</p>
+            </div>
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <p class="text-xs text-slate-500 uppercase font-semibold">Quotations Issued</p>
+                <p class="text-2xl font-black text-slate-900 mt-1">{{ operations_data.quotations_count }}</p>
+            </div>
+            <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <p class="text-xs text-slate-500 uppercase font-semibold">Logistics Jobs Dispatched</p>
+                <p class="text-2xl font-black text-slate-900 mt-1">{{ operations_data.jobs_dispatched }}</p>
+            </div>
+            <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200">
+                <p class="text-xs text-emerald-800 uppercase font-semibold">Deliveries Completed (POD)</p>
+                <p class="text-2xl font-black text-emerald-900 mt-1">{{ operations_data.jobs_delivered }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

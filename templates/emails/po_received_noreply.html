@@ -1,0 +1,63 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+<h1 class="doc-heading">Purchase Order Received</h1>
+
+<p class="lead-p">Dear {{ customer_name|default:"Valued Client" }},</p>
+
+<p class="lead-p">
+  Thank you for sending Purchase Order <strong>#{{ po.po_number }}</strong> to Menard Trading CC.
+  We have received your order and our operations team is currently reviewing the specifications. We will prepare and send your official quotation shortly.
+</p>
+
+<div class="info-card gold-border">
+  <table class="info-table">
+    <tr>
+      <td class="info-label">PO Reference:</td>
+      <td class="info-value">#{{ po.po_number }}</td>
+    </tr>
+    {% if po.pickup_location %}
+    <tr>
+      <td class="info-label">Collection / Origin:</td>
+      <td class="info-value">{{ po.pickup_location }}</td>
+    </tr>
+    {% endif %}
+    {% if po.delivery_location %}
+    <tr>
+      <td class="info-label">Destination:</td>
+      <td class="info-value">{{ po.delivery_location }}</td>
+    </tr>
+    {% endif %}
+    {% if po.cargo_description %}
+    <tr>
+      <td class="info-label">Cargo Description:</td>
+      <td class="info-value">{{ po.cargo_description }}</td>
+    </tr>
+    {% endif %}
+    {% if po.weight_tons %}
+    <tr>
+      <td class="info-label">Weight:</td>
+      <td class="info-value">{{ po.weight_tons }} Tons</td>
+    </tr>
+    {% endif %}
+    <tr>
+      <td class="info-label">Status:</td>
+      <td class="info-value" style="color: #b47828;">Quotation in preparation</td>
+    </tr>
+  </table>
+</div>
+
+<p class="lead-p">
+  You will receive your quotation with an online review and approval link as soon as it is ready.
+</p>
+
+<div class="notice-box">
+  Please do not reply directly to this email address. For any questions or updates regarding your order, please contact our team at <a href="mailto:{{ branding.orders_email|default:'orders@menardtrading.com' }}" style="color: #b47828; font-weight: 600; text-decoration: none;">{{ branding.orders_email|default:'orders@menardtrading.com' }}</a>.
+</div>
+
+<div class="signoff">
+  Kind regards,<br>
+  <strong>Menard Trading CC</strong><br>
+  <span style="color: #b47828; font-size: 11px; font-weight: 700; letter-spacing: 1px;">ALWAYS ON TIME</span>
+</div>
+{% endblock %}

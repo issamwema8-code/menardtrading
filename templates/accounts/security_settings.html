@@ -1,0 +1,307 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}Account Security &amp; 2FA — Menard Trading CC{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6" x-data="{
+  activeModal: null,
+  setPin1: '',
+  setPin2: '',
+  changeOldPin: '',
+  changeNewPin1: '',
+  changeNewPin2: '',
+  removePin: '',
+}">
+
+  <!-- ============================================================ -->
+  <!-- 1. PAGE HEADER                                               -->
+  <!-- ============================================================ -->
+  <div class="page-header-card">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="space-y-1.5">
+        <div class="flex items-center gap-2">
+          <span class="badge-gold text-[10px]">Account Security</span>
+          <span class="text-xs font-medium text-slate-400 font-mono">{{ request.user.email }}</span>
+        </div>
+        <h1 class="page-title">Two-Step Verification</h1>
+        <p class="page-description max-w-2xl">
+          Manage your second-factor authentication methods to protect your account and company operations.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Messages / Alerts -->
+  {% if messages %}
+  <div class="space-y-2">
+    {% for message in messages %}
+    <div class="p-4 rounded-xl text-xs flex items-start gap-3 {% if message.tags == 'error' %}bg-rose-50 border border-rose-200 text-rose-800{% elif message.tags == 'success' %}bg-emerald-50 border border-emerald-200 text-emerald-800{% else %}bg-amber-50 border border-amber-200 text-amber-800{% endif %}">
+      <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      <p class="leading-relaxed font-medium">{{ message }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- ============================================================ -->
+  <!-- 2. TWO-FACTOR METHODS STATUS CARDS                           -->
+  <!-- ============================================================ -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    
+    <!-- METHOD 1: EMAIL VERIFICATION -->
+    <div class="surface-card p-6 flex flex-col justify-between space-y-4 border border-slate-200/80">
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+          </div>
+          <span class="badge-emerald text-[10px] font-semibold">Enabled (Primary)</span>
+        </div>
+        <div>
+          <h3 class="font-bold text-base text-slate-900">Email Verification</h3>
+          <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+            A single-use 6-digit verification code is emailed to your registered email address (<span class="font-mono text-slate-700 font-semibold">{{ request.user.email }}</span>) whenever you sign in.
+          </p>
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
+        <span class="text-slate-400 font-medium">Status</span>
+        <span class="font-semibold text-emerald-700 flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          Active on all sign-ins
+        </span>
+      </div>
+    </div>
+
+    <!-- METHOD 2: 4-DIGIT 2FA PIN -->
+    <div class="surface-card p-6 flex flex-col justify-between space-y-4 border border-slate-200/80">
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-[#b47828]">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+          </div>
+          {% if request.user.profile.is_pin_configured %}
+          <span class="badge-gold text-[10px] font-semibold">Enabled</span>
+          {% else %}
+          <span class="badge-slate text-[10px]">Not set</span>
+          {% endif %}
+        </div>
+        <div>
+          <h3 class="font-bold text-base text-slate-900">2FA PIN</h3>
+          <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+            Use your personal 4-digit PIN as a quick alternative verification method instead of waiting for an email code.
+          </p>
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
+        {% if request.user.profile.is_pin_configured %}
+        <div class="flex items-center gap-2">
+          <button 
+            type="button" 
+            @click="activeModal = 'change_pin_modal'" 
+            class="btn-primary text-xs py-1.5 px-3"
+          >
+            Change PIN
+          </button>
+          <button 
+            type="button" 
+            @click="activeModal = 'remove_pin_modal'" 
+            class="btn-outline text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 py-1.5 px-3"
+          >
+            Remove PIN
+          </button>
+        </div>
+        {% else %}
+        <button 
+          type="button" 
+          @click="activeModal = 'set_pin_modal'" 
+          class="btn-primary text-xs py-1.5 px-4"
+        >
+          Set 2FA PIN
+        </button>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 3. SECURITY INFORMATION & RECOVERY NOTE                      -->
+  <!-- ============================================================ -->
+  <div class="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+    <div class="flex items-center gap-2 text-slate-900 font-semibold text-xs">
+      <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      <span>Security Guidelines</span>
+    </div>
+    <ul class="text-xs text-slate-600 list-disc list-inside space-y-1 leading-relaxed">
+      <li>Your 4-digit PIN is stored with cryptographic hashing and is never accessible to anyone, including administrators.</li>
+      <li>If you forget your PIN, you can always log in using the 6-digit verification code sent to your email.</li>
+      <li>After 5 incorrect PIN attempts, PIN verification is temporarily locked for 15 minutes to prevent unauthorized access.</li>
+    </ul>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- MODAL: SET 2FA PIN                                           -->
+  <!-- ============================================================ -->
+  <div x-show="activeModal === 'set_pin_modal'" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4" x-cloak>
+    <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 sm:p-7 max-w-md w-full shadow-2xl space-y-5 border border-slate-200 text-left">
+      <div class="flex justify-between items-start border-b border-slate-100 pb-3">
+        <div>
+          <span class="badge-gold text-[10px] mb-1">Security Setup</span>
+          <h3 class="font-semibold text-base text-slate-900">Set your 2FA PIN</h3>
+        </div>
+        <button type="button" @click="activeModal = null" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+      </div>
+
+      <form method="POST" action="{% url 'account_security_set_pin' %}" class="space-y-4">
+        {% csrf_token %}
+        <div>
+          <label class="form-label">Enter 4-digit PIN <span class="text-rose-500">*</span></label>
+          <input 
+            type="password" 
+            name="pin" 
+            required 
+            maxlength="4" 
+            pattern="[0-9]{4}" 
+            inputmode="numeric" 
+            placeholder="••••" 
+            class="form-input text-center font-mono font-bold text-xl tracking-widest"
+            autocomplete="new-password"
+          >
+          <p class="text-[11px] text-slate-400 mt-1">Must be exactly 4 numeric digits. Avoid simple combinations like 1234 or 0000.</p>
+        </div>
+
+        <div>
+          <label class="form-label">Confirm 4-digit PIN <span class="text-rose-500">*</span></label>
+          <input 
+            type="password" 
+            name="confirm_pin" 
+            required 
+            maxlength="4" 
+            pattern="[0-9]{4}" 
+            inputmode="numeric" 
+            placeholder="••••" 
+            class="form-input text-center font-mono font-bold text-xl tracking-widest"
+            autocomplete="new-password"
+          >
+        </div>
+
+        <div class="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+          <button type="button" @click="activeModal = null" class="btn-outline">Cancel</button>
+          <button type="submit" class="btn-primary">Save PIN</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- MODAL: CHANGE 2FA PIN                                        -->
+  <!-- ============================================================ -->
+  <div x-show="activeModal === 'change_pin_modal'" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4" x-cloak>
+    <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 sm:p-7 max-w-md w-full shadow-2xl space-y-5 border border-slate-200 text-left">
+      <div class="flex justify-between items-start border-b border-slate-100 pb-3">
+        <div>
+          <span class="badge-gold text-[10px] mb-1">Update Security</span>
+          <h3 class="font-semibold text-base text-slate-900">Change 2FA PIN</h3>
+        </div>
+        <button type="button" @click="activeModal = null" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+      </div>
+
+      <form method="POST" action="{% url 'account_security_change_pin' %}" class="space-y-4">
+        {% csrf_token %}
+        <div>
+          <label class="form-label">Current 4-digit PIN <span class="text-rose-500">*</span></label>
+          <input 
+            type="password" 
+            name="old_pin" 
+            required 
+            maxlength="4" 
+            pattern="[0-9]{4}" 
+            inputmode="numeric" 
+            placeholder="••••" 
+            class="form-input text-center font-mono font-bold text-xl tracking-widest"
+          >
+        </div>
+
+        <div>
+          <label class="form-label">New 4-digit PIN <span class="text-rose-500">*</span></label>
+          <input 
+            type="password" 
+            name="new_pin" 
+            required 
+            maxlength="4" 
+            pattern="[0-9]{4}" 
+            inputmode="numeric" 
+            placeholder="••••" 
+            class="form-input text-center font-mono font-bold text-xl tracking-widest"
+            autocomplete="new-password"
+          >
+        </div>
+
+        <div>
+          <label class="form-label">Confirm New 4-digit PIN <span class="text-rose-500">*</span></label>
+          <input 
+            type="password" 
+            name="confirm_new_pin" 
+            required 
+            maxlength="4" 
+            pattern="[0-9]{4}" 
+            inputmode="numeric" 
+            placeholder="••••" 
+            class="form-input text-center font-mono font-bold text-xl tracking-widest"
+            autocomplete="new-password"
+          >
+        </div>
+
+        <div class="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+          <button type="button" @click="activeModal = null" class="btn-outline">Cancel</button>
+          <button type="submit" class="btn-primary">Update PIN</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- MODAL: REMOVE 2FA PIN                                        -->
+  <!-- ============================================================ -->
+  <div x-show="activeModal === 'remove_pin_modal'" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4" x-cloak>
+    <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 sm:p-7 max-w-md w-full shadow-2xl space-y-5 border border-slate-200 text-left">
+      <div class="flex justify-between items-start border-b border-slate-100 pb-3">
+        <div>
+          <span class="badge-rose text-[10px] mb-1">Remove Verification Method</span>
+          <h3 class="font-semibold text-base text-slate-900">Remove 2FA PIN</h3>
+        </div>
+        <button type="button" @click="activeModal = null" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+      </div>
+
+      <form method="POST" action="{% url 'account_security_remove_pin' %}" class="space-y-4">
+        {% csrf_token %}
+        <p class="text-xs text-slate-600 leading-relaxed">
+          Are you sure you want to remove your 2FA PIN? You will continue to receive verification codes by email when signing in.
+        </p>
+
+        <div>
+          <label class="form-label">Enter your password or current PIN to confirm <span class="text-rose-500">*</span></label>
+          <input 
+            type="password" 
+            name="confirmation_secret" 
+            required 
+            placeholder="••••••••••••" 
+            class="form-input text-xs"
+          >
+        </div>
+
+        <div class="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+          <button type="button" @click="activeModal = null" class="btn-outline">Cancel</button>
+          <button type="submit" class="text-xs font-semibold px-4 py-2 rounded-xl text-white bg-rose-600 hover:bg-rose-700 transition">
+            Remove PIN
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

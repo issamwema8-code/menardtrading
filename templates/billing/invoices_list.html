@@ -1,0 +1,291 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}Invoices{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{
+  searchQuery: '',
+  statusFilter: 'ALL',
+  typeFilter: 'ALL',
+  matches(invNum, customerName, customerEmail, status, invType) {
+    const q = this.searchQuery.toLowerCase().trim();
+    const matchSearch = !q || 
+      invNum.toLowerCase().includes(q) || 
+      customerName.toLowerCase().includes(q) || 
+      customerEmail.toLowerCase().includes(q);
+    const matchStatus = this.statusFilter === 'ALL' || status === this.statusFilter;
+    const matchType = this.typeFilter === 'ALL' || invType === this.typeFilter;
+    return matchSearch && matchStatus && matchType;
+  },
+  get activeFilterCount() {
+    let count = 0;
+    if (this.searchQuery.trim()) count++;
+    if (this.statusFilter !== 'ALL') count++;
+    if (this.typeFilter !== 'ALL') count++;
+    return count;
+  },
+  clearFilters() {
+    this.searchQuery = '';
+    this.statusFilter = 'ALL';
+    this.typeFilter = 'ALL';
+  }
+}">
+
+  <!-- ============================================================ -->
+  <!-- 1. PAGE HEADER & SUMMARY                                     -->
+  <!-- ============================================================ -->
+  <div class="page-header-card">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+      <div class="space-y-1.5">
+        <div class="flex items-center gap-2">
+          <span class="badge badge-emerald">Billing</span>
+          <span class="text-xs font-medium text-slate-400 font-mono">{{ invoices|length }} Invoice{{ invoices|length|pluralize }}</span>
+        </div>
+        <h1 class="page-title">Invoices</h1>
+        <p class="page-description max-w-2xl">
+          Manage client invoices, payment status, and outstanding balances.
+        </p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div class="bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-right min-w-[170px]">
+          <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Total Outstanding</span>
+          <span class="text-xl font-black text-rose-600 font-mono">N$ {{ metrics.unpaid_balance|floatformat:2 }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 2. INVOICES TABLE CONTAINER                                  -->
+  <!-- ============================================================ -->
+  <div class="table-container">
+    
+    <!-- Table Toolbar: Search, Status Filter, Type Filter & Clear -->
+    <div class="p-4 border-b border-slate-200/80 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+      <div>
+        <h3 class="text-sm font-bold text-slate-900">All Invoices</h3>
+        <p class="text-xs text-slate-500">Invoices created from approved deliveries and quotes</p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+        <!-- Live Search Input -->
+        <div class="relative flex-grow sm:flex-grow-0 sm:w-60">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </div>
+          <input 
+            type="text" 
+            x-model="searchQuery" 
+            placeholder="Search invoices..." 
+            class="form-input pl-9 pr-8 text-xs py-1.5"
+          >
+          <button 
+            type="button" 
+            x-show="searchQuery" 
+            @click="searchQuery = ''" 
+            class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 text-xs font-bold"
+            style="display: none;"
+          >
+            &times;
+          </button>
+        </div>
+
+        <!-- Status Filter -->
+        <select x-model="statusFilter" class="form-input text-xs py-1.5 w-auto">
+          <option value="ALL">All Statuses</option>
+          <option value="PAID">Paid</option>
+          <option value="PARTIALLY_PAID">Partially Paid</option>
+          <option value="OVERDUE">Overdue</option>
+          <option value="ISSUED">Issued</option>
+          <option value="DRAFT">Draft</option>
+        </select>
+
+        <!-- Invoice Type Filter -->
+        <select x-model="typeFilter" class="form-input text-xs py-1.5 w-auto">
+          <option value="ALL">All Types</option>
+          <option value="FULL">Full (100%)</option>
+          <option value="PARTIAL_DEPOSIT">Deposit (50%)</option>
+          <option value="PARTIAL_BALANCE">Balance</option>
+          <option value="ADD_ON">Add-on</option>
+        </select>
+
+        <!-- Clear Filters Button -->
+        <button 
+          type="button" 
+          x-show="activeFilterCount > 0" 
+          @click="clearFilters()" 
+          class="text-xs text-rose-600 hover:text-rose-700 font-semibold px-2 py-1.5 rounded-lg hover:bg-rose-50 transition"
+          style="display: none;"
+        >
+          Clear filters
+        </button>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse min-w-[1000px]">
+        <thead>
+          <tr class="border-b border-slate-200 bg-slate-50/75">
+            <th class="table-header-cell w-[160px]">Invoice #</th>
+            <th class="table-header-cell w-[240px]">Customer</th>
+            <th class="table-header-cell w-[140px]">Invoice Type</th>
+            <th class="table-header-cell w-[130px] text-right">Total (NAD)</th>
+            <th class="table-header-cell w-[130px] text-right">Paid (NAD)</th>
+            <th class="table-header-cell w-[130px] text-right">Balance Due</th>
+            <th class="table-header-cell w-[120px] text-center">Status</th>
+            <th class="table-header-cell w-[220px] text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200/60 bg-white">
+          {% for inv in invoices %}
+          <tr 
+            class="table-body-row" 
+            x-show="matches('{{ inv.invoice_number|escapejs }}', '{{ inv.customer.company_name|escapejs }}', '{{ inv.customer.email|escapejs }}', '{{ inv.status }}', '{{ inv.invoice_type }}')"
+          >
+            <td class="table-body-cell whitespace-nowrap">
+              <span class="font-bold text-slate-900 font-mono">{{ inv.invoice_number }}</span>
+              <span class="block text-[11px] text-slate-400 mt-0.5">Due: {{ inv.due_date|date:"d M Y" }}</span>
+            </td>
+            <td class="table-body-cell whitespace-nowrap">
+              <span class="font-semibold text-slate-900 block truncate max-w-[220px]" title="{{ inv.customer.company_name }}">{{ inv.customer.company_name }}</span>
+              <span class="text-xs text-slate-500 font-mono block truncate max-w-[220px]" title="{{ inv.customer.email }}">{{ inv.customer.email }}</span>
+            </td>
+            <td class="table-body-cell whitespace-nowrap">
+              <span class="badge badge-slate text-[11px]">{{ inv.get_invoice_type_display }}</span>
+            </td>
+            <td class="table-body-cell whitespace-nowrap text-right">
+              <span class="font-bold text-slate-900 font-mono">N$ {{ inv.total_amount|floatformat:2 }}</span>
+            </td>
+            <td class="table-body-cell whitespace-nowrap text-right">
+              <span class="font-semibold text-emerald-600 font-mono">N$ {{ inv.amount_paid|floatformat:2 }}</span>
+            </td>
+            <td class="table-body-cell whitespace-nowrap text-right">
+              {% if inv.balance_due > 0 %}
+              <span class="font-bold text-rose-600 font-mono">N$ {{ inv.balance_due|floatformat:2 }}</span>
+              {% else %}
+              <span class="font-semibold text-slate-400 font-mono">N$ 0.00</span>
+              {% endif %}
+            </td>
+            <td class="table-body-cell whitespace-nowrap text-center">
+              {% if inv.status == 'PAID' %}
+              <span class="badge badge-emerald">{{ inv.get_status_display }}</span>
+              {% elif inv.status == 'PARTIALLY_PAID' %}
+              <span class="badge badge-gold">{{ inv.get_status_display }}</span>
+              {% elif inv.status == 'OVERDUE' %}
+              <span class="badge badge-rose">{{ inv.get_status_display }}</span>
+              {% else %}
+              <span class="badge badge-slate">{{ inv.get_status_display }}</span>
+              {% endif %}
+            </td>
+            <td class="table-body-cell whitespace-nowrap text-right">
+              <div class="inline-flex items-center gap-2">
+                <a href="{% url 'invoice_preview' inv.id %}" class="btn-outline text-xs px-2.5 py-1.5 whitespace-nowrap" title="Preview Invoice">
+                  <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                  <span>Preview</span>
+                </a>
+                <a href="{% url 'invoice_pdf_download' inv.id %}" target="_blank" class="btn-outline text-xs px-2.5 py-1.5 whitespace-nowrap" title="Download PDF">
+                  <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                  <span>PDF</span>
+                </a>
+                {% if inv.balance_due > 0 %}
+                <button type="button" @click="activeModal = 'pay_modal_{{ inv.id }}'" class="btn-primary text-xs px-3 py-1.5 whitespace-nowrap">
+                  <svg class="w-3.5 h-3.5 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                  <span>Record Payment</span>
+                </button>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+
+          <!-- MODAL: Record Payment for this Invoice -->
+          <div x-show="activeModal === 'pay_modal_{{ inv.id }}'" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4" x-cloak>
+            <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-200 space-y-5">
+              <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <div>
+                  <h3 class="font-bold text-base text-slate-900">Record Payment</h3>
+                  <p class="text-xs text-slate-500 font-mono">{{ inv.invoice_number }} &bull; {{ inv.customer.company_name }}</p>
+                </div>
+                <button type="button" @click="activeModal = null" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+              </div>
+
+              <form method="POST" action="{% url 'record_payment_action' inv.id %}" class="space-y-4">
+                {% csrf_token %}
+                <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 space-y-1">
+                  <div class="flex justify-between text-xs text-slate-600">
+                    <span>Invoice Total:</span>
+                    <span class="font-bold text-slate-900 font-mono">N$ {{ inv.total_amount|floatformat:2 }}</span>
+                  </div>
+                  <div class="flex justify-between text-xs text-slate-600">
+                    <span>Already Paid:</span>
+                    <span class="font-semibold text-emerald-600 font-mono">N$ {{ inv.amount_paid|floatformat:2 }}</span>
+                  </div>
+                  <div class="border-t border-slate-200 pt-1.5 mt-1.5 flex justify-between text-xs">
+                    <span class="font-bold text-rose-700">Remaining Balance:</span>
+                    <span class="font-black text-rose-700 font-mono">N$ {{ inv.balance_due|floatformat:2 }}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="form-label">Payment Amount (NAD) <span class="text-rose-500">*</span></label>
+                  <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 font-bold text-xs">N$</div>
+                    <input type="number" step="0.01" name="amount_paid" value="{{ inv.balance_due }}" max="{{ inv.balance_due }}" required class="form-input pl-9 font-mono font-bold text-slate-900">
+                  </div>
+                </div>
+
+                <div>
+                  <label class="form-label">Payment Method <span class="text-rose-500">*</span></label>
+                  <select name="payment_method" class="form-select">
+                    <option value="EFT_BANK_TRANSFER">Bank Transfer / EFT</option>
+                    <option value="DIRECT_DEPOSIT">Direct Bank Deposit</option>
+                    <option value="CREDIT_CARD">Credit Card</option>
+                    <option value="CASH">Cash</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="form-label">Payment Reference / Proof <span class="text-rose-500">*</span></label>
+                  <input type="text" name="transaction_reference" placeholder="e.g. FNB-EFT-908234" required class="form-input font-mono">
+                </div>
+
+                <div class="p-3 bg-amber-50/60 rounded-xl border border-amber-200/60 flex items-start gap-2.5">
+                  <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  <p class="text-[11px] text-amber-900 leading-relaxed">
+                    Recording this payment will automatically create and email a receipt to <strong class="font-mono text-amber-950">{{ inv.customer.email }}</strong>.
+                  </p>
+                </div>
+
+                <div class="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+                  <button type="button" @click="activeModal = null" class="btn-secondary">Cancel</button>
+                  <button type="submit" class="btn-primary">
+                    <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span>Save Payment &amp; Send Receipt</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          {% empty %}
+          <tr>
+            <td colspan="8" class="px-6 py-14 text-center">
+              <div class="max-w-sm mx-auto space-y-3">
+                <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                </div>
+                <h4 class="text-sm font-bold text-slate-800">No invoices yet</h4>
+                <p class="text-xs text-slate-500">Invoices are created from active deliveries in Deliveries &amp; Fleet.</p>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

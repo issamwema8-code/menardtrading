@@ -1,0 +1,441 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify your account - {{ branding.brand_name|default:"MENARD TRADING CC" }}</title>
+  
+  <!-- Favicons -->
+  <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}">
+  
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS & Design System -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{% static 'css/design_system.css' %}">
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    html {
+      font-size: 75% !important;
+      font-family: 'Inter', sans-serif;
+    }
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+    .bg-slide {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      transition: opacity 1.8s cubic-bezier(0.4, 0, 0.2, 1), transform 8s ease-out;
+      will-change: opacity, transform;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen antialiased selection:bg-amber-500 selection:text-slate-950 relative overflow-x-hidden">
+
+  <!-- Background Carousel with Fade Effect (Full-Bleed Viewport) -->
+  <div 
+    class="fixed inset-0 overflow-hidden pointer-events-none z-0" 
+    aria-hidden="true" 
+    x-data="{ 
+      currentSlide: 0, 
+      slidesCount: 3, 
+      init() { 
+      setInterval(() => { 
+        this.currentSlide = (this.currentSlide + 1) % this.slidesCount; 
+      }, 7000); 
+      } 
+    }"
+  >
+    <!-- Slide 1 -->
+    <div 
+      class="bg-slide"
+      :class="currentSlide === 0 ? 'opacity-100 scale-105' : 'opacity-0 scale-100'"
+      style="background-image: url('{{ branding.login_bg_image_1 }}');"
+    ></div>
+    
+    <!-- Slide 2 -->
+    <div 
+      class="bg-slide"
+      :class="currentSlide === 1 ? 'opacity-100 scale-105' : 'opacity-0 scale-100'"
+      style="background-image: url('{{ branding.login_bg_image_2 }}');"
+    ></div>
+
+    <!-- Slide 3 -->
+    <div 
+      class="bg-slide"
+      :class="currentSlide === 2 ? 'opacity-100 scale-105' : 'opacity-0 scale-100'"
+      style="background-image: url('{{ branding.login_bg_image_3 }}');"
+    ></div>
+
+    <!-- Soft Gradient Overlay so background photo is vivid across whole screen -->
+    <div class="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/40 to-slate-950/75"></div>
+  </div>
+
+  <!-- Full-Page Foreground Layout Container -->
+  <div class="relative z-10 min-h-screen flex flex-col justify-between w-full">
+
+    <!-- Top Simple Bar -->
+    <header class="py-5 px-6 sm:px-12 flex items-center justify-between bg-transparent">
+      <div class="flex items-center gap-3.5">
+        {% if branding.logo_image %}
+        <img src="{{ branding.logo_image }}" alt="{{ branding.brand_name }}" class="h-9 sm:h-10 w-auto object-contain">
+        {% else %}
+        <img src="{% static 'images/menard_emblem.svg' %}" alt="Menard Emblem" class="h-9 sm:h-10 w-auto object-contain">
+        {% endif %}
+        <div class="inline-flex flex-col justify-center">
+          <span class="text-base font-semibold tracking-wide text-white uppercase block leading-tight whitespace-nowrap">
+            {{ branding.brand_name|default:branding.company_name|default:"MENARD TRADING CC" }}
+          </span>
+          <div class="w-full flex justify-between items-center text-[7.5px] font-medium text-[#dca048]/90 uppercase leading-none mt-1 select-none tracking-normal">
+            <span>A</span><span>L</span><span>W</span><span>A</span><span>Y</span><span>S</span>
+            <span class="w-1.5 inline-block"></span>
+            <span>O</span><span>N</span>
+            <span class="w-1.5 inline-block"></span>
+            <span>T</span><span>I</span><span>M</span><span>E</span>
+          </div>
+        </div>
+      </div>
+      <div class="text-xs text-slate-300 font-medium hidden sm:block">
+        Two-Step Verification
+      </div>
+    </header>
+
+  <!-- Verification Card Container -->
+  <main 
+    class="w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-8 sm:py-12 flex-grow flex items-center justify-center lg:justify-end"
+    x-data="{
+      activeMethod: '{{ default_method|default:'otp' }}',
+      hasPin: {{ has_pin|yesno:'true,false' }},
+      otpDigits: ['', '', '', '', '', ''],
+      pinDigits: ['', '', '', ''],
+      isSubmitting: false,
+      cooldownSeconds: {{ cooldown_seconds|default:0 }},
+      timer: null,
+
+      init() {
+        if (this.cooldownSeconds > 0) {
+          this.startCooldownTimer();
+        }
+        this.$nextTick(() => {
+          this.focusFirstInput();
+        });
+      },
+
+      startCooldownTimer() {
+        if (this.timer) clearInterval(this.timer);
+        this.timer = setInterval(() => {
+          if (this.cooldownSeconds > 0) {
+            this.cooldownSeconds--;
+          } else {
+            clearInterval(this.timer);
+          }
+        }, 1000);
+      },
+
+      focusFirstInput() {
+        if (this.activeMethod === 'otp') {
+          const el = document.getElementById('otp-0');
+          if (el) el.focus();
+        } else {
+          const el = document.getElementById('pin-0');
+          if (el) el.focus();
+        }
+      },
+
+      switchMethod(method) {
+        this.activeMethod = method;
+        this.$nextTick(() => {
+          this.focusFirstInput();
+        });
+      },
+
+      handleOtpInput(index, event) {
+        const val = event.target.value.replace(/[^0-9]/g, '');
+        this.otpDigits[index] = val ? val[val.length - 1] : '';
+        if (val && index < 5) {
+          const next = document.getElementById('otp-' + (index + 1));
+          if (next) next.focus();
+        }
+        this.updateCombinedOtp();
+      },
+
+      handleOtpKeydown(index, event) {
+        if (event.key === 'Backspace' && !this.otpDigits[index] && index > 0) {
+          const prev = document.getElementById('otp-' + (index - 1));
+          if (prev) {
+            prev.focus();
+            this.otpDigits[index - 1] = '';
+          }
+        }
+      },
+
+      handleOtpPaste(event) {
+        event.preventDefault();
+        const text = (event.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '');
+        if (text) {
+          for (let i = 0; i < 6; i++) {
+            this.otpDigits[i] = text[i] || '';
+          }
+          const focusIndex = Math.min(text.length, 5);
+          const el = document.getElementById('otp-' + focusIndex);
+          if (el) el.focus();
+          this.updateCombinedOtp();
+          if (text.length >= 6) {
+            this.$nextTick(() => {
+              document.getElementById('otp-verify-form').submit();
+            });
+          }
+        }
+      },
+
+      updateCombinedOtp() {
+        document.getElementById('combined_otp_input').value = this.otpDigits.join('');
+      },
+
+      handlePinInput(index, event) {
+        const val = event.target.value.replace(/[^0-9]/g, '');
+        this.pinDigits[index] = val ? val[val.length - 1] : '';
+        if (val && index < 3) {
+          const next = document.getElementById('pin-' + (index + 1));
+          if (next) next.focus();
+        }
+        this.updateCombinedPin();
+      },
+
+      handlePinKeydown(index, event) {
+        if (event.key === 'Backspace' && !this.pinDigits[index] && index > 0) {
+          const prev = document.getElementById('pin-' + (index - 1));
+          if (prev) {
+            prev.focus();
+            this.pinDigits[index - 1] = '';
+          }
+        }
+      },
+
+      handlePinPaste(event) {
+        event.preventDefault();
+        const text = (event.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '');
+        if (text) {
+          for (let i = 0; i < 4; i++) {
+            this.pinDigits[i] = text[i] || '';
+          }
+          const focusIndex = Math.min(text.length, 3);
+          const el = document.getElementById('pin-' + focusIndex);
+          if (el) el.focus();
+          this.updateCombinedPin();
+          if (text.length >= 4) {
+            this.$nextTick(() => {
+              document.getElementById('pin-verify-form').submit();
+            });
+          }
+        }
+      },
+
+      updateCombinedPin() {
+        document.getElementById('combined_pin_input').value = this.pinDigits.join('');
+      }
+    }"
+  >
+    <!-- Form (Transparent Background, Right-Aligned) -->
+    <div class="bg-transparent p-6 sm:p-8 w-full max-w-md space-y-6">
+      
+      <!-- Form Header -->
+      <div class="text-center space-y-1.5 border-b border-white/10 pb-5">
+        <div class="flex justify-center mb-3">
+          <img src="{% static 'images/menard_emblem.svg' %}" alt="Menard Trading" class="h-11 w-auto object-contain drop-shadow-md">
+        </div>
+        <h1 class="text-2xl font-semibold text-white tracking-tight drop-shadow-sm">Verify your account</h1>
+        <p class="text-xs text-slate-300 leading-relaxed" x-show="activeMethod === 'otp'">
+          Enter the verification code sent to your email.
+        </p>
+        <p class="text-xs text-slate-300 leading-relaxed" x-show="activeMethod === 'pin'" style="display: none;">
+          Enter your 4-digit 2FA PIN
+        </p>
+      </div>
+
+      <!-- Messages / Alerts -->
+      {% if messages %}
+      <div class="space-y-2">
+        {% for message in messages %}
+        <div class="p-3 rounded-xl text-xs flex items-start gap-2.5 backdrop-blur-md {% if message.tags == 'error' %}bg-rose-500/20 border border-rose-500/40 text-rose-200{% elif message.tags == 'success' %}bg-emerald-500/20 border border-emerald-500/40 text-emerald-200{% else %}bg-amber-500/20 border border-amber-500/40 text-amber-200{% endif %}">
+          <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <p class="leading-relaxed font-medium">{{ message }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- ============================================================ -->
+      <!-- METHOD 1: 6-DIGIT EMAIL OTP                                  -->
+      <!-- ============================================================ -->
+      <div x-show="activeMethod === 'otp'" class="space-y-5">
+        
+        <!-- Recipient Notice -->
+        <div class="p-3 bg-slate-950/70 border border-slate-800 rounded-xl text-center">
+          <span class="text-[11px] text-slate-400">Code sent to:</span>
+          <span class="font-mono text-xs font-semibold text-amber-400 block mt-0.5">{{ masked_email|default:user_email }}</span>
+        </div>
+
+        <form id="otp-verify-form" method="POST" action="{% url 'verify_2fa' %}" @submit="isSubmitting = true" class="space-y-5">
+          {% csrf_token %}
+          <input type="hidden" name="method" value="otp">
+          <input type="hidden" name="otp_code" id="combined_otp_input">
+
+          <div>
+            <label class="block text-xs font-medium text-slate-300 text-center mb-2.5">6-digit code</label>
+            <!-- 6 Digit Input Boxes -->
+            <div class="flex items-center justify-center gap-2 sm:gap-2.5" @paste="handleOtpPaste($event)">
+              <template x-for="(digit, idx) in otpDigits" :key="idx">
+                <input 
+                  type="text" 
+                  inputmode="numeric" 
+                  maxlength="1" 
+                  :id="'otp-' + idx"
+                  :value="digit"
+                  @input="handleOtpInput(idx, $event)"
+                  @keydown="handleOtpKeydown(idx, $event)"
+                  class="w-11 h-12 sm:w-12 sm:h-14 text-center font-mono font-bold text-lg sm:text-xl rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-[#dca048] focus:ring-2 focus:ring-[#dca048]/20 transition outline-none"
+                  autocomplete="off"
+                >
+              </template>
+            </div>
+          </div>
+
+          <button 
+            type="submit" 
+            :disabled="isSubmitting || otpDigits.join('').length < 6"
+            class="btn-primary w-full py-2.5 text-xs font-semibold justify-center shadow-lg shadow-amber-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span x-show="!isSubmitting">Verify</span>
+            <span x-show="isSubmitting" style="display: none;">Verifying...</span>
+          </button>
+        </form>
+
+        <!-- Resend Code Action -->
+        <div class="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs">
+          <div>
+            <template x-if="cooldownSeconds > 0">
+              <span class="text-slate-400 font-mono text-[11px]">
+                Resend available in <span class="text-amber-400 font-semibold" x-text="cooldownSeconds + 's'"></span>
+              </span>
+            </template>
+            <template x-if="cooldownSeconds <= 0">
+              <form method="POST" action="{% url 'resend_2fa_otp' %}" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="text-amber-400 hover:text-amber-300 font-medium hover:underline transition">
+                  Resend code
+                </button>
+              </form>
+            </template>
+          </div>
+
+          <!-- Switch to PIN if configured -->
+          <template x-if="hasPin">
+            <button 
+              type="button" 
+              @click="switchMethod('pin')"
+              class="text-slate-300 hover:text-amber-400 font-medium hover:underline transition text-right"
+            >
+              Use my 2FA PIN instead
+            </button>
+          </template>
+        </div>
+
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- METHOD 2: 4-DIGIT 2FA PIN                                    -->
+      <!-- ============================================================ -->
+      <div x-show="activeMethod === 'pin'" class="space-y-5" style="display: none;">
+        
+        <form id="pin-verify-form" method="POST" action="{% url 'verify_2fa' %}" @submit="isSubmitting = true" class="space-y-5">
+          {% csrf_token %}
+          <input type="hidden" name="method" value="pin">
+          <input type="hidden" name="pin" id="combined_pin_input">
+
+          <div>
+            <label class="block text-xs font-medium text-slate-300 text-center mb-2.5">Enter your 4-digit PIN</label>
+            <!-- 4 Digit PIN Masked Boxes -->
+            <div class="flex items-center justify-center gap-3" @paste="handlePinPaste($event)">
+              <template x-for="(digit, idx) in pinDigits" :key="idx">
+                <input 
+                  type="password" 
+                  inputmode="numeric" 
+                  maxlength="1" 
+                  :id="'pin-' + idx"
+                  :value="digit"
+                  @input="handlePinInput(idx, $event)"
+                  @keydown="handlePinKeydown(idx, $event)"
+                  class="w-12 h-14 text-center font-mono font-bold text-2xl rounded-xl bg-slate-950 border border-slate-700 text-amber-400 focus:border-[#dca048] focus:ring-2 focus:ring-[#dca048]/20 transition outline-none"
+                  autocomplete="off"
+                >
+              </template>
+            </div>
+          </div>
+
+          <button 
+            type="submit" 
+            :disabled="isSubmitting || pinDigits.join('').length < 4"
+            class="btn-primary w-full py-2.5 text-xs font-semibold justify-center shadow-lg shadow-amber-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span x-show="!isSubmitting">Verify</span>
+            <span x-show="isSubmitting" style="display: none;">Verifying...</span>
+          </button>
+        </form>
+
+        <!-- Switch back to Email OTP -->
+        <div class="text-center pt-2 border-t border-slate-800/80 text-xs">
+          <button 
+            type="button" 
+            @click="switchMethod('otp')"
+            class="text-amber-400 hover:text-amber-300 font-medium hover:underline transition"
+          >
+            Use email verification instead
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Cancel / Sign out -->
+      <div class="text-center pt-1">
+        <a href="{% url 'logout' %}" class="text-[11px] text-slate-500 hover:text-slate-400 hover:underline transition">
+          Cancel and return to sign in
+        </a>
+      </div>
+
+    </div>
+  </main>
+
+    <!-- Footer -->
+    <footer class="py-4 px-6 sm:px-12 text-[10.5px] sm:text-[11px] font-normal text-slate-300 bg-transparent">
+      <div class="w-full flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
+        <p class="font-normal tracking-wide text-slate-200/95">&copy; 2026 Menard Trading CC | Namibia. All rights reserved.</p>
+        <p class="text-[10px] sm:text-[10.5px] font-normal text-slate-300 flex items-center justify-center sm:justify-end gap-1">
+          <span>Made with</span>
+          <span class="text-rose-500 inline-block text-[10px]">❤️</span>
+          <span>by</span>
+          <a href="https://cosmos-ai-labs.com/" target="_blank" rel="noopener noreferrer" class="font-medium text-[#dca048] hover:text-[#f0b560] hover:underline transition">
+            CoSMOS AI Labs
+          </a>
+        </p>
+      </div>
+    </footer>
+
+  </div>
+
+</body>
+</html>

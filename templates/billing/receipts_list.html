@@ -1,0 +1,188 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}Payment Receipts{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{
+  searchQuery: '',
+  methodFilter: 'ALL',
+  matches(rcpNum, customerName, customerEmail, invNum, txRef, method) {
+    const q = this.searchQuery.toLowerCase().trim();
+    const matchSearch = !q || 
+      rcpNum.toLowerCase().includes(q) || 
+      customerName.toLowerCase().includes(q) || 
+      customerEmail.toLowerCase().includes(q) ||
+      invNum.toLowerCase().includes(q) ||
+      txRef.toLowerCase().includes(q);
+    const matchMethod = this.methodFilter === 'ALL' || method === this.methodFilter;
+    return matchSearch && matchMethod;
+  },
+  get activeFilterCount() {
+    let count = 0;
+    if (this.searchQuery.trim()) count++;
+    if (this.methodFilter !== 'ALL') count++;
+    return count;
+  },
+  clearFilters() {
+    this.searchQuery = '';
+    this.methodFilter = 'ALL';
+  }
+}">
+
+  <!-- ============================================================ -->
+  <!-- 1. PAGE HEADER & SUMMARY                                     -->
+  <!-- ============================================================ -->
+  <div class="page-header-card">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+      <div class="space-y-1.5">
+        <div class="flex items-center gap-2">
+          <span class="badge badge-emerald">Receipts</span>
+          <span class="text-xs font-medium text-slate-400 font-mono">{{ receipts|length }} Payment Receipt{{ receipts|length|pluralize }}</span>
+        </div>
+        <h1 class="page-title">Payment Receipts</h1>
+        <p class="page-description max-w-2xl">
+          View recorded payments and download official payment receipts.
+        </p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div class="bg-emerald-50/70 border border-emerald-200/80 rounded-xl px-4 py-2.5 text-right min-w-[180px]">
+          <span class="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider block">Total Revenue Collected</span>
+          <span class="text-xl font-black text-emerald-700 font-mono">N$ {{ metrics.total_revenue|floatformat:2 }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 2. RECEIPTS TABLE CONTAINER                                  -->
+  <!-- ============================================================ -->
+  <div class="table-container">
+    
+    <!-- Table Toolbar: Search, Payment Method Filter & Clear -->
+    <div class="p-4 border-b border-slate-200/80 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+      <div>
+        <h3 class="text-sm font-bold text-slate-900">All Receipts</h3>
+        <p class="text-xs text-slate-500">Payment receipts issued and emailed to customers</p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+        <!-- Live Search Input -->
+        <div class="relative flex-grow sm:flex-grow-0 sm:w-64">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </div>
+          <input 
+            type="text" 
+            x-model="searchQuery" 
+            placeholder="Search receipts, references..." 
+            class="form-input pl-9 pr-8 text-xs py-1.5"
+          >
+          <button 
+            type="button" 
+            x-show="searchQuery" 
+            @click="searchQuery = ''" 
+            class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 text-xs font-bold"
+            style="display: none;"
+          >
+            &times;
+          </button>
+        </div>
+
+        <!-- Payment Method Filter -->
+        <select x-model="methodFilter" class="form-input text-xs py-1.5 w-auto">
+          <option value="ALL">All Methods</option>
+          <option value="EFT_BANK_TRANSFER">Bank Transfer / EFT</option>
+          <option value="DIRECT_DEPOSIT">Direct Deposit</option>
+          <option value="CREDIT_CARD">Credit Card</option>
+          <option value="CASH">Cash</option>
+        </select>
+
+        <!-- Clear Filters Button -->
+        <button 
+          type="button" 
+          x-show="activeFilterCount > 0" 
+          @click="clearFilters()" 
+          class="text-xs text-rose-600 hover:text-rose-700 font-semibold px-2 py-1.5 rounded-lg hover:bg-rose-50 transition"
+          style="display: none;"
+        >
+          Clear filters
+        </button>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse min-w-[950px]">
+        <thead>
+          <tr class="border-b border-slate-200 bg-slate-50/75">
+            <th class="table-header-cell w-[160px]">Receipt #</th>
+            <th class="table-header-cell w-[240px]">Customer</th>
+            <th class="table-header-cell w-[140px]">Invoice Ref</th>
+            <th class="table-header-cell w-[140px] text-right">Amount Paid</th>
+            <th class="table-header-cell w-[140px]">Payment Method</th>
+            <th class="table-header-cell w-[160px]">Payment Reference</th>
+            <th class="table-header-cell w-[120px]">Date</th>
+            <th class="table-header-cell w-[200px] text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200/60 bg-white">
+          {% for rcp in receipts %}
+          <tr 
+            class="table-body-row" 
+            x-show="matches('{{ rcp.receipt_number|escapejs }}', '{{ rcp.customer.company_name|escapejs }}', '{{ rcp.customer.email|escapejs }}', '{{ rcp.invoice.invoice_number|escapejs }}', '{{ rcp.transaction_reference|escapejs }}', '{{ rcp.payment_method }}')"
+          >
+            <td class="table-body-cell whitespace-nowrap">
+              <span class="font-bold text-slate-900 font-mono">{{ rcp.receipt_number }}</span>
+            </td>
+            <td class="table-body-cell whitespace-nowrap">
+              <span class="font-semibold text-slate-900 block truncate max-w-[220px]" title="{{ rcp.customer.company_name }}">{{ rcp.customer.company_name }}</span>
+              <span class="text-xs text-slate-500 font-mono block truncate max-w-[220px]" title="{{ rcp.customer.email }}">{{ rcp.customer.email }}</span>
+            </td>
+            <td class="table-body-cell whitespace-nowrap">
+              <span class="badge badge-slate text-[11px] font-mono">{{ rcp.invoice.invoice_number }}</span>
+            </td>
+            <td class="table-body-cell whitespace-nowrap text-right">
+              <span class="font-black text-emerald-600 font-mono text-sm">N$ {{ rcp.amount_paid|floatformat:2 }}</span>
+            </td>
+            <td class="table-body-cell whitespace-nowrap">
+              <span class="text-xs font-medium text-slate-700">{{ rcp.get_payment_method_display }}</span>
+            </td>
+            <td class="table-body-cell whitespace-nowrap">
+              <span class="font-mono text-xs text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">{{ rcp.transaction_reference }}</span>
+            </td>
+            <td class="table-body-cell whitespace-nowrap text-xs text-slate-600 font-mono">
+              {{ rcp.payment_date|date:"d M Y" }}
+            </td>
+            <td class="table-body-cell whitespace-nowrap text-right">
+              <div class="inline-flex items-center gap-2">
+                <a href="{% url 'receipt_preview' rcp.id %}" class="btn-outline text-xs px-2.5 py-1.5 whitespace-nowrap" title="Preview Receipt">
+                  <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                  <span>Preview</span>
+                </a>
+                <a href="{% url 'receipt_pdf_download' rcp.id %}" target="_blank" class="btn-outline text-xs px-2.5 py-1.5 whitespace-nowrap" title="Download Receipt PDF">
+                  <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                  <span>PDF</span>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="8" class="px-6 py-14 text-center">
+              <div class="max-w-sm mx-auto space-y-3">
+                <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h4 class="text-sm font-bold text-slate-800">No receipts yet</h4>
+                <p class="text-xs text-slate-500">Payment receipts are created automatically when you record a payment on an invoice.</p>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

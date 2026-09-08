@@ -1,0 +1,51 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Receipt {{ receipt.receipt_number }} — Preview &mdash; Menard Trading CC{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+  <!-- Top Action Toolbar (No Print) -->
+  <div class="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900 text-white p-4 rounded-2xl shadow-lg border border-slate-800">
+    <div class="flex items-center gap-3">
+      <a href="{% url 'receipts_list' %}" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+      </a>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            Payment Settled
+          </span>
+          <span class="text-xs text-slate-400 font-mono">{{ receipt.receipt_number }}</span>
+        </div>
+        <h1 class="text-lg font-bold text-white mt-0.5">Receipt Preview</h1>
+      </div>
+    </div>
+
+    <!-- Actions: Print, PDF, Email -->
+    <div class="flex flex-wrap items-center gap-2">
+      <button onclick="window.print()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition">
+        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+        Print
+      </button>
+      <a href="{% url 'receipt_pdf_download' receipt.id %}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+        Download PDF
+      </a>
+      {% if receipt.customer.email %}
+      <a href="mailto:{{ receipt.customer.email }}?subject=Menard%20Trading%20Payment%20Receipt%20{{ receipt.receipt_number }}&body=Dear%20Customer,%0A%0AThank%20you%20for%20your%20payment%20of%20N$%20{{ receipt.amount_paid|floatformat:2 }}.%20Please%20find%20attached%20Payment%20Receipt%20{{ receipt.receipt_number }}." class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition">
+        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+        Email to {{ receipt.customer.email }}
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- A4 Document Canvas Container -->
+  <div class="overflow-x-auto py-6 flex justify-center bg-slate-200/60 rounded-2xl border border-slate-300/80 p-2 sm:p-6">
+    <div class="bg-white rounded-lg shadow-2xl border border-slate-300 w-full max-w-[210mm] min-h-[297mm] p-[16mm_18mm] box-border text-[#1e293b] font-sans">
+      {% include 'pdfs/receipt_pdf.html' %}
+    </div>
+  </div>
+</div>
+{% endblock %}

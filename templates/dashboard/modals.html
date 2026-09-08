@@ -1,0 +1,179 @@
+<!-- ============================================================ -->
+<!-- GLOBAL MODALS                                                -->
+<!-- ============================================================ -->
+
+<!-- MODAL 1: UPLOAD PURCHASE ORDER (PDF) -->
+<div x-show="activeModal === 'upload_po_modal'" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4" x-cloak>
+  <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 sm:p-7 max-w-lg w-full shadow-2xl space-y-5 border border-slate-200">
+    <div class="flex justify-between items-start border-b border-slate-100 pb-4">
+      <div>
+        <span class="badge-gold text-[10px] mb-1">Purchase Order</span>
+        <h3 class="font-extrabold text-lg text-slate-900">Upload Purchase Order</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Upload a PDF to create an order and draft quotation automatically.</p>
+      </div>
+      <button @click="activeModal = null" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition text-lg font-bold leading-none">&times;</button>
+    </div>
+
+    <form method="POST" action="{% url 'upload_purchase_order' %}" enctype="multipart/form-data" class="space-y-4">
+      {% csrf_token %}
+      
+      <div>
+        <label class="form-label">Purchase Order (PDF) <span class="text-rose-500">*</span></label>
+        <input type="file" name="po_file" accept=".pdf" required class="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 text-xs text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#fdf8f0] file:text-[#b47828] hover:file:bg-amber-100 cursor-pointer transition">
+      </div>
+
+      <div>
+        <label class="form-label">PO Number <span class="text-slate-400 font-normal">(Optional &mdash; auto-detected if blank)</span></label>
+        <input type="text" name="po_number" placeholder="e.g. PO-2026-9901" class="form-input">
+      </div>
+
+      <div>
+        <label class="form-label">Customer Email <span class="text-slate-400 font-normal">(Optional)</span></label>
+        <input type="email" name="sender_email" placeholder="e.g. logistics@clientcompany.co.za" class="form-input">
+      </div>
+
+      {% if global_customers %}
+      <div>
+        <label class="form-label">Customer <span class="text-slate-400 font-normal">(Optional)</span></label>
+        <select name="customer_id" class="form-input font-medium">
+          <option value="">-- Auto-detect from PDF --</option>
+          {% for c in global_customers %}
+          <option value="{{ c.id }}">{{ c.company_name }} ({{ c.email }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-100">
+        <button type="button" @click="activeModal = null" class="btn-outline">Cancel</button>
+        <button type="submit" class="btn-primary">
+          <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+          <span>Upload &amp; Create Quote</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL 2: REGISTER NEW CUSTOMER -->
+<div x-show="activeModal === 'create_customer_modal'" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4" x-cloak>
+  <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 sm:p-7 max-w-lg w-full shadow-2xl space-y-5 border border-slate-200">
+    <div class="flex justify-between items-start border-b border-slate-100 pb-4">
+      <div>
+        <span class="badge-sky text-[10px] mb-1">New Customer</span>
+        <h3 class="font-extrabold text-lg text-slate-900">Add Customer</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Enter customer details and default payment terms.</p>
+      </div>
+      <button @click="activeModal = null" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition text-lg font-bold leading-none">&times;</button>
+    </div>
+
+    <form method="POST" action="{% url 'create_customer' %}" class="space-y-4">
+      {% csrf_token %}
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div>
+          <label class="form-label">Company Name <span class="text-rose-500">*</span></label>
+          <input type="text" name="company_name" required placeholder="e.g. Sasol Mining &amp; Freight" class="form-input font-bold">
+        </div>
+        <div>
+          <label class="form-label">Contact Person <span class="text-rose-500">*</span></label>
+          <input type="text" name="contact_name" required placeholder="e.g. John Nkosi" class="form-input">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div>
+          <label class="form-label">Email Address <span class="text-rose-500">*</span></label>
+          <input type="email" name="email" required placeholder="john@client.co.za" class="form-input font-mono text-xs">
+        </div>
+        <div>
+          <label class="form-label">Phone Number</label>
+          <input type="text" name="phone" placeholder="+27 11 000 0000" class="form-input font-mono text-xs">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div>
+          <label class="form-label">VAT Number</label>
+          <input type="text" name="vat_number" placeholder="4000000000" class="form-input font-mono text-xs">
+        </div>
+        <div>
+          <label class="form-label">Payment Terms <span class="text-rose-500">*</span></label>
+          <select name="payment_terms" class="form-input font-semibold">
+            <option value="50_DEPOSIT_50_POD">50% Deposit / 50% on Delivery</option>
+            <option value="100_UPFRONT">100% Upfront</option>
+            <option value="30_DEPOSIT_70_POD">30% Deposit / 70% on Delivery</option>
+            <option value="30_DAYS_NET">30 Days Net</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="form-label">Address</label>
+        <textarea name="physical_address" rows="2" placeholder="e.g. Depot 4, Elandsfontein Logistics Park, Germiston" class="form-input"></textarea>
+      </div>
+
+      <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-100">
+        <button type="button" @click="activeModal = null" class="btn-outline">Cancel</button>
+        <button type="submit" class="btn-secondary">
+          <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+          <span>Save Customer</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL 3: CREATE QUOTATION -->
+<div x-show="activeModal === 'create_quote_modal'" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4" x-cloak>
+  <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 sm:p-7 max-w-lg w-full shadow-2xl space-y-5 border border-slate-200">
+    <div class="flex justify-between items-start border-b border-slate-100 pb-4">
+      <div>
+        <span class="badge-gold text-[10px] mb-1">New Quotation</span>
+        <h3 class="font-extrabold text-lg text-slate-900">Create Quotation</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Create a new price quotation for a customer.</p>
+      </div>
+      <button @click="activeModal = null" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition text-lg font-bold leading-none">&times;</button>
+    </div>
+
+    <form method="POST" action="{% url 'create_quotation' %}" class="space-y-4">
+      {% csrf_token %}
+      <div>
+        <label class="form-label">Customer <span class="text-rose-500">*</span></label>
+        <select name="customer_id" required class="form-input font-bold">
+          {% for c in global_customers %}
+          <option value="{{ c.id }}">{{ c.company_name }} ({{ c.email }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="form-label">Description <span class="text-rose-500">*</span></label>
+        <input type="text" name="description" required placeholder="e.g. 34-Ton Long Haul Freight JHB to Cape Town" class="form-input font-medium">
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div>
+          <label class="form-label">Quantity / Tons</label>
+          <input type="number" step="0.01" name="quantity" value="1.00" class="form-input font-mono">
+        </div>
+        <div>
+          <label class="form-label">Rate (Excl. VAT) <span class="text-rose-500">*</span></label>
+          <input type="number" step="0.01" name="unit_price" required placeholder="25000.00" class="form-input font-bold font-mono">
+        </div>
+      </div>
+
+      <div>
+        <label class="form-label">Validity (Days)</label>
+        <input type="number" name="valid_days" value="14" class="form-input font-mono">
+      </div>
+
+      <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-100">
+        <button type="button" @click="activeModal = null" class="btn-outline">Cancel</button>
+        <button type="submit" class="btn-primary">
+          <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span>Create Quotation</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

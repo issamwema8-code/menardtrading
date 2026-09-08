@@ -1,0 +1,258 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}Deliveries &amp; Fleet{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{
+  searchQuery: '',
+  statusFilter: 'ALL',
+  matches(jobNum, customerName, route, driver, vehicle, status) {
+    const q = this.searchQuery.toLowerCase().trim();
+    const matchSearch = !q || 
+      jobNum.toLowerCase().includes(q) || 
+      customerName.toLowerCase().includes(q) || 
+      route.toLowerCase().includes(q) ||
+      driver.toLowerCase().includes(q) ||
+      vehicle.toLowerCase().includes(q);
+    const matchStatus = this.statusFilter === 'ALL' || status === this.statusFilter;
+    return matchSearch && matchStatus;
+  },
+  get activeFilterCount() {
+    let count = 0;
+    if (this.searchQuery.trim()) count++;
+    if (this.statusFilter !== 'ALL') count++;
+    return count;
+  },
+  clearFilters() {
+    this.searchQuery = '';
+    this.statusFilter = 'ALL';
+  }
+}">
+
+  <!-- ============================================================ -->
+  <!-- 1. PAGE HEADER & CONTROLS                                    -->
+  <!-- ============================================================ -->
+  <div class="page-header-card">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="badge-purple text-[10px]">Deliveries</span>
+          <span class="text-xs text-slate-400 font-mono">{{ jobs|length }} Active Deliver{{ jobs|length|pluralize:"y,ies" }}</span>
+        </div>
+        <h1 class="page-title">Deliveries &amp; Fleet</h1>
+        <p class="page-description">Track transport jobs, assign drivers, view delivery proof, and create invoices.</p>
+      </div>
+
+      <div class="flex items-center gap-2.5">
+        <a href="{% url 'orders_list' %}" class="btn-outline">
+          <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+          <span>Purchase Orders</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 2. DELIVERIES TOOLBAR & FILTERS                              -->
+  <!-- ============================================================ -->
+  <div class="surface-card p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+    <div>
+      <h3 class="font-bold text-slate-900 text-sm">Active Consignments</h3>
+      <p class="text-xs text-slate-500">Filter jobs by driver, vehicle, destination, or milestone status.</p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+      <!-- Live Search Input -->
+      <div class="relative flex-grow sm:flex-grow-0 sm:w-72">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+        <input 
+          type="text" 
+          x-model="searchQuery" 
+          placeholder="Search deliveries, driver, route..." 
+          class="form-input pl-9 pr-8 text-xs py-1.5"
+        >
+        <button 
+          type="button" 
+          x-show="searchQuery" 
+          @click="searchQuery = ''" 
+          class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 text-xs font-bold"
+          style="display: none;"
+        >
+          &times;
+        </button>
+      </div>
+
+      <!-- Status Filter Dropdown -->
+      <select x-model="statusFilter" class="form-input text-xs py-1.5 w-auto">
+        <option value="ALL">All Statuses</option>
+        <option value="BOOKED">Booked</option>
+        <option value="DISPATCHED">Dispatched</option>
+        <option value="IN_TRANSIT">In Transit</option>
+        <option value="DELIVERED">Delivered</option>
+        <option value="POD_RECEIVED">Delivered (Proof Received)</option>
+        <option value="CLOSED">Closed</option>
+      </select>
+
+      <!-- Clear Filters Button -->
+      <button 
+        type="button" 
+        x-show="activeFilterCount > 0" 
+        @click="clearFilters()" 
+        class="text-xs text-rose-600 hover:text-rose-700 font-semibold px-2 py-1.5 rounded-lg hover:bg-rose-50 transition"
+        style="display: none;"
+      >
+        Clear filters
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 3. LOGISTICS JOB CARDS                                       -->
+  <!-- ============================================================ -->
+  <div class="space-y-4">
+    {% for job in jobs %}
+    <div 
+      class="surface-card p-6 space-y-4 hover:border-slate-300 transition"
+      x-show="matches('{{ job.job_number|escapejs }}', '{{ job.customer.company_name|escapejs }}', '{{ job.pickup_address|escapejs }} {{ job.delivery_address|escapejs }}', '{{ job.driver_name|default:''|escapejs }}', '{{ job.vehicle_registration|default:''|escapejs }}', '{{ job.status }}')"
+    >
+      
+      <!-- Top Job Header & Summary -->
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="font-mono font-black text-[#b47828] text-sm">{{ job.job_number }}</span>
+            <span class="{% if job.status == 'DELIVERED' or job.status == 'POD_RECEIVED' or job.status == 'CLOSED' %}badge-emerald{% elif job.status == 'DISPATCHED' or job.status == 'IN_TRANSIT' %}badge-sky{% else %}badge-slate{% endif %} text-[10px]">
+              {{ job.get_status_display }}
+            </span>
+          </div>
+          <h3 class="text-base font-bold text-slate-900">{{ job.customer.company_name }}</h3>
+          <p class="text-xs text-slate-500 mt-0.5">
+            <strong class="text-slate-700">Route:</strong> {{ job.pickup_address }} &rarr; {{ job.delivery_address }}
+          </p>
+        </div>
+
+        <div class="text-left sm:text-right bg-slate-50 sm:bg-transparent p-3 sm:p-0 rounded-xl sm:rounded-none border sm:border-0 border-slate-200 w-full sm:w-auto">
+          <span class="text-xs font-mono font-bold text-slate-900 block">Total: R {{ job.quote_total|floatformat:2 }}</span>
+          <span class="text-xs text-slate-500 mt-0.5 block font-mono">
+            Invoiced: R {{ job.total_invoiced|floatformat:2 }} &bull; Unbilled: <strong class="text-[#b47828]">R {{ job.remaining_uninvoiced|floatformat:2 }}</strong>
+          </span>
+        </div>
+      </div>
+
+      <!-- Vehicle, Driver & Action Toolbar -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-3.5 border-t border-slate-100 text-xs">
+        <div class="flex flex-wrap items-center gap-4 text-slate-600">
+          <span><strong class="text-slate-900 uppercase text-[10px] tracking-wider block sm:inline">Vehicle:</strong> <span class="font-mono text-slate-800">{{ job.vehicle_registration|default:"Unassigned" }}</span></span>
+          <span><strong class="text-slate-900 uppercase text-[10px] tracking-wider block sm:inline">Driver:</strong> {{ job.driver_name|default:"Unassigned" }} {% if job.driver_phone %}<span class="font-mono text-slate-400">({{ job.driver_phone }})</span>{% endif %}</span>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap items-center gap-2">
+          
+          <!-- Status Form -->
+          <form method="POST" action="{% url 'update_job_status' job.id %}" class="inline-flex items-center gap-1.5">
+            {% csrf_token %}
+            <select name="status" class="form-input text-xs py-1.5 px-2.5 font-semibold bg-white w-auto">
+              <option value="BOOKED" {% if job.status == 'BOOKED' %}selected{% endif %}>Booked</option>
+              <option value="DISPATCHED" {% if job.status == 'DISPATCHED' %}selected{% endif %}>Dispatched</option>
+              <option value="IN_TRANSIT" {% if job.status == 'IN_TRANSIT' %}selected{% endif %}>In Transit</option>
+              <option value="DELIVERED" {% if job.status == 'DELIVERED' %}selected{% endif %}>Delivered</option>
+              <option value="POD_RECEIVED" {% if job.status == 'POD_RECEIVED' %}selected{% endif %}>Delivered (Proof Received)</option>
+              <option value="CLOSED" {% if job.status == 'CLOSED' %}selected{% endif %}>Closed</option>
+            </select>
+            <button type="submit" class="btn-secondary text-xs py-1.5 px-3">Update</button>
+          </form>
+
+          <!-- Upload Proof Form -->
+          <form method="POST" action="{% url 'upload_pod' job.id %}" enctype="multipart/form-data" class="inline-flex items-center gap-1">
+            {% csrf_token %}
+            <label class="btn-outline text-xs py-1.5 px-3 cursor-pointer">
+              <svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+              <span>Upload Delivery Proof</span>
+              <input type="file" name="pod_document" onchange="this.form.submit()" class="hidden">
+            </label>
+          </form>
+
+          {% if job.pod_document %}
+          <a href="{{ job.pod_document.url }}" target="_blank" class="badge-emerald text-xs py-1.5 px-3 font-semibold">
+            <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            <span>View Delivery Proof</span>
+          </a>
+          {% endif %}
+
+          <!-- Create Invoice Button -->
+          <button @click="activeModal = 'invoice_modal_{{ job.id }}'" class="btn-primary text-xs py-1.5 px-3.5">
+            <span>+ Create Invoice</span>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- MODAL: Create Invoice for this Job -->
+      <div x-show="activeModal === 'invoice_modal_{{ job.id }}'" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4" x-cloak>
+        <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 sm:p-7 max-w-lg w-full shadow-2xl space-y-5 border border-slate-200">
+          <div class="flex justify-between items-start border-b border-slate-100 pb-4">
+            <div>
+              <span class="badge-gold text-[10px] mb-1">Invoices</span>
+              <h3 class="font-extrabold text-lg text-slate-900">Create Invoice for {{ job.job_number }}</h3>
+              <p class="text-xs text-slate-500 mt-0.5">Choose an invoice type to issue for this delivery.</p>
+            </div>
+            <button @click="activeModal = null" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition text-lg font-bold leading-none">&times;</button>
+          </div>
+
+          <form method="POST" action="{% url 'issue_invoice_action' job.id %}" class="space-y-4">
+            {% csrf_token %}
+            <div>
+              <label class="form-label">Invoice Type <span class="text-rose-500">*</span></label>
+              <select name="invoice_type" class="form-input font-bold">
+                <option value="FULL">100% Full Payment (R {{ job.quote_total|floatformat:2 }})</option>
+                <option value="PARTIAL_DEPOSIT">50% Deposit (R {{ job.quote.subtotal|floatformat:2 }} &times; 50%)</option>
+                <option value="PARTIAL_BALANCE">Final Balance on Delivery (Unbilled: R {{ job.remaining_uninvoiced|floatformat:2 }})</option>
+                <option value="ADD_ON">Add-on Charge (Waiting Time, Extra Tolls)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="form-label">Description <span class="text-slate-400 font-normal">(For add-ons)</span></label>
+              <input type="text" name="addon_description" placeholder="e.g. Waiting time - 4 hours at offloading bay" class="form-input">
+            </div>
+
+            <div>
+              <label class="form-label">Amount (Excl. VAT)</label>
+              <input type="number" step="0.01" name="addon_amount" value="450.00" class="form-input font-mono font-bold">
+            </div>
+
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center gap-3">
+              <input type="checkbox" name="send_email" value="true" checked id="send_email_{{ job.id }}" class="w-4 h-4 rounded text-[#b47828] focus:ring-[#b47828] border-slate-300">
+              <label for="send_email_{{ job.id }}" class="text-xs text-slate-700 font-medium">Email invoice PDF to <strong class="text-slate-900 font-mono">{{ job.customer.email }}</strong></label>
+            </div>
+
+            <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-100">
+              <button type="button" @click="activeModal = null" class="btn-outline">Cancel</button>
+              <button type="submit" class="btn-primary">
+                <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>Create &amp; Send Invoice</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+    </div>
+    {% empty %}
+    <div class="surface-card p-12 text-center text-slate-400">
+      <div class="max-w-sm mx-auto space-y-3">
+        <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0zM13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"></path></svg>
+        </div>
+        <p class="font-bold text-slate-700">No active deliveries</p>
+        <p class="text-xs text-slate-400">Deliveries appear here once a customer approves a quotation.</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

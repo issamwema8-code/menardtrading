@@ -1,0 +1,42 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+<h1 class="doc-heading">Update on Purchase Order #{{ po.po_number }}</h1>
+
+<p class="lead-p">Dear {{ recipient_name|default:"Valued Client" }},</p>
+
+<p class="lead-p">
+  We are contacting you regarding your Purchase Order <strong>#{{ po.po_number }}</strong> with Menard Trading CC.
+</p>
+
+<div class="info-card" style="border-left-color: #0f172a; padding: 18px 20px; background-color: #ffffff; border: 1px solid #cbd5e1; border-left: 4px solid #0f172a;">
+  <div style="font-size: 14px; color: #1e293b; line-height: 1.7; white-space: pre-line;">{{ message_body }}</div>
+</div>
+
+<div class="info-card gold-border">
+  <table class="info-table">
+    <tr>
+      <td class="info-label">PO Reference:</td>
+      <td class="info-value">#{{ po.po_number }}</td>
+    </tr>
+    <tr>
+      <td class="info-label">Route:</td>
+      <td class="info-value">{{ po.pickup_location|default:"Origin" }} &rarr; {{ po.delivery_location|default:"Destination" }}</td>
+    </tr>
+    <tr>
+      <td class="info-label">Cargo:</td>
+      <td class="info-value">{{ po.cargo_description|default:"Freight Consignment" }}</td>
+    </tr>
+  </table>
+</div>
+
+<p class="lead-p">
+  Please reply directly to this email if you have any questions or to provide any requested information.
+</p>
+
+<div class="signoff">
+  Kind regards,<br>
+  <strong>Menard Trading CC Operations</strong><br>
+  <span style="color: #b47828; font-size: 11px; font-weight: 700; letter-spacing: 1px;">ALWAYS ON TIME</span>
+</div>
+{% endblock %}

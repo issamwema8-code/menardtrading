@@ -1,0 +1,136 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}Cash Flow Statement — Menard Trading CC{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header with Date Filters -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                    Cash Basis Transactions
+                </span>
+                <span class="text-xs text-slate-500">Period: {{ cash_flow.start_date|date:"d M Y" }} – {{ cash_flow.end_date|date:"d M Y" }}</span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-900 mt-1">Cash Flow Statement</h1>
+            <p class="text-sm text-slate-500">Movement of actual liquid funds through bank & cash channels</p>
+        </div>
+        
+        <form method="get" class="flex flex-wrap items-center gap-2">
+            <select name="preset" onchange="this.form.submit()" class="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900">
+                <option value="mtd" {% if preset == 'mtd' %}selected{% endif %}>Month to Date</option>
+                <option value="qtd" {% if preset == 'qtd' %}selected{% endif %}>Quarter to Date</option>
+                <option value="ytd" {% if preset == 'ytd' %}selected{% endif %}>Year to Date</option>
+                <option value="last_year" {% if preset == 'last_year' %}selected{% endif %}>Last Year</option>
+                <option value="all" {% if preset == 'all' %}selected{% endif %}>All Time</option>
+            </select>
+            <div class="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                <input type="date" name="start_date" value="{{ cash_flow.start_date|date:'Y-m-d' }}" class="px-2 py-1 text-xs bg-transparent border-0 text-slate-700 focus:ring-0">
+                <span class="text-slate-400 text-xs">to</span>
+                <input type="date" name="end_date" value="{{ cash_flow.end_date|date:'Y-m-d' }}" class="px-2 py-1 text-xs bg-transparent border-0 text-slate-700 focus:ring-0">
+                <button type="submit" class="px-3 py-1 text-xs font-medium bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors">Apply</button>
+            </div>
+            <a href="{% url 'accounting:reports_export' %}?report=cash_flow&start_date={{ cash_flow.start_date|date:'Y-m-d' }}&end_date={{ cash_flow.end_date|date:'Y-m-d' }}" class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors">
+                <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Export CSV
+            </a>
+        </form>
+    </div>
+
+    <!-- Summary KPI Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Opening Balance</p>
+            <p class="text-2xl font-bold text-slate-900 mt-2">N$ {{ cash_flow.opening_balance|floatformat:2 }}</p>
+            <p class="text-xs text-slate-500 mt-1">Funds available at period start</p>
+        </div>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <p class="text-xs font-semibold uppercase tracking-wider text-emerald-600">Total Cash In</p>
+            <p class="text-2xl font-bold text-emerald-700 mt-2">+ N$ {{ cash_flow.total_cash_in|floatformat:2 }}</p>
+            <p class="text-xs text-slate-500 mt-1">Customer EFT & cash settlements</p>
+        </div>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <p class="text-xs font-semibold uppercase tracking-wider text-rose-600">Total Cash Out</p>
+            <p class="text-2xl font-bold text-rose-700 mt-2">- N$ {{ cash_flow.total_cash_out|floatformat:2 }}</p>
+            <p class="text-xs text-slate-500 mt-1">Expense disbursements & vendor payments</p>
+        </div>
+        <div class="p-5 rounded-2xl border shadow-sm {% if cash_flow.net_cash_flow >= 0 %}bg-emerald-50/70 border-emerald-200{% else %}bg-rose-50/70 border-rose-200{% endif %}">
+            <p class="text-xs font-semibold uppercase tracking-wider {% if cash_flow.net_cash_flow >= 0 %}text-emerald-800{% else %}text-rose-800{% endif %}">Net Cash Movement</p>
+            <p class="text-2xl font-bold {% if cash_flow.net_cash_flow >= 0 %}text-emerald-900{% else %}text-rose-900{% endif %} mt-2">
+                {% if cash_flow.net_cash_flow >= 0 %}+{% endif %}N$ {{ cash_flow.net_cash_flow|floatformat:2 }}
+            </p>
+            <p class="text-xs {% if cash_flow.net_cash_flow >= 0 %}text-emerald-700{% else %}text-rose-700{% endif %} mt-1">Closing Balance: N$ {{ cash_flow.closing_balance|floatformat:2 }}</p>
+        </div>
+    </div>
+
+    <!-- Main Cash Flow Statement Table -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-200 bg-slate-50/60 flex items-center justify-between">
+            <h2 class="text-base font-bold text-slate-900">Statement of Cash Flows</h2>
+            <span class="text-xs text-slate-500">Amounts shown in Namibia Dollars (N$)</span>
+        </div>
+
+        <div class="divide-y divide-slate-100 text-sm">
+            <!-- OPENING BALANCE ROW -->
+            <div class="px-6 py-3 bg-slate-50/30 flex justify-between items-center font-medium text-slate-700">
+                <span>Opening Cash & Bank Balance</span>
+                <span class="font-bold text-slate-900">N$ {{ cash_flow.opening_balance|floatformat:2 }}</span>
+            </div>
+
+            <!-- CASH INFLOWS SECTION -->
+            <div class="p-6 space-y-3">
+                <div class="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-emerald-700">
+                    <span>Cash Inflows (Operating Collections)</span>
+                    <span>Amount (N$)</span>
+                </div>
+                <div class="flex justify-between items-center text-slate-700 pl-4 py-1">
+                    <span>Customer Invoice Payments Received</span>
+                    <span class="font-semibold text-emerald-700">+ N$ {{ cash_flow.cash_in_customer_payments|floatformat:2 }}</span>
+                </div>
+                <div class="flex justify-between items-center font-bold text-slate-900 pt-2 border-t border-slate-100">
+                    <span>Total Cash Inflows</span>
+                    <span class="text-base text-emerald-700">+ N$ {{ cash_flow.total_cash_in|floatformat:2 }}</span>
+                </div>
+            </div>
+
+            <!-- CASH OUTFLOWS SECTION -->
+            <div class="p-6 space-y-3 bg-slate-50/30">
+                <div class="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-rose-700">
+                    <span>Cash Outflows (Disbursements & Payables)</span>
+                    <span>Amount (N$)</span>
+                </div>
+                <div class="flex justify-between items-center text-slate-700 pl-4 py-1">
+                    <span>Operating & Transport Expenses Paid</span>
+                    <span class="font-semibold text-rose-700">- N$ {{ cash_flow.cash_out_expenses|floatformat:2 }}</span>
+                </div>
+                <div class="flex justify-between items-center text-slate-700 pl-4 py-1">
+                    <span>Supplier / Vendor Bill Payments</span>
+                    <span class="font-semibold text-rose-700">- N$ {{ cash_flow.cash_out_supplier_bills|floatformat:2 }}</span>
+                </div>
+                <div class="flex justify-between items-center font-bold text-slate-900 pt-2 border-t border-slate-200">
+                    <span>Total Cash Outflows</span>
+                    <span class="text-base text-rose-700">- N$ {{ cash_flow.total_cash_out|floatformat:2 }}</span>
+                </div>
+            </div>
+
+            <!-- NET CASH FLOW SUMMARY ROW -->
+            <div class="px-6 py-4 bg-slate-100 flex justify-between items-center">
+                <span class="text-base font-bold text-slate-900">Net Increase / (Decrease) in Cash</span>
+                <span class="text-lg font-black {% if cash_flow.net_cash_flow >= 0 %}text-emerald-700{% else %}text-rose-700{% endif %}">
+                    {% if cash_flow.net_cash_flow >= 0 %}+{% endif %}N$ {{ cash_flow.net_cash_flow|floatformat:2 }}
+                </span>
+            </div>
+
+            <!-- CLOSING BALANCE ROW -->
+            <div class="px-6 py-5 bg-slate-900 text-white flex justify-between items-center">
+                <div>
+                    <span class="text-base font-bold">Closing Cash & Bank Balance</span>
+                    <p class="text-xs text-slate-400 mt-0.5">As at {{ cash_flow.end_date|date:"d M Y" }}</p>
+                </div>
+                <span class="text-2xl font-black text-emerald-400">N$ {{ cash_flow.closing_balance|floatformat:2 }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

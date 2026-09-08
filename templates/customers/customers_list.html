@@ -1,0 +1,176 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block title %}Customers{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{
+  searchQuery: '',
+  termsFilter: 'ALL',
+  matches(company, contact, email, phone, vat, terms) {
+    const q = this.searchQuery.toLowerCase().trim();
+    const matchSearch = !q || 
+      company.toLowerCase().includes(q) || 
+      contact.toLowerCase().includes(q) || 
+      email.toLowerCase().includes(q) ||
+      phone.toLowerCase().includes(q) ||
+      vat.toLowerCase().includes(q);
+    const matchTerms = this.termsFilter === 'ALL' || terms === this.termsFilter;
+    return matchSearch && matchTerms;
+  },
+  get activeFilterCount() {
+    let count = 0;
+    if (this.searchQuery.trim()) count++;
+    if (this.termsFilter !== 'ALL') count++;
+    return count;
+  },
+  clearFilters() {
+    this.searchQuery = '';
+    this.termsFilter = 'ALL';
+  }
+}">
+
+  <!-- ============================================================ -->
+  <!-- 1. PAGE HEADER & ACTIONS                                     -->
+  <!-- ============================================================ -->
+  <div class="page-header-card">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="space-y-1.5">
+        <div class="flex items-center gap-2">
+          <span class="badge badge-sky">Customers</span>
+          <span class="text-xs font-medium text-slate-400 font-mono">{{ customers|length }} Account{{ customers|length|pluralize }}</span>
+        </div>
+        <h1 class="page-title">Customers</h1>
+        <p class="page-description max-w-2xl">
+          Manage your customer accounts, contact details, and payment terms.
+        </p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button type="button" @click="activeModal = 'create_customer_modal'" class="btn-primary">
+          <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+          <span>Add Customer</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 2. CUSTOMERS TABLE CONTAINER                                 -->
+  <!-- ============================================================ -->
+  <div class="table-container">
+    
+    <!-- Table Toolbar: Search, Payment Terms Filter & Clear -->
+    <div class="p-4 border-b border-slate-200/80 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+      <div>
+        <h3 class="text-sm font-bold text-slate-900">Customer Accounts</h3>
+        <p class="text-xs text-slate-500">Default terms applied to quotations and invoices for each customer</p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+        <!-- Live Search Input -->
+        <div class="relative flex-grow sm:flex-grow-0 sm:w-64">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </div>
+          <input 
+            type="text" 
+            x-model="searchQuery" 
+            placeholder="Search customers, email, phone..." 
+            class="form-input pl-9 pr-8 text-xs py-1.5"
+          >
+          <button 
+            type="button" 
+            x-show="searchQuery" 
+            @click="searchQuery = ''" 
+            class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 text-xs font-bold"
+            style="display: none;"
+          >
+            &times;
+          </button>
+        </div>
+
+        <!-- Payment Terms Filter -->
+        <select x-model="termsFilter" class="form-input text-xs py-1.5 w-auto">
+          <option value="ALL">All Terms</option>
+          <option value="50_DEPOSIT_50_POD">50% Deposit / 50% on POD</option>
+          <option value="100_UPFRONT">100% Upfront</option>
+          <option value="30_DEPOSIT_70_POD">30% Deposit / 70% on POD</option>
+          <option value="30_DAYS_NET">30 Days Net</option>
+        </select>
+
+        <!-- Clear Filters Button -->
+        <button 
+          type="button" 
+          x-show="activeFilterCount > 0" 
+          @click="clearFilters()" 
+          class="text-xs text-rose-600 hover:text-rose-700 font-semibold px-2 py-1.5 rounded-lg hover:bg-rose-50 transition"
+          style="display: none;"
+        >
+          Clear filters
+        </button>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse min-w-[1000px]">
+        <thead>
+          <tr class="border-b border-slate-200 bg-slate-50/75">
+            <th class="table-header-cell w-[220px]">Company Name</th>
+            <th class="table-header-cell w-[180px]">Primary Contact</th>
+            <th class="table-header-cell w-[220px]">Email Address</th>
+            <th class="table-header-cell w-[140px]">Phone</th>
+            <th class="table-header-cell w-[160px]">Payment Terms</th>
+            <th class="table-header-cell w-[140px]">VAT Number</th>
+            <th class="table-header-cell min-w-[200px]">Address</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200/60 bg-white">
+          {% for cust in customers %}
+          <tr 
+            class="table-body-row" 
+            x-show="matches('{{ cust.company_name|escapejs }}', '{{ cust.contact_name|escapejs }}', '{{ cust.email|escapejs }}', '{{ cust.phone|escapejs }}', '{{ cust.vat_number|default:''|escapejs }}', '{{ cust.payment_terms }}')"
+          >
+            <td class="table-body-cell whitespace-nowrap">
+              <span class="font-bold text-slate-900 block truncate max-w-[210px]" title="{{ cust.company_name }}">{{ cust.company_name }}</span>
+            </td>
+            <td class="table-body-cell whitespace-nowrap">
+              <span class="font-medium text-slate-800 text-xs block truncate max-w-[170px]">{{ cust.contact_name }}</span>
+            </td>
+            <td class="table-body-cell whitespace-nowrap">
+              <a href="mailto:{{ cust.email }}" class="font-mono text-xs text-slate-600 hover:text-amber-700 hover:underline transition block truncate max-w-[210px]" title="{{ cust.email }}">{{ cust.email }}</a>
+            </td>
+            <td class="table-body-cell whitespace-nowrap">
+              <span class="text-xs text-slate-600 font-mono">{{ cust.phone }}</span>
+            </td>
+            <td class="table-body-cell whitespace-nowrap">
+              <span class="badge badge-gold text-[11px]">
+                {{ cust.get_payment_terms_display }}
+              </span>
+            </td>
+            <td class="table-body-cell whitespace-nowrap">
+              <span class="font-mono text-xs text-slate-600">{{ cust.vat_number|default:"-" }}</span>
+            </td>
+            <td class="table-body-cell whitespace-nowrap">
+              <span class="text-xs text-slate-500 truncate block max-w-[260px]" title="{{ cust.physical_address|default:'-' }}">{{ cust.physical_address|default:"-" }}</span>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="px-6 py-14 text-center">
+              <div class="max-w-sm mx-auto space-y-3">
+                <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                </div>
+                <h4 class="text-sm font-bold text-slate-800">No customers yet</h4>
+                <p class="text-xs text-slate-500">Click "Add Customer" above to add your first customer account.</p>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

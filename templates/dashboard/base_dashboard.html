@@ -1,0 +1,779 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Dashboard{% endblock %} - {{ branding.brand_name }}</title>
+  
+  <!-- Favicons -->
+  <link rel="icon" type="image/svg+xml" href="{% static 'images/favicon.svg' %}">
+  <link rel="alternate icon" href="{% static 'images/favicon.png' %}">
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Custom Enterprise Design System -->
+  <link rel="stylesheet" href="{% static 'css/design_system.css' %}">
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- HTMX -->
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              navy: '#0f172a',
+              dark: '#1e293b',
+              gold: '#b47828',
+              goldLight: '#dca048',
+              goldDark: '#8a5818',
+              goldSubtle: '#fdf8f0',
+              accent: '#b47828',
+              light: '#f8fafc',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html {
+      font-size: 75% !important;
+      font-family: 'Inter', sans-serif;
+    }
+    .no-scrollbar::-webkit-scrollbar,
+    .no-scrollbar *::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+      background: transparent !important;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none !important;
+      scrollbar-width: none !important;
+    }
+  </style>
+  <!-- CSRF Security Tokens for AJAX/Fetch/HTMX -->
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <script>
+    window.CSRF_TOKEN = "{{ csrf_token }}";
+    function getCsrfToken() {
+      const meta = document.querySelector('meta[name="csrf-token"]');
+      if (meta && meta.content) return meta.content;
+      const match = document.cookie.match(/csrftoken=([^;]+)/);
+      return match ? match[1] : window.CSRF_TOKEN;
+    }
+
+    // Attach CSRF Token automatically to all HTMX requests
+    document.addEventListener('htmx:configRequest', function(evt) {
+      evt.detail.headers['X-CSRFToken'] = getCsrfToken();
+    });
+
+    // Helper for interactive Swal confirmations
+    function confirmSwalAction(formId, titleText, confirmText = 'Yes, proceed', icon = 'warning') {
+      Swal.fire({
+        title: titleText,
+        icon: icon,
+        showCancelButton: true,
+        confirmButtonColor: '#0f172a',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: confirmText,
+        cancelButtonText: 'Cancel',
+        reverseButtons: true,
+        customClass: {
+          popup: 'rounded-2xl shadow-2xl border border-slate-200'
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          document.getElementById(formId).submit();
+        }
+      });
+    }
+  </script>
+</head>
+<body class="bg-[#f8fafc] text-slate-800 font-sans min-h-screen flex flex-col antialiased" hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}' x-data="{ currentTab: 'overview', activeModal: null, openMenu: null, showUserDropdown: false, showNotifications: false }" @click.outside="openMenu = null; showUserDropdown = false; showNotifications = false">
+
+  <!-- ============================================================ -->
+  <!-- ============================================================ -->
+  <!-- TIER 1: PRIMARY HEADER                                       -->
+  <!-- ============================================================ -->
+  <header class="bg-slate-950 border-b border-slate-800 text-white z-50">
+    <div class="layout-container">
+      <div class="flex items-center justify-between h-20">
+
+        <!-- LOGO & BRAND -->
+        <div class="flex items-center gap-4">
+          <a href="{% url 'dashboard_overview' %}" class="flex items-center gap-3.5 group py-2">
+            {% if branding.logo_image %}
+            <img src="{{ branding.logo_image }}" alt="{{ branding.brand_name }}" class="h-10 sm:h-11 w-auto object-contain transition-transform duration-300 group-hover:scale-105">
+            {% else %}
+            <img src="{% static 'images/menard_emblem.svg' %}" alt="Menard Trading Emblem" class="h-10 sm:h-11 w-auto object-contain transition-transform duration-300 group-hover:scale-105">
+            {% endif %}
+            <div class="inline-flex flex-col justify-center">
+              <span class="text-base sm:text-lg font-semibold tracking-wide text-white uppercase block leading-tight font-sans whitespace-nowrap">
+                {{ branding.brand_name|default:branding.company_name|default:"MENARD TRADING CC" }}
+              </span>
+              <div class="w-full flex justify-between items-center text-[7.5px] sm:text-[8.5px] font-medium text-[#dca048]/85 uppercase leading-none font-sans mt-1 select-none tracking-normal">
+                <span>A</span><span>L</span><span>W</span><span>A</span><span>Y</span><span>S</span>
+                <span class="w-1.5 sm:w-2 inline-block"></span>
+                <span>O</span><span>N</span>
+                <span class="w-1.5 sm:w-2 inline-block"></span>
+                <span>T</span><span>I</span><span>M</span><span>E</span>
+              </div>
+            </div>
+          </a>
+        </div>
+
+        <!-- RIGHT: NOTIFICATIONS & USER PROFILE (OR CUSTOMER PORTAL INFO) -->
+        <div class="flex items-center gap-4">
+
+          {% if request.user.is_authenticated %}
+          <!-- Notifications Dropdown -->
+          <div class="relative">
+            <button 
+              @click.stop="showNotifications = !showNotifications; showUserDropdown = false;" 
+              class="relative p-2.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 hover:text-white transition"
+              title="Notifications"
+            >
+              <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+              <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-slate-950 font-semibold text-[10px] flex items-center justify-center shadow">
+                {{ header_counts.orders_count|default:"0" }}
+              </span>
+            </button>
+
+            <!-- Notifications Popover -->
+            <div 
+              x-show="showNotifications" 
+              x-transition:enter="transition ease-out duration-200"
+              x-transition:enter-start="opacity-0 translate-y-2"
+              x-transition:enter-end="opacity-100 translate-y-0"
+              x-transition:leave="transition ease-in duration-150"
+              x-transition:leave-start="opacity-100 translate-y-0"
+              x-transition:leave-end="opacity-0 translate-y-2"
+              class="absolute right-0 mt-3 w-80 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 divide-y divide-slate-800"
+              style="display: none;"
+            >
+              <div class="p-4 bg-slate-950/80 flex items-center justify-between">
+                <div>
+                  <h4 class="font-semibold text-sm text-white">Activity</h4>
+                  <p class="text-[11px] text-slate-400">Recent orders and deliveries</p>
+                </div>
+                <span class="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded font-semibold">Active</span>
+              </div>
+              <!-- Notification items -->
+              <div class="p-3 space-y-2 text-xs">
+                <a href="{% url 'orders_list' %}" class="flex items-center justify-between p-2 rounded-lg bg-slate-800/60 hover:bg-slate-800 transition">
+                  <span class="text-slate-300 font-normal">Purchase Orders</span>
+                  <span class="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-semibold text-[10px]">{{ header_counts.orders_count|default:"0" }}</span>
+                </a>
+                <a href="{% url 'quotes_list' %}" class="flex items-center justify-between p-2 rounded-lg bg-slate-800/60 hover:bg-slate-800 transition">
+                  <span class="text-slate-300 font-normal">Quotations</span>
+                  <span class="px-2 py-0.5 rounded-full bg-blue-500/30 text-blue-300 font-semibold text-[10px]">{{ header_counts.quotes_count|default:"0" }}</span>
+                </a>
+                <a href="{% url 'logistics_list' %}" class="flex items-center justify-between p-2 rounded-lg bg-slate-800/60 hover:bg-slate-800 transition">
+                  <span class="text-slate-300 font-normal">Deliveries</span>
+                  <span class="px-2 py-0.5 rounded-full bg-purple-500/30 text-purple-300 font-semibold text-[10px]">{{ header_counts.jobs_count|default:"0" }}</span>
+                </a>
+              </div>
+              <div class="p-2.5 bg-slate-950 text-center">
+                <a href="{% url 'dashboard_overview' %}" class="text-xs text-amber-400 hover:text-amber-300 font-semibold block">
+                  View Overview &rarr;
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="h-8 w-px bg-slate-800 hidden sm:block"></div>
+
+          <!-- USER PROFILE DROPDOWN -->
+          <div class="relative">
+            <button
+              @click.stop="showUserDropdown = !showUserDropdown; showNotifications = false;"
+              class="flex items-center gap-3 cursor-pointer focus:outline-none group p-1.5 rounded-xl hover:bg-slate-900 transition"
+            >
+              <div class="text-right hidden sm:block">
+                <p class="font-semibold text-xs text-white group-hover:text-amber-400 transition truncate max-w-[140px]">
+                  {{ request.user.get_full_name|default:request.user.username }}
+                </p>
+                <p class="text-[10px] text-slate-400 truncate max-w-[140px]">
+                  {% if request.user.is_superuser %}Superuser{% elif user_roles %}{{ user_roles.0.name }}{% else %}Staff{% endif %}
+                </p>
+              </div>
+
+              <div class="w-9 h-9 rounded-full flex items-center justify-center text-slate-950 font-semibold text-sm shadow-md border-2 border-amber-500 relative bg-gradient-to-tr from-[#b47828] to-[#e8b868]">
+                {{ request.user.first_name|first|default:request.user.username|first|upper }}
+                <div class="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 flex items-center justify-center border border-slate-950 shadow-sm" title="Active">
+                  <svg class="w-2 h-2 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+              </div>
+
+              <svg 
+                class="w-4 h-4 text-slate-400 transition-transform duration-200" 
+                :class="showUserDropdown ? 'rotate-180 text-amber-400' : ''" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              </svg>
+            </button>
+
+            <!-- User Dropdown Popover -->
+            <div
+              x-show="showUserDropdown"
+              x-transition:enter="transition ease-out duration-200"
+              x-transition:enter-start="opacity-0 translate-y-2"
+              x-transition:enter-end="opacity-100 translate-y-0"
+              x-transition:leave="transition ease-in duration-150"
+              x-transition:leave-start="opacity-100 translate-y-0"
+              x-transition:leave-end="opacity-0 translate-y-2"
+              class="absolute right-0 mt-3 w-80 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 divide-y divide-slate-800"
+              style="display: none;"
+            >
+              <div class="p-5 bg-gradient-to-br from-slate-950 to-slate-900">
+                <div class="flex items-center gap-3.5">
+                  <div class="w-11 h-11 rounded-full flex items-center justify-center text-slate-950 font-semibold text-base bg-gradient-to-tr from-[#b47828] to-[#e8b868] border-2 border-amber-400 shadow-md">
+                    {{ request.user.first_name|first|default:request.user.username|first|upper }}
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                      <p class="font-semibold text-sm text-white truncate">{{ request.user.get_full_name|default:request.user.username }}</p>
+                      {% if request.user.is_superuser %}
+                      <span class="px-2 py-0.5 text-[9px] rounded-full bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30">Superuser</span>
+                      {% else %}
+                      <span class="px-2 py-0.5 text-[9px] rounded-full bg-emerald-500/20 text-emerald-300 font-medium border border-emerald-500/30">Active</span>
+                      {% endif %}
+                    </div>
+                    <p class="text-xs text-amber-400 font-mono truncate">{{ request.user.email|default:request.user.username }}</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">
+                      Roles: {% if request.user.is_superuser %}Superuser (All Permissions){% elif user_roles %}{% for r in user_roles %}{{ r.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% else %}No Roles Assigned{% endif %}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Menu Items -->
+              <div class="py-2 text-xs">
+                <a href="{% url 'account_security' %}" class="flex items-center gap-3 px-5 py-3 text-slate-200 hover:bg-slate-800 hover:text-amber-400 transition">
+                  <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                  <div>
+                    <p class="font-medium">Account Security &amp; 2FA</p>
+                    <p class="text-[10px] text-slate-400">Configure 4-digit PIN &amp; two-step verification</p>
+                  </div>
+                </a>
+
+                {% if can_access_admin %}
+                {% if can_manage_settings or is_superuser %}
+                <a href="{% url 'administration-company-settings' %}" class="flex items-center gap-3 px-5 py-3 text-slate-200 hover:bg-slate-800 hover:text-amber-400 transition">
+                  <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                  <div>
+                    <p class="font-medium">Company &amp; Business Settings</p>
+                    <p class="text-[10px] text-slate-400">Manage business details, logo, addresses &amp; bank info</p>
+                  </div>
+                </a>
+                {% endif %}
+
+                <a href="{% url 'administration-users' %}" class="flex items-center gap-3 px-5 py-3 text-slate-200 hover:bg-slate-800 hover:text-amber-400 transition">
+                  <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                  <div>
+                    <p class="font-medium">User &amp; Role Management</p>
+                    <p class="text-[10px] text-slate-400">Manage user accounts &amp; RBAC roles</p>
+                  </div>
+                </a>
+
+                <a href="{% url 'administration-audit-logs' %}" class="flex items-center gap-3 px-5 py-3 text-slate-200 hover:bg-slate-800 hover:text-amber-400 transition">
+                  <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                  <div>
+                    <p class="font-medium">Security &amp; Audit Logs</p>
+                    <p class="text-[10px] text-slate-400">View activity and authentication logs</p>
+                  </div>
+                </a>
+                {% endif %}
+
+                {% if can_view_customers %}
+                <a href="{% url 'customers_list' %}" class="w-full flex items-center gap-3 px-5 py-3 text-slate-200 hover:bg-slate-800 hover:text-amber-400 transition text-left">
+                  <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                  <div>
+                    <p class="font-medium">Customer Directory</p>
+                    <p class="text-[10px] text-slate-400">Manage customer accounts &amp; terms</p>
+                  </div>
+                </a>
+                {% endif %}
+              </div>
+
+              <!-- Logout & System Actions -->
+              <div class="p-3 bg-slate-950">
+                <a
+                  href="{% url 'logout' %}"
+                  class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white transition text-left"
+                >
+                  <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  <div class="flex-1">
+                    <p class="font-medium text-[11px]">Sign Out</p>
+                    <p class="text-[9px] text-slate-400">Terminate authenticated session</p>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <div class="flex items-center gap-3">
+            <div class="hidden sm:flex flex-col text-right">
+              <span class="text-slate-400 text-[11px]">Customer Quotation Portal</span>
+              <a href="mailto:{{ branding.quotes_email|default:'quotes@menardtrading.com' }}" class="text-[#dca048] font-mono hover:underline font-semibold text-xs">
+                {{ branding.quotes_email|default:"quotes@menardtrading.com" }}
+              </a>
+            </div>
+            <div class="h-6 w-px bg-slate-800 hidden sm:block"></div>
+            <a href="{% url 'login' %}" class="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 hover:text-white text-xs font-semibold border border-slate-700 transition flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path></svg>
+              <span>Staff Sign In</span>
+            </a>
+          </div>
+          {% endif %}
+
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================ -->
+  <!-- TIER 2: NAVIGATION BAR                                       -->
+  <!-- ============================================================ -->
+  <nav class="bg-slate-900 border-b-2 border-[#b47828] sticky top-0 z-40 shadow-md text-white no-print">
+    <div class="layout-container">
+      <div class="flex items-center justify-between overflow-x-auto py-2.5 sm:py-3 space-x-1.5 scrollbar-none">
+
+        {% if request.user.is_authenticated %}
+        <!-- 1. Overview -->
+        <a 
+          href="{% url 'dashboard_overview' %}" 
+          class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs transition flex-shrink-0 {% if active_tab == 'overview' %}bg-slate-800 text-amber-400 font-semibold border border-amber-500/50 shadow-sm{% else %}font-medium text-slate-300 hover:text-white hover:bg-slate-800{% endif %}"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+          <span>Overview</span>
+        </a>
+
+        {% if can_view_orders %}
+        <!-- 2. Purchase Orders Dropdown & Link -->
+        <div class="relative flex-shrink-0">
+          <div class="inline-flex rounded-xl overflow-hidden">
+            <a 
+              href="{% url 'orders_list' %}" 
+              class="flex items-center gap-1.5 px-3.5 py-2.5 text-xs transition {% if active_tab == 'orders' %}bg-slate-800 text-amber-400 font-semibold border-l border-t border-b border-amber-500/50 shadow-sm{% else %}font-medium text-slate-300 hover:text-white hover:bg-slate-800{% endif %}"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+              <span>Purchase Orders</span>
+            </a>
+            <button 
+              @click.stop="openMenu = (openMenu === 'orders' ? null : 'orders')" 
+              class="px-2 py-2.5 text-xs transition {% if active_tab == 'orders' %}bg-slate-800 text-amber-400 border-r border-t border-b border-amber-500/50{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}"
+            >
+              <svg class="w-3.5 h-3.5 transition-transform duration-200" :class="openMenu === 'orders' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+          </div>
+
+          <!-- Dropdown Popover -->
+          <div x-show="openMenu === 'orders'" class="absolute top-full left-0 mt-2 w-64 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 p-2 space-y-1 text-xs" style="display: none;">
+            <a href="{% url 'orders_list' %}" class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left">
+              <span class="font-normal">All Purchase Orders</span>
+              <span class="font-mono text-[10px] text-slate-500">({{ header_counts.orders_count|default:"0" }})</span>
+            </a>
+            {% if can_upload_orders %}
+            <button @click="activeModal = 'upload_po_modal'; openMenu = null;" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left font-normal">
+              <span>Upload Purchase Order</span>
+            </button>
+            {% endif %}
+            {% if can_sync_orders %}
+            <form method="POST" action="{% url 'sync_inbox' %}" class="w-full">
+              {% csrf_token %}
+              <button type="submit" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-sky-950/60 text-sky-400 transition text-left font-medium">
+                <span>Sync Email</span>
+              </button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if can_view_quotes %}
+        <!-- 3. Quotations Dropdown & Link -->
+        <div class="relative flex-shrink-0">
+          <div class="inline-flex rounded-xl overflow-hidden">
+            <a 
+              href="{% url 'quotes_list' %}" 
+              class="flex items-center gap-1.5 px-3.5 py-2.5 text-xs transition {% if active_tab == 'quotes' %}bg-slate-800 text-amber-400 font-semibold border-l border-t border-b border-amber-500/50 shadow-sm{% else %}font-medium text-slate-300 hover:text-white hover:bg-slate-800{% endif %}"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+              <span>Quotations</span>
+            </a>
+            <button 
+              @click.stop="openMenu = (openMenu === 'quotes' ? null : 'quotes')" 
+              class="px-2 py-2.5 text-xs transition {% if active_tab == 'quotes' %}bg-slate-800 text-amber-400 border-r border-t border-b border-amber-500/50{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}"
+            >
+              <svg class="w-3.5 h-3.5 transition-transform duration-200" :class="openMenu === 'quotes' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+          </div>
+
+          <div x-show="openMenu === 'quotes'" class="absolute top-full left-0 mt-2 w-64 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 p-2 space-y-1 text-xs" style="display: none;">
+            <a href="{% url 'quotes_list' %}" class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left">
+              <span class="font-normal">All Quotations</span>
+              <span class="font-mono text-[10px] text-slate-500">({{ header_counts.quotes_count|default:"0" }})</span>
+            </a>
+            {% if can_create_quotes %}
+            <button @click="activeModal = 'create_quote_modal'; openMenu = null;" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left font-normal">
+              <span>Create Quotation</span>
+            </button>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if can_view_logistics %}
+        <!-- 4. Logistics & Fleet Dropdown & Link -->
+        <div class="relative flex-shrink-0">
+          <div class="inline-flex rounded-xl overflow-hidden">
+            <a 
+              href="{% url 'logistics_list' %}" 
+              class="flex items-center gap-1.5 px-3.5 py-2.5 text-xs transition {% if active_tab == 'logistics' %}bg-slate-800 text-amber-400 font-semibold border-l border-t border-b border-amber-500/50 shadow-sm{% else %}font-medium text-slate-300 hover:text-white hover:bg-slate-800{% endif %}"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"></path></svg>
+              <span>Deliveries &amp; Fleet</span>
+            </a>
+            <button 
+              @click.stop="openMenu = (openMenu === 'jobs' ? null : 'jobs')" 
+              class="px-2 py-2.5 text-xs transition {% if active_tab == 'logistics' %}bg-slate-800 text-amber-400 border-r border-t border-b border-amber-500/50{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}"
+            >
+              <svg class="w-3.5 h-3.5 transition-transform duration-200" :class="openMenu === 'jobs' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+          </div>
+
+          <div x-show="openMenu === 'jobs'" class="absolute top-full left-0 mt-2 w-64 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 p-2 space-y-1 text-xs" style="display: none;">
+            <a href="{% url 'logistics_list' %}" class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left">
+              <span class="font-normal">Active Deliveries</span>
+              <span class="font-mono text-[10px] text-slate-500">({{ header_counts.jobs_count|default:"0" }})</span>
+            </a>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if can_view_invoices %}
+        <!-- 5. Invoices Dropdown & Link -->
+        <div class="relative flex-shrink-0">
+          <div class="inline-flex rounded-xl overflow-hidden">
+            <a 
+              href="{% url 'billing_list' %}" 
+              class="flex items-center gap-1.5 px-3.5 py-2.5 text-xs transition {% if active_tab == 'billing' %}bg-slate-800 text-amber-400 font-semibold border-l border-t border-b border-amber-500/50 shadow-sm{% else %}font-medium text-slate-300 hover:text-white hover:bg-slate-800{% endif %}"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+              <span>Invoices</span>
+            </a>
+            <button 
+              @click.stop="openMenu = (openMenu === 'invoices' ? null : 'invoices')" 
+              class="px-2 py-2.5 text-xs transition {% if active_tab == 'billing' %}bg-slate-800 text-amber-400 border-r border-t border-b border-amber-500/50{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}"
+            >
+              <svg class="w-3.5 h-3.5 transition-transform duration-200" :class="openMenu === 'invoices' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+          </div>
+
+          <div x-show="openMenu === 'invoices'" class="absolute top-full left-0 mt-2 w-64 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 p-2 space-y-1 text-xs" style="display: none;">
+            <a href="{% url 'billing_list' %}" class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left">
+              <span class="font-normal">All Invoices</span>
+              <span class="font-mono text-[10px] text-slate-500">({{ header_counts.invoices_count|default:"0" }})</span>
+            </a>
+          </div>
+        </div>
+        {% endif %}
+
+        {% if can_view_receipts %}
+        <!-- 6. Payment Receipts -->
+        <a 
+          href="{% url 'receipts_list' %}" 
+          class="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs transition flex-shrink-0 {% if active_tab == 'receipts' %}bg-slate-800 text-amber-400 font-semibold border border-amber-500/50 shadow-sm{% else %}font-medium text-slate-300 hover:text-white hover:bg-slate-800{% endif %}"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span>Receipts</span>
+        </a>
+        {% endif %}
+
+        {% if can_view_accounts %}
+        <!-- 7. Accounts & Financials Dropdown -->
+        <div class="relative flex-shrink-0">
+          <div class="inline-flex rounded-xl overflow-hidden">
+            <a 
+              href="{% url 'accounting:overview' %}" 
+              class="flex items-center gap-1.5 px-3.5 py-2.5 text-xs transition {% if active_tab == 'accounts' or active_tab == 'expenses' or active_tab == 'receivables' or active_tab == 'payables' or active_tab == 'profit_loss' or active_tab == 'balance_sheet' or active_tab == 'cash_flow' or active_tab == 'vat' %}bg-slate-800 text-amber-400 font-semibold border-l border-t border-b border-amber-500/50 shadow-sm{% else %}font-medium text-slate-300 hover:text-white hover:bg-slate-800{% endif %}"
+            >
+              <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <span>Accounts</span>
+            </a>
+            <button 
+              @click.stop="openMenu = (openMenu === 'accounts' ? null : 'accounts')" 
+              class="px-2 py-2.5 text-xs transition {% if active_tab == 'accounts' %}bg-slate-800 text-amber-400 border-r border-t border-b border-amber-500/50{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}"
+            >
+              <svg class="w-3.5 h-3.5 transition-transform duration-200" :class="openMenu === 'accounts' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+          </div>
+
+          <!-- Accounts Dropdown with Individual Sub-Nav Link Permissions -->
+          <div x-show="openMenu === 'accounts'" class="absolute top-full left-0 mt-2 w-64 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 p-2 space-y-1 text-xs" style="display: none;">
+            {% if can_view_financial_overview %}
+            <a href="{% url 'accounting:overview' %}" class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left">
+              <span class="font-semibold text-amber-400">Financial Overview</span>
+            </a>
+            {% endif %}
+            {% if can_view_receivables %}
+            <a href="{% url 'accounting:receivables' %}" class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left">
+              <span>Accounts Receivable (AR)</span>
+            </a>
+            {% endif %}
+            {% if can_view_payables %}
+            <a href="{% url 'accounting:payables' %}" class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left">
+              <span>Accounts Payable (AP)</span>
+            </a>
+            {% endif %}
+            {% if can_view_expenses %}
+            <a href="{% url 'accounting:expenses' %}" class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left">
+              <span>Expenses Management</span>
+            </a>
+            {% endif %}
+            {% if can_view_statements %}
+            <a href="{% url 'accounting:customer_statements' %}" class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left">
+              <span>Customer Statements</span>
+            </a>
+            {% endif %}
+            {% if can_view_profit_loss or can_view_balance_sheet or can_view_cash_flow or can_view_vat %}
+            <div class="h-px bg-slate-800 my-1"></div>
+            {% endif %}
+            {% if can_view_profit_loss %}
+            <a href="{% url 'accounting:profit_loss' %}" class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left">
+              <span>Profit &amp; Loss Statement</span>
+            </a>
+            {% endif %}
+            {% if can_view_balance_sheet %}
+            <a href="{% url 'accounting:balance_sheet' %}" class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left">
+              <span>Balance Sheet</span>
+            </a>
+            {% endif %}
+            {% if can_view_cash_flow %}
+            <a href="{% url 'accounting:cash_flow' %}" class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left">
+              <span>Cash Flow Statement</span>
+            </a>
+            {% endif %}
+            {% if can_view_vat %}
+            <a href="{% url 'accounting:vat_report' %}" class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left">
+              <span>VAT &amp; Tax Report</span>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if can_view_reports %}
+        <!-- 8. Reports Center -->
+        <a 
+          href="{% url 'accounting:reports_hub' %}" 
+          class="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs transition flex-shrink-0 {% if active_tab == 'reports' %}bg-slate-800 text-amber-400 font-semibold border border-amber-500/50 shadow-sm{% else %}font-medium text-slate-300 hover:text-white hover:bg-slate-800{% endif %}"
+        >
+          <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          <span>Reports</span>
+        </a>
+        {% endif %}
+
+        {% if can_view_analytics %}
+        <!-- 9. Analytics -->
+        <a 
+          href="{% url 'accounting:analytics_hub' %}" 
+          class="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs transition flex-shrink-0 {% if active_tab == 'analytics' %}bg-slate-800 text-amber-400 font-semibold border border-amber-500/50 shadow-sm{% else %}font-medium text-slate-300 hover:text-white hover:bg-slate-800{% endif %}"
+        >
+          <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          <span>Analytics</span>
+        </a>
+        {% endif %}
+
+        {% if can_view_customers %}
+        <!-- 10. Customers -->
+        <a 
+          href="{% url 'customers_list' %}" 
+          class="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs transition flex-shrink-0 {% if active_tab == 'customers' %}bg-slate-800 text-amber-400 font-semibold border border-amber-500/50 shadow-sm{% else %}font-medium text-slate-300 hover:text-white hover:bg-slate-800{% endif %}"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+          <span>Customers</span>
+        </a>
+        {% endif %}
+
+        {% if can_access_admin %}
+        <!-- 11. Administration Dropdown -->
+        <div class="relative flex-shrink-0">
+          <div class="inline-flex rounded-xl overflow-hidden">
+            <a 
+              href="{% url 'administration-users' %}" 
+              class="flex items-center gap-1.5 px-3.5 py-2.5 text-xs transition {% if active_tab == 'administration' %}bg-slate-800 text-amber-400 font-semibold border-l border-t border-b border-amber-500/50 shadow-sm{% else %}font-medium text-slate-300 hover:text-white hover:bg-slate-800{% endif %}"
+            >
+              <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+              <span>Administration</span>
+            </a>
+            <button 
+              @click.stop="openMenu = (openMenu === 'admin' ? null : 'admin')" 
+              class="px-2 py-2.5 text-xs transition {% if active_tab == 'administration' %}bg-slate-800 text-amber-400 border-r border-t border-b border-amber-500/50{% else %}text-slate-400 hover:text-white hover:bg-slate-800{% endif %}"
+            >
+              <svg class="w-3.5 h-3.5 transition-transform duration-200" :class="openMenu === 'admin' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+          </div>
+
+          <div x-show="openMenu === 'admin'" class="absolute top-full right-0 mt-2 w-64 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 p-2 space-y-1 text-xs" style="display: none;">
+            {% if can_manage_settings or is_superuser %}
+            <a href="{% url 'administration-company-settings' %}" class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left">
+              <span class="font-normal">Company &amp; Business Settings</span>
+            </a>
+            {% endif %}
+            {% if can_manage_users %}
+            <a href="{% url 'administration-users' %}" class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left">
+              <span class="font-normal">User Management</span>
+            </a>
+            {% endif %}
+            {% if can_manage_roles %}
+            <a href="{% url 'administration-roles' %}" class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left">
+              <span class="font-normal">Roles &amp; Permissions</span>
+            </a>
+            {% endif %}
+            {% if can_view_audit %}
+            <a href="{% url 'administration-audit-logs' %}" class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left">
+              <span class="font-normal">Security &amp; Audit Logs</span>
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <!-- Customer Portal Navigation View -->
+        <div class="flex items-center justify-between w-full py-0.5">
+          <div class="flex items-center gap-2">
+            <span class="px-3 py-1.5 rounded-xl bg-slate-800 text-amber-400 font-semibold border border-amber-500/50 text-xs shadow-sm flex items-center gap-2">
+              <svg class="w-4 h-4 text-[#dca048]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+              <span>Customer Portal &bull; Quotation Review</span>
+            </span>
+          </div>
+          <div class="hidden sm:flex items-center gap-3 text-xs text-slate-400">
+            <span>Official Client Document</span>
+            <span class="text-slate-600">&bull;</span>
+            <span class="text-[#dca048] font-mono font-medium">{{ branding.tagline|default:"ALWAYS ON TIME" }}</span>
+          </div>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+  </nav>
+
+  <!-- SweetAlert2 Toast Handler for Django Messages -->
+  {% if messages %}
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 4000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+          toast.addEventListener('mouseenter', Swal.stopTimer);
+          toast.addEventListener('mouseleave', Swal.resumeTimer);
+        }
+      });
+      {% for message in messages %}
+      Toast.fire({
+        icon: "{% if message.tags == 'success' %}success{% elif message.tags == 'error' %}error{% elif message.tags == 'warning' %}warning{% else %}info{% endif %}",
+        title: "{{ message|escapejs }}"
+      });
+      {% endfor %}
+    });
+  </script>
+  {% endif %}
+
+  <!-- Automated Mailbox Poller & Background Refresh Script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const pollIntervalMs = 25000; // Poll every 25 seconds
+
+      async function checkMailboxInBackground() {
+        try {
+          const response = await fetch('/system/auto-poll-inbox/');
+          if (response.ok) {
+            const data = await response.json();
+            if (data.status === 'success' && data.synced_count > 0) {
+              Swal.fire({
+                title: 'New Purchase Order Received!',
+                text: `${data.synced_count} new purchase order(s) received. Updating view...`,
+                icon: 'success',
+                timer: 2500,
+                showConfirmButton: false,
+                customClass: {
+                  popup: 'rounded-2xl shadow-2xl border border-slate-200'
+                }
+              }).then(() => {
+                window.location.reload();
+              });
+            }
+          }
+        } catch (err) {
+          console.warn('Background mailbox poll:', err);
+        }
+      }
+
+      // Initial check after 5 seconds, then recurring every 25 seconds
+      setTimeout(checkMailboxInBackground, 5000);
+      setInterval(checkMailboxInBackground, pollIntervalMs);
+    });
+  </script>
+
+  <!-- Main Content -->
+  <main class="layout-container py-6 flex-grow w-full">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Global Modals Inclusion -->
+  {% include "dashboard/modals.html" %}
+
+  <!-- Footer -->
+  <footer class="bg-slate-900 text-slate-400 text-xs py-6 border-t border-slate-800 mt-auto no-print">
+    <div class="layout-container flex flex-col sm:flex-row justify-between items-center gap-3 text-center sm:text-left">
+      <div class="space-y-0.5">
+        <p>&copy; 2026 {{ branding.brand_name|default:"Menard Trading CC" }}. All rights reserved.</p>
+        <p class="text-[11px] text-slate-400">{{ branding.company_address|default:"Menard Trading CC Logistics Hub • Namibia" }}</p>
+      </div>
+      <div class="space-y-0.5 text-center sm:text-right">
+        <p class="text-xs text-slate-400 flex items-center justify-center sm:justify-end gap-1">
+          <span>Made with</span>
+          <span class="text-rose-500 inline-block text-xs">❤️</span>
+          <span>by</span>
+        </p>
+        <p class="text-[11px]">
+          <a href="https://cosmos-ai-labs.com/" target="_blank" rel="noopener noreferrer" class="font-medium text-[#dca048] hover:text-[#f0b560] hover:underline transition">
+            CoSMOS AI Labs
+          </a>
+        </p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

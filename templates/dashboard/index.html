@@ -1,0 +1,898 @@
+{% extends "dashboard/base_dashboard.html" %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- ============================================================ -->
+  <!-- TOP CONTROLS & KPI CARDS                                    -->
+  <!-- ============================================================ -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+    <div>
+      <h2 class="text-lg font-bold text-slate-900">Menard Trading CC Operations Center</h2>
+      <p class="text-xs text-slate-500">Live order-to-cash workflow &bull; Brevo multi-sender connected &bull; Real document processing</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <!-- Sync Live Mailbox Action -->
+      <form id="sync_inbox_form" method="POST" action="{% url 'sync_inbox' %}" class="inline">
+        {% csrf_token %}
+        <button type="submit" class="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition" title="Fetch incoming emails from orders@menardtrading.com">
+          <svg class="w-4 h-4 text-sky-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+          <span>Sync Live Mailbox</span>
+        </button>
+      </form>
+
+      <!-- Quick Action: Upload PO -->
+      <button @click="activeModal = 'upload_po_modal'" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm flex items-center gap-1.5 transition">
+        <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+        <span>Upload Real PO (PDF)</span>
+      </button>
+
+      <!-- Quick Action: Add Customer -->
+      <button @click="activeModal = 'create_customer_modal'" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition">
+        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+        <span>New Customer</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    
+    <!-- Revenue Collected -->
+    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+      <div>
+        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Revenue Collected</p>
+        <p class="text-2xl font-black text-emerald-600 mt-1">R {{ metrics.total_revenue|floatformat:2 }}</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">&check; Fully receipted via Brevo</p>
+      </div>
+      <div class="p-3 bg-emerald-50 rounded-xl text-emerald-600">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Outstanding Balance -->
+    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+      <div>
+        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Outstanding Invoices</p>
+        <p class="text-2xl font-black text-rose-600 mt-1">R {{ metrics.unpaid_balance|floatformat:2 }}</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">Across active &amp; staged jobs</p>
+      </div>
+      <div class="p-3 bg-rose-50 rounded-xl text-rose-600">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Active Logistics Jobs -->
+    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+      <div>
+        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Freight Jobs</p>
+        <p class="text-2xl font-black text-slate-900 mt-1">{{ metrics.active_jobs }} Consignments</p>
+        <p class="text-xs text-amber-600 font-medium mt-0.5">Dispatched &amp; In-transit</p>
+      </div>
+      <div class="p-3 bg-amber-50 rounded-xl text-amber-600">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 17a2 2 0 100 4 2 2 0 000-4zm10 0a2 2 0 100 4 2 2 0 000-4zM13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10h10zm0 0h5.586a1 1 0 00.707-.293l2.414-2.414A1 1 0 0022 12.586V16h-3m-6 0h2"></path>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Pending Quotes -->
+    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+      <div>
+        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Quotes Awaiting Approval</p>
+        <p class="text-2xl font-black text-slate-900 mt-1">{{ metrics.pending_quotes }} Quotes</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">Automated 1-click links active</p>
+      </div>
+      <div class="p-3 bg-blue-50 rounded-xl text-blue-600">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- TAB 1: OVERVIEW KANBAN & TIMELINE                           -->
+  <!-- ============================================================ -->
+  <div x-show="currentTab === 'overview'" class="space-y-6">
+    
+    <!-- Order-to-Cash Workflow Pipeline -->
+    <div class="bg-slate-900 p-6 rounded-2xl text-white shadow-md border border-slate-800">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4">
+        <div>
+          <h3 class="text-lg font-extrabold text-amber-400">Order-to-Cash Automation Pipeline</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Inbound Brevo PO &rarr; Auto-Quote &rarr; Multi-Stage Invoicing &rarr; Instant Receipts</p>
+        </div>
+        <div class="flex gap-2">
+          <button @click="currentTab = 'orders'" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition">
+            + View Inbound POs ({{ orders|length }})
+          </button>
+        </div>
+      </div>
+
+      <!-- Pipeline Steps Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+        
+        <!-- Step 1: PO Intake -->
+        <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-amber-400">1. Inbound PO</span>
+            <span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded">Brevo Webhook</span>
+          </div>
+          <p class="text-xs text-slate-300">Customer emails PO to <code class="text-amber-300">orders@menardtrading.com</code> or upload real PDF.</p>
+        </div>
+
+        <!-- Step 2: Auto Quotation -->
+        <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-blue-400">2. Smart Quotation</span>
+            <span class="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded">1-Click Approve</span>
+          </div>
+          <p class="text-xs text-slate-300">System drafts quote and emails customer with interactive 1-click acceptance portal.</p>
+        </div>
+
+        <!-- Step 3: Multi-Stage Invoicing -->
+        <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-purple-400">3. Staged Billing</span>
+            <span class="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded">Full/Deposit/Addons</span>
+          </div>
+          <p class="text-xs text-slate-300">Issues 50% deposit, add-on demurrage fees, and balance on POD upload.</p>
+        </div>
+
+        <!-- Step 4: Receipts -->
+        <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-emerald-400">4. Auto Receipts</span>
+            <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded">Instant PDF</span>
+          </div>
+          <p class="text-xs text-slate-300">Instant generation and email dispatch of official payment receipts &amp; balances.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Live Operational Feeds -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      
+      <!-- Recent Active Jobs -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+          <h3 class="font-bold text-slate-900 text-base">Active Freight Dispatches</h3>
+          <button @click="currentTab = 'jobs'" class="text-xs text-amber-600 hover:text-amber-700 font-semibold">View All &rarr;</button>
+        </div>
+
+        <div class="divide-y divide-slate-100">
+          {% for job in jobs|slice:":5" %}
+          <div class="py-3 flex items-center justify-between">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-900 text-sm">{{ job.job_number }}</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">{{ job.get_status_display }}</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5">{{ job.customer.company_name }} &bull; {{ job.pickup_address|truncatechars:25 }} &rarr; {{ job.delivery_address|truncatechars:25 }}</p>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-bold text-slate-900 block">R {{ job.quote_total|floatformat:2 }}</span>
+              <span class="text-[10px] text-slate-400">Invoiced: R {{ job.total_invoiced|floatformat:2 }}</span>
+            </div>
+          </div>
+          {% empty %}
+          <p class="text-xs text-slate-400 py-4 text-center">No active logistics jobs yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Recent Billing & Invoices -->
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+          <h3 class="font-bold text-slate-900 text-base">Recent Invoices &amp; Balances</h3>
+          <button @click="currentTab = 'invoices'" class="text-xs text-amber-600 hover:text-amber-700 font-semibold">View All &rarr;</button>
+        </div>
+
+        <div class="divide-y divide-slate-100">
+          {% for inv in invoices|slice:":5" %}
+          <div class="py-3 flex items-center justify-between">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-900 text-sm">{{ inv.invoice_number }}</span>
+                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full {% if inv.status == 'PAID' %}bg-emerald-100 text-emerald-800{% else %}bg-amber-100 text-amber-800{% endif %}">
+                  {{ inv.get_status_display }}
+                </span>
+                <span class="text-[10px] text-slate-500">{{ inv.get_invoice_type_display }}</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-0.5">{{ inv.customer.company_name }} &bull; Due: {{ inv.due_date|date:"d M Y" }}</p>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-bold text-slate-900 block">R {{ inv.total_amount|floatformat:2 }}</span>
+              <span class="text-[11px] font-bold text-rose-600">Bal: R {{ inv.balance_due|floatformat:2 }}</span>
+            </div>
+          </div>
+          {% empty %}
+          <p class="text-xs text-slate-400 py-4 text-center">No invoices issued yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- TAB 2: INBOUND PURCHASE ORDERS                              -->
+  <!-- ============================================================ -->
+  <div x-show="currentTab === 'orders'" class="space-y-4">
+    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">Inbound Purchase Orders (POs)</h2>
+          <p class="text-xs text-slate-500">Automatically received via Brevo Inbound Webhook (<code class="text-amber-600">orders@menardtrading.com</code>) or uploaded directly</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <form method="POST" action="{% url 'sync_inbox' %}" class="inline">
+            {% csrf_token %}
+            <button type="submit" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition">
+              <svg class="w-4 h-4 text-sky-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+              <span>Sync Live Mailbox</span>
+            </button>
+          </form>
+          <button @click="activeModal = 'upload_po_modal'" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm flex items-center gap-1.5 transition">
+            <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+            <span>+ Upload Customer PO File</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+            <tr>
+              <th class="px-4 py-3">PO Number</th>
+              <th class="px-4 py-3">Customer / Sender</th>
+              <th class="px-4 py-3">Route &amp; Cargo</th>
+              <th class="px-4 py-3 text-center">Weight (Tons)</th>
+              <th class="px-4 py-3">Status</th>
+              <th class="px-4 py-3">Received Date</th>
+              <th class="px-4 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for po in orders %}
+            <tr class="hover:bg-amber-50/40 transition cursor-pointer group" onclick="window.location='{% url 'purchase_order_detail' po.id %}';">
+              <td class="px-4 py-3 font-bold text-slate-900 group-hover:text-amber-600 transition">
+                <div class="flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                  <span>{{ po.po_number }}</span>
+                </div>
+              </td>
+              <td class="px-4 py-3">
+                <span class="font-medium text-slate-900 block">{{ po.customer.company_name|default:po.raw_email_sender }}</span>
+                <span class="text-xs text-slate-500">{{ po.raw_email_sender }}</span>
+              </td>
+              <td class="px-4 py-3">
+                <span class="text-xs font-medium text-slate-800 block">{{ po.pickup_location|default:"N/A" }} &rarr; {{ po.delivery_location|default:"N/A" }}</span>
+                <span class="text-xs text-slate-500">{{ po.cargo_description|default:"General Cargo" }}</span>
+              </td>
+              <td class="px-4 py-3 text-center font-semibold text-slate-700">{{ po.weight_tons|default:"-" }}</td>
+              <td class="px-4 py-3">
+                <span class="text-xs font-bold px-2.5 py-1 rounded-full {% if po.status == 'QUOTED' %}bg-blue-100 text-blue-800{% elif po.status == 'JOB_CREATED' %}bg-purple-100 text-purple-800{% else %}bg-slate-100 text-slate-700{% endif %}">
+                  {{ po.get_status_display }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-xs text-slate-500">{{ po.created_at|date:"d M Y H:i" }}</td>
+              <td class="px-4 py-3 text-right" onclick="event.stopPropagation();">
+                <div class="flex items-center justify-end gap-2">
+                  <a href="{% url 'purchase_order_detail' po.id %}" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition">
+                    Details &amp; Reply &rarr;
+                  </a>
+                  {% if po.quotation %}
+                  <button @click="currentTab = 'quotes'" class="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold text-xs transition">
+                    Quote #{{ po.quotation.quote_number }}
+                  </button>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="px-4 py-8 text-center text-slate-400">No purchase orders uploaded yet. Click "+ Upload Customer PO File" above or send to Brevo inbound.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- TAB 3: QUOTATIONS DESK                                      -->
+  <!-- ============================================================ -->
+  <div x-show="currentTab === 'quotes'" class="space-y-4">
+    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">Quotations Desk</h2>
+          <p class="text-xs text-slate-500">Auto-drafted from customer POs or manually created, with 1-click Brevo email dispatch &amp; approval tokens</p>
+        </div>
+        <button @click="activeModal = 'create_quote_modal'" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition">
+          <span>+ Create Quotation</span>
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+            <tr>
+              <th class="px-4 py-3">Quote #</th>
+              <th class="px-4 py-3">Customer</th>
+              <th class="px-4 py-3">Subtotal</th>
+              <th class="px-4 py-3">VAT (15%)</th>
+              <th class="px-4 py-3">Total Amount</th>
+              <th class="px-4 py-3">Status</th>
+              <th class="px-4 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for quote in quotes %}
+            <tr class="hover:bg-slate-50 transition">
+              <td class="px-4 py-3 font-bold text-slate-900">{{ quote.quote_number }}</td>
+              <td class="px-4 py-3 font-medium text-slate-900">{{ quote.customer.company_name }}</td>
+              <td class="px-4 py-3 text-slate-600">R {{ quote.subtotal|floatformat:2 }}</td>
+              <td class="px-4 py-3 text-slate-600">R {{ quote.vat_amount|floatformat:2 }}</td>
+              <td class="px-4 py-3 font-extrabold text-slate-900">R {{ quote.total_amount|floatformat:2 }}</td>
+              <td class="px-4 py-3">
+                <span class="text-xs font-bold px-2.5 py-1 rounded-full {% if quote.status == 'APPROVED' %}bg-emerald-100 text-emerald-800{% elif quote.status == 'SENT' %}bg-blue-100 text-blue-800{% else %}bg-slate-100 text-slate-700{% endif %}">
+                  {{ quote.get_status_display }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-right space-x-2">
+                <a href="{% url 'quote_portal' quote.approval_token %}" target="_blank" class="px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-100">
+                  Portal Link
+                </a>
+                <a href="{% url 'quote_pdf_download' quote.id %}" target="_blank" class="px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-100">
+                  PDF
+                </a>
+                {% if quote.status == 'DRAFT' %}
+                <form method="POST" action="{% url 'send_quote_email' quote.id %}" class="inline">
+                  {% csrf_token %}
+                  <button type="submit" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm">
+                    Send via Brevo &rarr;
+                  </button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="px-4 py-8 text-center text-slate-400">No quotations generated yet.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- TAB 4: LOGISTICS JOBS & FLEET TRACKING                      -->
+  <!-- ============================================================ -->
+  <div x-show="currentTab === 'jobs'" class="space-y-4">
+    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div class="flex justify-between items-center mb-6">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">Freight Jobs &amp; Dispatch</h2>
+          <p class="text-xs text-slate-500">Track consignments, assign fleet, upload real POD documents, and trigger milestone invoices</p>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        {% for job in jobs %}
+        <div class="p-5 rounded-xl border border-slate-200 bg-slate-50 hover:border-slate-300 transition space-y-3">
+          
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <div>
+              <span class="text-xs font-extrabold text-amber-600 uppercase tracking-wider">{{ job.job_number }}</span>
+              <h3 class="text-base font-bold text-slate-900">{{ job.customer.company_name }}</h3>
+              <p class="text-xs text-slate-500"><strong>Route:</strong> {{ job.pickup_address }} &rarr; {{ job.delivery_address }}</p>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-bold text-slate-900 block">Total Contract: R {{ job.quote_total|floatformat:2 }}</span>
+              <span class="text-xs text-slate-500">Invoiced: R {{ job.total_invoiced|floatformat:2 }} &bull; Unbilled: <strong class="text-amber-600">R {{ job.remaining_uninvoiced|floatformat:2 }}</strong></span>
+            </div>
+          </div>
+
+          <!-- Driver & Fleet status bar -->
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-200 text-xs">
+            <div class="flex items-center gap-4 text-slate-600">
+              <span><strong>Fleet:</strong> {{ job.vehicle_registration|default:"Unassigned" }}</span>
+              <span><strong>Driver:</strong> {{ job.driver_name|default:"Unassigned" }} ({{ job.driver_phone|default:"-" }})</span>
+              <span><strong>Status:</strong> <strong class="text-slate-900">{{ job.get_status_display }}</strong></span>
+            </div>
+
+            <!-- Action Buttons for this Job -->
+            <div class="flex flex-wrap items-center gap-2">
+              
+              <!-- Quick Status Form -->
+              <form method="POST" action="{% url 'update_job_status' job.id %}" class="inline-flex items-center gap-1">
+                {% csrf_token %}
+                <select name="status" class="text-xs border border-slate-300 rounded px-2 py-1 bg-white">
+                  <option value="BOOKED" {% if job.status == 'BOOKED' %}selected{% endif %}>Booked</option>
+                  <option value="DISPATCHED" {% if job.status == 'DISPATCHED' %}selected{% endif %}>Dispatched</option>
+                  <option value="IN_TRANSIT" {% if job.status == 'IN_TRANSIT' %}selected{% endif %}>In Transit</option>
+                  <option value="DELIVERED" {% if job.status == 'DELIVERED' %}selected{% endif %}>Delivered</option>
+                  <option value="POD_RECEIVED" {% if job.status == 'POD_RECEIVED' %}selected{% endif %}>POD Verified</option>
+                  <option value="CLOSED" {% if job.status == 'CLOSED' %}selected{% endif %}>Closed</option>
+                </select>
+                <button type="submit" class="px-2 py-1 rounded bg-slate-800 text-white font-medium hover:bg-slate-700">Update</button>
+              </form>
+
+              <!-- Upload POD Form -->
+              <form method="POST" action="{% url 'upload_pod' job.id %}" enctype="multipart/form-data" class="inline-flex items-center gap-1">
+                {% csrf_token %}
+                <label class="cursor-pointer px-2 py-1 bg-blue-50 border border-blue-200 text-blue-700 rounded hover:bg-blue-100 font-semibold">
+                  <span>Upload POD</span>
+                  <input type="file" name="pod_document" onchange="this.form.submit()" class="hidden">
+                </label>
+              </form>
+              {% if job.pod_document %}
+              <a href="{{ job.pod_document.url }}" target="_blank" class="px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded font-semibold">
+                &check; View POD
+              </a>
+              {% endif %}
+
+              <!-- Invoice Generation Trigger -->
+              <button @click="activeModal = 'invoice_modal_{{ job.id }}'" class="px-3 py-1 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-sm">
+                + Issue Invoice
+              </button>
+
+            </div>
+          </div>
+
+          <!-- MODAL: Issue Invoice for this Job -->
+          <div x-show="activeModal === 'invoice_modal_{{ job.id }}'" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4" x-cloak>
+            <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4">
+              <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-lg text-slate-900">Issue Invoice for {{ job.job_number }}</h3>
+                <button @click="activeModal = null" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+              </div>
+
+              <form method="POST" action="{% url 'issue_invoice_action' job.id %}" class="space-y-4 text-xs">
+                {% csrf_token %}
+                <div>
+                  <label class="font-bold text-slate-700 block mb-1">Select Invoicing Milestone:</label>
+                  <select name="invoice_type" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-semibold text-slate-900">
+                    <option value="FULL">100% Upfront Tax Invoice (R {{ job.quote_total|floatformat:2 }})</option>
+                    <option value="PARTIAL_DEPOSIT">50% Mobilization Deposit (R {{ job.quote.subtotal|floatformat:2 }} &times; 50%)</option>
+                    <option value="PARTIAL_BALANCE">Final Balance on POD (Unbilled: R {{ job.remaining_uninvoiced|floatformat:2 }})</option>
+                    <option value="ADD_ON">Supplementary / Add-on (Demurrage, Waiting Time, Extra Tolls)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="font-bold text-slate-700 block mb-1">Add-on Description (If applicable):</label>
+                  <input type="text" name="addon_description" placeholder="e.g. Demurrage - 4 hours waiting at offloading bay" class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50">
+                </div>
+
+                <div>
+                  <label class="font-bold text-slate-700 block mb-1">Add-on Amount (Excl VAT):</label>
+                  <input type="number" step="0.01" name="addon_amount" value="450.00" class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50">
+                </div>
+
+                <div class="flex items-center gap-2 pt-2">
+                  <input type="checkbox" name="send_email" value="true" checked id="send_email_{{ job.id }}">
+                  <label for="send_email_{{ job.id }}" class="text-slate-700 font-medium">Automatically dispatch PDF Invoice via Brevo to {{ job.customer.email }}</label>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-4 border-t">
+                  <button type="button" @click="activeModal = null" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold">Cancel</button>
+                  <button type="submit" class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold">Generate &amp; Issue Invoice</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+        </div>
+        {% empty %}
+        <p class="text-xs text-slate-400 py-8 text-center">No logistics jobs created yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- TAB 5: BILLING & INVOICES                                   -->
+  <!-- ============================================================ -->
+  <div x-show="currentTab === 'invoices'" class="space-y-4">
+    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div class="flex justify-between items-center mb-6">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">Tax Invoices &amp; Accounts</h2>
+          <p class="text-xs text-slate-500">Milestone, upfront, deposit, and supplementary invoices linked to transport jobs</p>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+            <tr>
+              <th class="px-4 py-3">Invoice #</th>
+              <th class="px-4 py-3">Customer</th>
+              <th class="px-4 py-3">Type</th>
+              <th class="px-4 py-3">Total Amount</th>
+              <th class="px-4 py-3">Paid</th>
+              <th class="px-4 py-3">Balance Due</th>
+              <th class="px-4 py-3">Status</th>
+              <th class="px-4 py-3 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for inv in invoices %}
+            <tr class="hover:bg-slate-50 transition">
+              <td class="px-4 py-3 font-bold text-slate-900">{{ inv.invoice_number }}</td>
+              <td class="px-4 py-3 font-medium text-slate-900">{{ inv.customer.company_name }}</td>
+              <td class="px-4 py-3 text-xs text-slate-600">{{ inv.get_invoice_type_display }}</td>
+              <td class="px-4 py-3 font-bold text-slate-900">R {{ inv.total_amount|floatformat:2 }}</td>
+              <td class="px-4 py-3 text-emerald-600 font-medium">R {{ inv.amount_paid|floatformat:2 }}</td>
+              <td class="px-4 py-3 font-bold text-rose-600">R {{ inv.balance_due|floatformat:2 }}</td>
+              <td class="px-4 py-3">
+                <span class="text-xs font-bold px-2.5 py-1 rounded-full {% if inv.status == 'PAID' %}bg-emerald-100 text-emerald-800{% elif inv.status == 'PARTIALLY_PAID' %}bg-amber-100 text-amber-800{% else %}bg-slate-100 text-slate-700{% endif %}">
+                  {{ inv.get_status_display }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-right space-x-2">
+                <a href="{% url 'invoice_pdf_download' inv.id %}" target="_blank" class="px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-100">
+                  PDF
+                </a>
+                {% if inv.balance_due > 0 %}
+                <button @click="activeModal = 'pay_modal_{{ inv.id }}'" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm">
+                  Record Payment &rarr;
+                </button>
+                {% endif %}
+              </td>
+            </tr>
+
+            <!-- MODAL: Record Payment for this Invoice -->
+            <div x-show="activeModal === 'pay_modal_{{ inv.id }}'" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4" x-cloak>
+              <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+                <div class="flex justify-between items-center border-b pb-3">
+                  <h3 class="font-bold text-lg text-slate-900">Record Payment for {{ inv.invoice_number }}</h3>
+                  <button @click="activeModal = null" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+                </div>
+
+                <form method="POST" action="{% url 'record_payment_action' inv.id %}" class="space-y-4 text-xs">
+                  {% csrf_token %}
+                  <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <p class="text-slate-600">Invoice Total: <strong>R {{ inv.total_amount|floatformat:2 }}</strong></p>
+                    <p class="text-rose-600 font-bold">Outstanding Balance: R {{ inv.balance_due|floatformat:2 }}</p>
+                  </div>
+
+                  <div>
+                    <label class="font-bold text-slate-700 block mb-1">Amount Paid (ZAR):</label>
+                    <input type="number" step="0.01" name="amount_paid" value="{{ inv.balance_due }}" max="{{ inv.balance_due }}" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-bold text-slate-900">
+                  </div>
+
+                  <div>
+                    <label class="font-bold text-slate-700 block mb-1">Payment Method:</label>
+                    <select name="payment_method" class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50">
+                      <option value="EFT_BANK_TRANSFER">EFT / Bank Transfer</option>
+                      <option value="DIRECT_DEPOSIT">Direct Bank Deposit</option>
+                      <option value="CREDIT_CARD">Credit Card</option>
+                      <option value="CASH">Cash</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="font-bold text-slate-700 block mb-1">Bank Confirmation / POP Reference:</label>
+                    <input type="text" name="transaction_reference" placeholder="e.g. FNB-REF-987456" required class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50">
+                  </div>
+
+                  <p class="text-[11px] text-slate-500">
+                    &check; System will automatically generate an Official Payment Receipt PDF and dispatch it to <strong>{{ inv.customer.email }}</strong> via Brevo.
+                  </p>
+
+                  <div class="flex justify-end gap-2 pt-4 border-t">
+                    <button type="button" @click="activeModal = null" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold">Cancel</button>
+                    <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold">Confirm &amp; Send Receipt</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            {% empty %}
+            <tr>
+              <td colspan="8" class="px-4 py-8 text-center text-slate-400">No invoices generated yet.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- TAB 6: PAYMENT RECEIPTS                                     -->
+  <!-- ============================================================ -->
+  <div x-show="currentTab === 'receipts'" class="space-y-4">
+    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div class="flex justify-between items-center mb-6">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">Official Payment Receipts</h2>
+          <p class="text-xs text-slate-500">Issued and emailed automatically to clients upon settlement</p>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+            <tr>
+              <th class="px-4 py-3">Receipt #</th>
+              <th class="px-4 py-3">Customer</th>
+              <th class="px-4 py-3">Invoice Ref</th>
+              <th class="px-4 py-3">Amount Paid</th>
+              <th class="px-4 py-3">Method</th>
+              <th class="px-4 py-3">Bank Ref</th>
+              <th class="px-4 py-3">Date</th>
+              <th class="px-4 py-3 text-right">PDF</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for rcp in receipts %}
+            <tr class="hover:bg-slate-50 transition">
+              <td class="px-4 py-3 font-bold text-slate-900">{{ rcp.receipt_number }}</td>
+              <td class="px-4 py-3 font-medium text-slate-900">{{ rcp.customer.company_name }}</td>
+              <td class="px-4 py-3 text-slate-600">{{ rcp.invoice.invoice_number }}</td>
+              <td class="px-4 py-3 font-black text-emerald-600">R {{ rcp.amount_paid|floatformat:2 }}</td>
+              <td class="px-4 py-3 text-xs text-slate-600">{{ rcp.get_payment_method_display }}</td>
+              <td class="px-4 py-3 font-mono text-xs text-slate-700">{{ rcp.transaction_reference }}</td>
+              <td class="px-4 py-3 text-xs text-slate-500">{{ rcp.payment_date|date:"d M Y" }}</td>
+              <td class="px-4 py-3 text-right">
+                <a href="{% url 'receipt_pdf_download' rcp.id %}" target="_blank" class="px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-100">
+                  Download PDF
+                </a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="8" class="px-4 py-8 text-center text-slate-400">No payment receipts recorded yet.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- TAB 7: CUSTOMER DIRECTORY                                   -->
+  <!-- ============================================================ -->
+  <div x-show="currentTab === 'customers'" class="space-y-4">
+    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">Customer Directory</h2>
+          <p class="text-xs text-slate-500">Corporate clients, billing contacts, and payment terms</p>
+        </div>
+        <button @click="activeModal = 'create_customer_modal'" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition">
+          <span>+ Register New Customer</span>
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+            <tr>
+              <th class="px-4 py-3">Company Name</th>
+              <th class="px-4 py-3">Contact Person</th>
+              <th class="px-4 py-3">Email</th>
+              <th class="px-4 py-3">Phone</th>
+              <th class="px-4 py-3">Payment Terms</th>
+              <th class="px-4 py-3">VAT No</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for cust in customers %}
+            <tr class="hover:bg-slate-50 transition">
+              <td class="px-4 py-3 font-bold text-slate-900">{{ cust.company_name }}</td>
+              <td class="px-4 py-3 font-medium text-slate-900">{{ cust.contact_name }}</td>
+              <td class="px-4 py-3 text-slate-600">{{ cust.email }}</td>
+              <td class="px-4 py-3 text-slate-600">{{ cust.phone }}</td>
+              <td class="px-4 py-3">
+                <span class="text-xs font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+                  {{ cust.get_payment_terms_display }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-xs text-slate-500">{{ cust.vat_number|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="px-4 py-8 text-center text-slate-400">No customers registered yet. Click "+ Register New Customer" above to add your real clients.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- MODAL: UPLOAD REAL CUSTOMER PO (PDF)                        -->
+  <!-- ============================================================ -->
+  <div x-show="activeModal === 'upload_po_modal'" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4" x-cloak>
+    <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <div>
+          <h3 class="font-bold text-lg text-slate-900">Upload Customer Purchase Order</h3>
+          <p class="text-xs text-slate-500">System will extract cargo, route, weight, and draft a quotation</p>
+        </div>
+        <button @click="activeModal = null" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+
+      <form method="POST" action="{% url 'upload_purchase_order' %}" enctype="multipart/form-data" class="space-y-4 text-xs">
+        {% csrf_token %}
+        
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Select Customer PO PDF File *</label>
+          <input type="file" name="po_file" accept=".pdf" required class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100">
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">PO Reference / Number (Optional, auto-extracted if blank):</label>
+          <input type="text" name="po_number" placeholder="e.g. PO-2026-9901" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50">
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Sender / Customer Email (Optional):</label>
+          <input type="email" name="sender_email" placeholder="e.g. logistics@clientcompany.co.za" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50">
+        </div>
+
+        {% if customers %}
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Or Link to Existing Customer:</label>
+          <select name="customer_id" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50">
+            <option value="">-- Auto-detect / Create from PDF --</option>
+            {% for c in customers %}
+            <option value="{{ c.id }}">{{ c.company_name }} ({{ c.email }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+
+        <div class="flex justify-end gap-2 pt-4 border-t">
+          <button type="button" @click="activeModal = null" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-md">
+            Parse &amp; Generate Quote
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- MODAL: CREATE REAL CUSTOMER PROFILE                         -->
+  <!-- ============================================================ -->
+  <div x-show="activeModal === 'create_customer_modal'" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4" x-cloak>
+    <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-lg text-slate-900">Register New Customer</h3>
+        <button @click="activeModal = null" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+
+      <form method="POST" action="{% url 'create_customer' %}" class="space-y-3 text-xs">
+        {% csrf_token %}
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Company Name *</label>
+            <input type="text" name="company_name" required placeholder="e.g. Sasol Mining &amp; Freight" class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Contact Person *</label>
+            <input type="text" name="contact_name" required placeholder="e.g. John Nkosi" class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Email Address *</label>
+            <input type="email" name="email" required placeholder="john@client.co.za" class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Phone Number</label>
+            <input type="text" name="phone" placeholder="+27 11 000 0000" class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">VAT Number</label>
+            <input type="text" name="vat_number" placeholder="4000000000" class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Payment Terms</label>
+            <select name="payment_terms" class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50">
+              <option value="50_DEPOSIT_50_POD">50% Deposit / 50% on POD</option>
+              <option value="100_UPFRONT">100% Upfront</option>
+              <option value="30_DEPOSIT_70_POD">30% Deposit / 70% on POD</option>
+              <option value="30_DAYS_NET">30 Days Net</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Physical / Depot Address</label>
+          <textarea name="physical_address" rows="2" placeholder="e.g. Depot 4, Elandsfontein Logistics Park, Germiston" class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t">
+          <button type="button" @click="activeModal = null" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold">Save Customer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ============================================================ -->
+  <!-- MODAL: CREATE CUSTOM QUOTATION                              -->
+  <!-- ============================================================ -->
+  <div x-show="activeModal === 'create_quote_modal'" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4" x-cloak>
+    <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-lg text-slate-900">Create Custom Quotation</h3>
+        <button @click="activeModal = null" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+
+      <form method="POST" action="{% url 'create_quotation' %}" class="space-y-3 text-xs">
+        {% csrf_token %}
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Select Customer *</label>
+          <select name="customer_id" required class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50 font-bold">
+            {% for c in customers %}
+            <option value="{{ c.id }}">{{ c.company_name }} ({{ c.email }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Service / Route Description *</label>
+          <input type="text" name="description" required placeholder="e.g. 34-Ton Long Haul Freight JHB to Cape Town" class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Quantity / Tons</label>
+            <input type="number" step="0.01" name="quantity" value="1.00" class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50">
+          </div>
+          <div>
+            <label class="font-bold text-slate-700 block mb-1">Rate (ZAR Excl VAT) *</label>
+            <input type="number" step="0.01" name="unit_price" required placeholder="25000.00" class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50 font-bold">
+          </div>
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Validity (Days)</label>
+          <input type="number" name="valid_days" value="14" class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50">
+        </div>
+
+        <div class="flex justify-end gap-2 pt-3 border-t">
+          <button type="button" @click="activeModal = null" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold">Create Quotation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

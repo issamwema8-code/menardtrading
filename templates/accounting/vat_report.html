@@ -1,0 +1,122 @@
+{% extends 'dashboard/base_dashboard.html' %}
+
+{% block title %}VAT & Tax Report — Menard Trading CC{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header with Date Filters -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    VAT Rate: 15% (Namibia Inland Revenue)
+                </span>
+                <span class="text-xs text-slate-500">Period: {{ vat_report.start_date|date:"d M Y" }} – {{ vat_report.end_date|date:"d M Y" }}</span>
+            </div>
+            <h1 class="text-2xl font-bold text-slate-900 mt-1">VAT & Tax Return Report</h1>
+            <p class="text-sm text-slate-500">Output VAT on sales minus Input VAT on qualifying business expenses</p>
+        </div>
+        
+        <form method="get" class="flex flex-wrap items-center gap-2">
+            <select name="preset" onchange="this.form.submit()" class="px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-900">
+                <option value="mtd" {% if preset == 'mtd' %}selected{% endif %}>Month to Date</option>
+                <option value="qtd" {% if preset == 'qtd' %}selected{% endif %}>Quarter to Date</option>
+                <option value="ytd" {% if preset == 'ytd' %}selected{% endif %}>Year to Date</option>
+                <option value="last_year" {% if preset == 'last_year' %}selected{% endif %}>Last Year</option>
+                <option value="all" {% if preset == 'all' %}selected{% endif %}>All Time</option>
+            </select>
+            <div class="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                <input type="date" name="start_date" value="{{ vat_report.start_date|date:'Y-m-d' }}" class="px-2 py-1 text-xs bg-transparent border-0 text-slate-700 focus:ring-0">
+                <span class="text-slate-400 text-xs">to</span>
+                <input type="date" name="end_date" value="{{ vat_report.end_date|date:'Y-m-d' }}" class="px-2 py-1 text-xs bg-transparent border-0 text-slate-700 focus:ring-0">
+                <button type="submit" class="px-3 py-1 text-xs font-medium bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors">Apply</button>
+            </div>
+            <a href="{% url 'accounting:reports_export' %}?report=vat&start_date={{ vat_report.start_date|date:'Y-m-d' }}&end_date={{ vat_report.end_date|date:'Y-m-d' }}" class="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors">
+                <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Export CSV
+            </a>
+        </form>
+    </div>
+
+    <!-- Summary KPI Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Output VAT (Invoices)</p>
+            <p class="text-2xl font-bold text-slate-900 mt-2">N$ {{ vat_report.output_vat_invoiced|floatformat:2 }}</p>
+            <p class="text-xs text-slate-500 mt-1">Tax billed on freight invoices</p>
+        </div>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <p class="text-xs font-semibold uppercase tracking-wider text-emerald-600">VAT Collected (Cash)</p>
+            <p class="text-2xl font-bold text-emerald-700 mt-2">N$ {{ vat_report.vat_collected_cash|floatformat:2 }}</p>
+            <p class="text-xs text-slate-500 mt-1">Tax collected on settled invoices</p>
+        </div>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+            <p class="text-xs font-semibold uppercase tracking-wider text-amber-600">Input VAT (Expenses)</p>
+            <p class="text-2xl font-bold text-amber-700 mt-2">N$ {{ vat_report.input_vat_expenses|floatformat:2 }}</p>
+            <p class="text-xs text-slate-500 mt-1">Claimable tax on operational expenses</p>
+        </div>
+        <div class="p-5 rounded-2xl border shadow-sm {% if vat_report.net_vat_payable >= 0 %}bg-amber-50/70 border-amber-200{% else %}bg-emerald-50/70 border-emerald-200{% endif %}">
+            <p class="text-xs font-semibold uppercase tracking-wider {% if vat_report.net_vat_payable >= 0 %}text-amber-800{% else %}text-emerald-800{% endif %}">
+                {% if vat_report.net_vat_payable >= 0 %}Net VAT Payable{% else %}Net VAT Refundable{% endif %}
+            </p>
+            <p class="text-2xl font-bold {% if vat_report.net_vat_payable >= 0 %}text-amber-900{% else %}text-emerald-900{% endif %} mt-2">
+                N$ {{ vat_report.net_vat_payable|floatformat:2 }}
+            </p>
+            <p class="text-xs {% if vat_report.net_vat_payable >= 0 %}text-amber-700{% else %}text-emerald-700{% endif %} mt-1">Output VAT − Input VAT</p>
+        </div>
+    </div>
+
+    <!-- VAT Reconciliation Breakdown -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Output VAT Breakdown -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">Output VAT (Sales & Billing)</h2>
+                    <p class="text-xs text-slate-500">VAT levied on client logistics invoices</p>
+                </div>
+                <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-200 text-slate-700">15% Standard Rate</span>
+            </div>
+            <div class="p-6 space-y-4 text-sm">
+                <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                    <span class="text-slate-600">Total Taxable Sales (Excl. VAT)</span>
+                    <span class="font-bold text-slate-900">N$ {{ vat_report.taxable_sales_subtotal|floatformat:2 }}</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                    <span class="text-slate-600">Total Output VAT Billed</span>
+                    <span class="font-bold text-blue-700">N$ {{ vat_report.output_vat_invoiced|floatformat:2 }}</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                    <span class="text-slate-600">Total Gross Billed Sales (Incl. VAT)</span>
+                    <span class="font-bold text-slate-900">N$ {{ vat_report.gross_sales_total|floatformat:2 }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input VAT Breakdown -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">Input VAT (Expenses & Purchases)</h2>
+                    <p class="text-xs text-slate-500">VAT claimable from approved business expenses</p>
+                </div>
+                <span class="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-200 text-slate-700">Claimable Input</span>
+            </div>
+            <div class="p-6 space-y-4 text-sm">
+                <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                    <span class="text-slate-600">Total Taxable Purchases / Expenses (Excl. VAT)</span>
+                    <span class="font-bold text-slate-900">N$ {{ vat_report.taxable_purchases_subtotal|floatformat:2 }}</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                    <span class="text-slate-600">Total Input VAT Incurred</span>
+                    <span class="font-bold text-amber-700">N$ {{ vat_report.input_vat_expenses|floatformat:2 }}</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                    <span class="text-slate-600">Total Gross Expenses (Incl. VAT)</span>
+                    <span class="font-bold text-slate-900">N$ {{ vat_report.gross_purchases_total|floatformat:2 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+<h1 class="doc-heading">Quotation #{{ quote.quote_number }}</h1>
+
+<p class="lead-p">Dear {{ quote.customer.contact_name|default:quote.customer.company_name }},</p>
+
+<p class="lead-p">
+  Thank you for contacting <strong>Menard Trading CC</strong>. We have prepared your quotation 
+  <strong>#{{ quote.quote_number }}</strong>{% if quote.purchase_order %} for your Purchase Order <strong>#{{ quote.purchase_order.po_number }}</strong>{% endif %}.
+</p>
+
+<div class="info-card gold-border">
+  <table class="info-table">
+    <tr>
+      <td class="info-label">Quotation Number:</td>
+      <td class="info-value">#{{ quote.quote_number }}</td>
+    </tr>
+    <tr>
+      <td class="info-label">Customer:</td>
+      <td class="info-value">{{ quote.customer.company_name }}</td>
+    </tr>
+    <tr>
+      <td class="info-label">Valid Until:</td>
+      <td class="info-value">{{ quote.valid_until|date:"d M Y"|default:"14 Days from issue" }}</td>
+    </tr>
+    <tr>
+      <td class="info-label">Subtotal (Excl VAT):</td>
+      <td class="info-value">N$ {{ quote.subtotal|floatformat:2 }}</td>
+    </tr>
+    <tr>
+      <td class="info-label">VAT ({{ quote.vat_rate }}%):</td>
+      <td class="info-value">N$ {{ quote.vat_amount|floatformat:2 }}</td>
+    </tr>
+    <tr style="background-color: #f1f5f9;">
+      <td class="info-label" style="font-size: 14px; color: #0f172a; padding-top: 10px; padding-bottom: 10px;"><strong>Total Amount:</strong></td>
+      <td class="info-value" style="font-size: 16px; color: #0f172a; padding-top: 10px; padding-bottom: 10px;"><strong>N$ {{ quote.total_amount|floatformat:2 }}</strong></td>
+    </tr>
+  </table>
+</div>
+
+<div style="text-align: center; margin: 28px 0;">
+  <a href="{{ approval_url }}" class="btn-action" target="_blank">
+    Review &amp; Approve Quotation Online &rarr;
+  </a>
+</div>
+
+<p class="lead-p" style="font-size: 13px; color: #64748b; text-align: center;">
+  The formal PDF quotation is attached to this email for your records.
+</p>
+
+<div class="notice-box">
+  If you have any questions or require any adjustments to this quotation, please contact us at <a href="mailto:{{ branding.quotes_email|default:'quotes@menardtrading.com' }}" style="color: #b47828; font-weight: 600; text-decoration: none;">{{ branding.quotes_email|default:'quotes@menardtrading.com' }}</a>.
+</div>
+
+<div class="signoff">
+  Kind regards,<br>
+  <strong>Menard Trading CC</strong><br>
+  <span style="color: #b47828; font-size: 11px; font-weight: 700; letter-spacing: 1px;">ALWAYS ON TIME</span>
+</div>
+{% endblock %}
