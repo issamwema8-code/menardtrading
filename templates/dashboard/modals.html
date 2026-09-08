@@ -363,9 +363,6 @@
                  position: 'top-end'
                });
              }
-             this.$nextTick(() => {
-               if (this.$refs.quoteDescription) this.$refs.quoteDescription.focus();
-             });
            } else {
              this.quickAddError = data.error || 'Failed to save customer.';
            }
@@ -376,13 +373,13 @@
          }
        }
      }"
-     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4" x-cloak>
-  <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 sm:p-7 max-w-lg w-full shadow-2xl space-y-5 border border-slate-200">
+     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 overflow-y-auto" x-cloak>
+  <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 sm:p-7 max-w-2xl w-full shadow-2xl space-y-5 border border-slate-200 my-8">
     <div class="flex justify-between items-start border-b border-slate-100 pb-4">
       <div>
         <span class="badge-gold text-[10px] mb-1">New Quotation</span>
         <h3 class="font-extrabold text-lg text-slate-900">Create Quotation</h3>
-        <p class="text-xs text-slate-500 mt-0.5">Create a new price quotation for a customer.</p>
+        <p class="text-xs text-slate-500 mt-0.5">Create a multi-item price quotation for doors, windows, freight, or general supply.</p>
       </div>
       <button @click="activeModal = null" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition text-lg font-bold leading-none">&times;</button>
     </div>
@@ -435,7 +432,6 @@
           </button>
         </div>
 
-        <!-- Dynamic Add Term Inline Popover in Quick Add -->
         <div x-show="showAddTerm" x-transition class="mb-2 p-2 bg-amber-100/70 border border-amber-200 rounded-xl space-y-1 shadow-sm">
           <div class="flex items-center justify-between">
             <span class="text-[10px] font-extrabold text-slate-800">Add Payment Term</span>
@@ -456,15 +452,6 @@
           </template>
         </select>
       </div>
-
-      <div class="flex justify-end items-center gap-2 pt-2 border-t border-amber-200/60">
-        <button type="button" @click="showQuickAdd = false" class="btn-outline text-xs py-1.5 px-3">Cancel</button>
-        <button type="button" @click="submitQuickAdd()" :disabled="isSavingClient" class="btn-secondary text-xs py-1.5 px-3">
-          <svg x-show="isSavingClient" class="animate-spin -ml-1 mr-1.5 h-3.5 w-3.5 text-slate-950 inline" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-          <span x-text="isSavingClient ? 'Saving Client...' : 'Save & Select Client'"></span>
-        </button>
-      </div>
-    </div>
 
       <div class="flex justify-end items-center gap-2 pt-2 border-t border-amber-200/60">
         <button type="button" @click="showQuickAdd = false" class="btn-outline text-xs py-1.5 px-3">Cancel</button>
@@ -586,25 +573,84 @@
         </div>
       </div>
 
-      <div>
-        <label class="form-label">Description <span class="text-rose-500">*</span></label>
-        <input type="text" x-ref="quoteDescription" name="description" required placeholder="e.g. 34-Ton Long Haul Freight JHB to Cape Town" class="form-input font-medium">
+      <!-- MULTI-ROW LINE ITEMS BUILDER -->
+      <div class="space-y-2">
+        <div class="flex justify-between items-center">
+          <label class="form-label mb-0">Quotation Line Items / Products <span class="text-rose-500">*</span></label>
+          <button type="button" @click="addItem()" class="text-xs font-bold text-[#b47828] hover:text-[#8a5818] flex items-center gap-1 hover:underline cursor-pointer">
+            <svg class="w-3.5 h-3.5 text-[#b47828]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+            <span>+ Add Another Row</span>
+          </button>
+        </div>
+
+        <div class="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50/50 shadow-sm">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-100/90 border-b border-slate-200 text-slate-600 font-bold">
+                <th class="py-2.5 px-3">Item / Service Description</th>
+                <th class="py-2.5 px-2 w-20 text-center">Qty</th>
+                <th class="py-2.5 px-2 w-28 text-right">Unit Price (N$)</th>
+                <th class="py-2.5 px-3 w-28 text-right">Amount (N$)</th>
+                <th class="py-2.5 px-2 w-10 text-center"></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200/60 bg-white">
+              <template x-for="(item, idx) in items" :key="idx">
+                <tr class="hover:bg-slate-50/70 transition">
+                  <td class="p-2">
+                    <input type="text" name="descriptions[]" x-model="item.description" required
+                           placeholder="e.g. Doors, Aluminium Windows, Freight Consignment" 
+                           class="form-input text-xs py-1.5 font-medium">
+                  </td>
+                  <td class="p-2">
+                    <input type="number" step="0.01" min="0.01" name="quantities[]" x-model="item.quantity" required
+                           class="form-input text-xs py-1.5 text-center font-mono">
+                  </td>
+                  <td class="p-2">
+                    <input type="number" step="0.01" min="0" name="unit_prices[]" x-model="item.unit_price" required
+                           placeholder="0.00" class="form-input text-xs py-1.5 text-right font-mono font-bold">
+                  </td>
+                  <td class="p-2 text-right font-mono font-bold text-slate-800" x-text="'N$ ' + getItemTotal(item)">
+                  </td>
+                  <td class="p-2 text-center">
+                    <button type="button" @click="removeItem(idx)" :disabled="items.length === 1" 
+                            :class="items.length === 1 ? 'opacity-30 cursor-not-allowed' : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer'"
+                            class="p-1 rounded-lg transition" title="Delete Row">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+
+          <!-- Totals Bar -->
+          <div class="p-3 bg-slate-100/90 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <button type="button" @click="addItem()" class="btn-outline text-xs py-1 px-2.5 flex items-center gap-1">
+              <svg class="w-3.5 h-3.5 text-[#b47828]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+              <span>+ Add Row</span>
+            </button>
+
+            <div class="flex flex-wrap items-center gap-3 text-xs font-mono">
+              <div class="text-slate-500">Subtotal: <strong class="text-slate-900" x-text="'N$ ' + subtotal"></strong></div>
+              <div class="text-slate-500">VAT (<span x-text="vatRate + '%'"></span>): <strong class="text-slate-900" x-text="'N$ ' + vatAmount"></strong></div>
+              <div class="px-2.5 py-1 rounded-lg bg-amber-100/90 text-[#8a5818] font-bold border border-amber-200">
+                Total: <span x-text="'N$ ' + totalAmount"></span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
         <div>
-          <label class="form-label">Quantity / Tons</label>
-          <input type="number" step="0.01" name="quantity" value="1.00" class="form-input font-mono">
+          <label class="form-label">Validity (Days)</label>
+          <input type="number" name="valid_days" value="14" class="form-input text-xs font-mono">
         </div>
         <div>
-          <label class="form-label">Rate (Excl. VAT) <span class="text-rose-500">*</span></label>
-          <input type="number" step="0.01" name="unit_price" required placeholder="25000.00" class="form-input font-bold font-mono">
+          <label class="form-label">Quotation Notes / Terms</label>
+          <input type="text" name="notes" value="Payment terms as per agreement. Rates include standard transit conditions." class="form-input text-xs font-medium">
         </div>
-      </div>
-
-      <div>
-        <label class="form-label">Validity (Days)</label>
-        <input type="number" name="valid_days" value="14" class="form-input font-mono">
       </div>
 
       <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-100">
@@ -612,6 +658,508 @@
         <button type="submit" class="btn-primary">
           <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
           <span>Create Quotation</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL 4: CREATE DIRECT INVOICE -->
+<div x-show="activeModal === 'create_invoice_modal'" 
+     x-data="{
+        customers: [
+          {% for c in global_customers %}
+          { 
+            id: {{ c.id }}, 
+            company_name: '{{ c.company_name|escapejs }}', 
+            contact_name: '{{ c.contact_name|escapejs }}', 
+            email: '{{ c.email|escapejs }}', 
+            phone: '{{ c.phone|escapejs }}' 
+          }{% if not forloop.last %},{% endif %}
+          {% endfor %}
+        ],
+        paymentTerms: [
+          {% for t in global_payment_terms %}
+          { code: '{{ t.code|escapejs }}', name: '{{ t.name|escapejs }}' }{% if not forloop.last %},{% endif %}
+          {% endfor %}
+        ],
+        selectedId: '',
+        selectedCustomer: null,
+        dropdownOpen: false,
+        searchQuery: '',
+        showQuickAdd: false,
+        isSavingClient: false,
+        quickAddError: '',
+        showAddTerm: false,
+        newTermName: '',
+        isAddingTerm: false,
+        termError: '',
+        quickForm: {
+          company_name: '',
+          contact_name: '',
+          email: '',
+          phone: '',
+          payment_terms: '50_DEPOSIT_50_POD'
+        },
+        items: [
+          { description: '', quantity: '1.00', unit_price: '' }
+        ],
+        vatRate: {{ branding.vat_rate|default:15.0 }},
+        addItem() {
+          this.items.push({ description: '', quantity: '1.00', unit_price: '' });
+        },
+        removeItem(idx) {
+          if (this.items.length > 1) {
+            this.items.splice(idx, 1);
+          }
+        },
+        getItemTotal(item) {
+          const q = parseFloat(item.quantity) || 0;
+          const p = parseFloat(item.unit_price) || 0;
+          return (q * p).toFixed(2);
+        },
+        get subtotal() {
+          return this.items.reduce((sum, item) => sum + ((parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0)), 0).toFixed(2);
+        },
+        get vatAmount() {
+          const sub = parseFloat(this.subtotal) || 0;
+          const rate = parseFloat(this.vatRate) || 0;
+          return (sub * (rate / 100)).toFixed(2);
+        },
+        get totalAmount() {
+          return ((parseFloat(this.subtotal) || 0) + (parseFloat(this.vatAmount) || 0)).toFixed(2);
+        },
+        init() {
+          this.selectedId = '';
+          this.selectedCustomer = null;
+          this.items = [{ description: '', quantity: '1.00', unit_price: '' }];
+        },
+        get filteredCustomers() {
+          const q = this.searchQuery.toLowerCase().trim();
+          if (!q) return this.customers;
+          return this.customers.filter(c => 
+            (c.company_name && c.company_name.toLowerCase().includes(q)) ||
+            (c.contact_name && c.contact_name.toLowerCase().includes(q)) ||
+            (c.email && c.email.toLowerCase().includes(q)) ||
+            (c.phone && c.phone.toLowerCase().includes(q))
+          );
+        },
+        selectCustomer(c) {
+          this.selectedId = c.id;
+          this.selectedCustomer = c;
+          this.dropdownOpen = false;
+          this.searchQuery = '';
+        },
+        openQuickAdd(prefillName = '') {
+          this.quickForm = {
+            company_name: prefillName || this.searchQuery.trim() || '',
+            contact_name: '',
+            email: '',
+            phone: '',
+            payment_terms: this.paymentTerms.length > 0 ? this.paymentTerms[0].code : '50_DEPOSIT_50_POD'
+          };
+          this.quickAddError = '';
+          this.showAddTerm = false;
+          this.newTermName = '';
+          this.dropdownOpen = false;
+          this.showQuickAdd = true;
+          this.$nextTick(() => {
+            if (this.$refs.quickCompanyName) this.$refs.quickCompanyName.focus();
+          });
+        },
+        async addCustomTerm() {
+          if (!this.newTermName.trim()) {
+            this.termError = 'Please enter a payment term name.';
+            return;
+          }
+          this.isAddingTerm = true;
+          this.termError = '';
+          try {
+            const csrf = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+            const res = await fetch('{% url 'create_payment_term_option' %}', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+              body: JSON.stringify({ name: this.newTermName.trim() })
+            });
+            const data = await res.json();
+            if (data.success && data.term) {
+              const newT = data.term;
+              if (!this.paymentTerms.some(t => t.code === newT.code)) {
+                this.paymentTerms.push(newT);
+              }
+              this.quickForm.payment_terms = newT.code;
+              this.newTermName = '';
+              this.showAddTerm = false;
+              if (window.Swal) {
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Payment Term Added!',
+                  text: `&quot;${newT.name}&quot; is now available and selected.`,
+                  timer: 2000,
+                  showConfirmButton: false,
+                  toast: true,
+                  position: 'top-end'
+                });
+              }
+            } else {
+              this.termError = data.error || 'Failed to add payment term.';
+            }
+          } catch (e) {
+            this.termError = 'Network error saving payment term.';
+          } finally {
+            this.isAddingTerm = false;
+          }
+        },
+        async submitQuickAdd() {
+          if (!this.quickForm.company_name.trim()) {
+            this.quickAddError = 'Company name is required.';
+            return;
+          }
+          if (!this.quickForm.email.trim()) {
+            this.quickAddError = 'Email address is required.';
+            return;
+          }
+          this.isSavingClient = true;
+          this.quickAddError = '';
+          try {
+            const csrf = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+            const res = await fetch('{% url 'quick_create_customer' %}', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrf
+              },
+              body: JSON.stringify(this.quickForm)
+            });
+            const data = await res.json();
+            if (data.success && data.customer) {
+              const newCust = data.customer;
+              const existingIdx = this.customers.findIndex(c => c.id === newCust.id);
+              if (existingIdx >= 0) {
+                this.customers[existingIdx] = newCust;
+              } else {
+                this.customers.unshift(newCust);
+              }
+              this.selectCustomer(newCust);
+              this.showQuickAdd = false;
+              if (window.Swal) {
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Customer Created!',
+                  text: `${newCust.company_name} selected for invoice.`,
+                  timer: 2000,
+                  showConfirmButton: false,
+                  toast: true,
+                  position: 'top-end'
+                });
+              }
+            } else {
+              this.quickAddError = data.error || 'Failed to save customer.';
+            }
+          } catch (err) {
+            this.quickAddError = 'Network error while saving customer.';
+          } finally {
+            this.isSavingClient = false;
+          }
+        }
+      }"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 overflow-y-auto" x-cloak>
+  <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 sm:p-7 max-w-2xl w-full shadow-2xl space-y-5 border border-slate-200 my-8">
+    <div class="flex justify-between items-start border-b border-slate-100 pb-4">
+      <div>
+        <span class="badge badge-emerald text-[10px] mb-1">Direct Billing</span>
+        <h3 class="font-extrabold text-lg text-slate-900">Create Tax Invoice</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Generate a formal tax invoice directly for a client with multiple line items.</p>
+      </div>
+      <button @click="activeModal = null" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition text-lg font-bold leading-none">&times;</button>
+    </div>
+
+    <!-- INLINE QUICK ADD CUSTOMER CARD -->
+    <div x-show="showQuickAdd" x-transition class="bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 space-y-3.5 shadow-sm">
+      <div class="flex justify-between items-center border-b border-amber-200/60 pb-2">
+        <div class="flex items-center gap-2">
+          <span class="badge-gold text-[10px]">Quick Add</span>
+          <h4 class="text-xs font-extrabold text-slate-900">Register New Client</h4>
+        </div>
+        <button type="button" @click="showQuickAdd = false" class="text-xs text-slate-500 hover:text-slate-800 font-semibold flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          <span>Cancel</span>
+        </button>
+      </div>
+
+      <div x-show="quickAddError" class="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium" x-text="quickAddError"></div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="form-label text-[11px] mb-1">Company Name <span class="text-rose-500">*</span></label>
+          <input type="text" x-ref="quickCompanyName" x-model="quickForm.company_name" placeholder="e.g. Anglo American Freight" class="form-input text-xs py-1.5 font-bold">
+        </div>
+        <div>
+          <label class="form-label text-[11px] mb-1">Contact Person <span class="text-rose-500">*</span></label>
+          <input type="text" x-model="quickForm.contact_name" placeholder="e.g. Sipho Ndlovu" class="form-input text-xs py-1.5">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="form-label text-[11px] mb-1">Email Address <span class="text-rose-500">*</span></label>
+          <input type="email" x-model="quickForm.email" placeholder="sipho@anglo.com" class="form-input text-xs py-1.5 font-mono">
+        </div>
+        <div>
+          <label class="form-label text-[11px] mb-1">Phone Number</label>
+          <input type="text" x-model="quickForm.phone" placeholder="+27 11 000 0000" class="form-input text-xs py-1.5 font-mono">
+        </div>
+      </div>
+
+      <div>
+        <div class="flex justify-between items-center mb-1">
+          <label class="form-label text-[11px] mb-0">Payment Terms</label>
+          <button type="button" @click="showAddTerm = !showAddTerm; if (showAddTerm) { $nextTick(() => $refs.newQuickTermInput.focus()); }" 
+                  class="text-[11px] font-bold text-[#b47828] hover:text-[#8a5818] flex items-center gap-1 hover:underline cursor-pointer"
+                  title="Add custom payment term">
+            <svg class="w-3.5 h-3.5 text-[#b47828]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+            <span>+ Add Term</span>
+          </button>
+        </div>
+
+        <div x-show="showAddTerm" x-transition class="mb-2 p-2 bg-amber-100/70 border border-amber-200 rounded-xl space-y-1 shadow-sm">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-extrabold text-slate-800">Add Payment Term</span>
+            <button type="button" @click="showAddTerm = false" class="text-slate-400 hover:text-slate-600 text-xs font-bold leading-none">&times;</button>
+          </div>
+          <div x-show="termError" class="text-[10px] text-rose-600 font-medium" x-text="termError"></div>
+          <div class="flex gap-1.5">
+            <input type="text" x-ref="newQuickTermInput" x-model="newTermName" @keydown.enter.prevent="addCustomTerm()" placeholder="e.g. 20% Deposit / 80% on Delivery" class="form-input text-xs py-1 flex-1">
+            <button type="button" @click="addCustomTerm()" :disabled="isAddingTerm" class="btn-primary text-xs py-1 px-2 shrink-0">
+              <span x-text="isAddingTerm ? '...' : 'Save'"></span>
+            </button>
+          </div>
+        </div>
+
+        <select x-model="quickForm.payment_terms" class="form-input text-xs py-1.5 font-semibold">
+          <template x-for="t in paymentTerms" :key="t.code">
+            <option :value="t.code" x-text="t.name" :selected="quickForm.payment_terms === t.code"></option>
+          </template>
+        </select>
+      </div>
+
+      <div class="flex justify-end items-center gap-2 pt-2 border-t border-amber-200/60">
+        <button type="button" @click="showQuickAdd = false" class="btn-outline text-xs py-1.5 px-3">Cancel</button>
+        <button type="button" @click="submitQuickAdd()" :disabled="isSavingClient" class="btn-secondary text-xs py-1.5 px-3">
+          <svg x-show="isSavingClient" class="animate-spin -ml-1 mr-1.5 h-3.5 w-3.5 text-slate-950 inline" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          <span x-text="isSavingClient ? 'Saving Client...' : 'Save & Select Client'"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- CREATE DIRECT INVOICE FORM -->
+    <form method="POST" action="{% url 'create_invoice' %}" 
+          @submit="if (!selectedId) { $event.preventDefault(); dropdownOpen = true; if (window.Swal) { Swal.fire({ icon: 'warning', title: 'Customer Required', text: 'Please select or add a client to issue this invoice.', timer: 2500, showConfirmButton: false, toast: true, position: 'top-end' }); } return false; }"
+          class="space-y-4">
+      {% csrf_token %}
+      
+      <!-- SEARCHABLE CUSTOMER SELECT & SHORTCUT -->
+      <div>
+        <div class="flex justify-between items-center mb-1.5">
+          <label class="form-label mb-0">Customer <span class="text-rose-500">*</span></label>
+          <button type="button" @click="openQuickAdd()" class="text-xs font-bold text-[#b47828] hover:text-[#8a5818] flex items-center gap-1 hover:underline transition cursor-pointer">
+            <svg class="w-3.5 h-3.5 text-[#b47828]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <span>+ Add New Client</span>
+          </button>
+        </div>
+
+        <!-- Hidden Input for Form Submission -->
+        <input type="hidden" name="customer_id" :value="selectedId" required>
+
+        <!-- Searchable Select Trigger & Combobox -->
+        <div class="relative" @click.away="dropdownOpen = false">
+          <div @click="dropdownOpen = !dropdownOpen; if (dropdownOpen) { $nextTick(() => $refs.customerSearchInput.focus()); }"
+               class="w-full border border-slate-300 hover:border-amber-400 bg-slate-50/70 p-2.5 rounded-xl flex items-center justify-between cursor-pointer transition shadow-sm select-none"
+               :class="!selectedId ? 'border-dashed' : 'border-solid'">
+            <div class="flex items-center gap-2.5 overflow-hidden">
+              <template x-if="selectedCustomer">
+                <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0">
+                  <span x-text="selectedCustomer.company_name.charAt(0).toUpperCase()"></span>
+                </div>
+              </template>
+              <template x-if="!selectedCustomer">
+                <div class="w-7 h-7 rounded-lg bg-slate-200/80 text-slate-500 flex items-center justify-center shrink-0">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                </div>
+              </template>
+
+              <div class="truncate text-left">
+                <div class="font-bold text-xs truncate" :class="selectedCustomer ? 'text-slate-900' : 'text-slate-500 font-medium'" x-text="selectedCustomer ? selectedCustomer.company_name : 'Select or search a client...'"></div>
+                <div class="text-[11px] text-slate-500 font-mono truncate" x-show="selectedCustomer" x-text="selectedCustomer ? (selectedCustomer.contact_name + ' &bull; ' + selectedCustomer.email) : ''"></div>
+                <div class="text-[10px] text-slate-400 truncate" x-show="!selectedCustomer">Click to search directory or click + Add New Client</div>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-1.5 text-slate-400 shrink-0 ml-2">
+              <button type="button" x-show="selectedCustomer" @click.stop="selectedId = ''; selectedCustomer = null;" title="Clear selection" class="p-1 rounded-md text-slate-400 hover:text-rose-500 hover:bg-slate-200/60 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+              <span class="text-[10px] uppercase font-semibold tracking-wider text-slate-400 hidden sm:inline" x-text="dropdownOpen ? 'Close' : 'Choose'"></span>
+              <svg class="w-4 h-4 transition-transform duration-200" :class="dropdownOpen ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+          </div>
+
+          <!-- Dropdown Search Panel -->
+          <div x-show="dropdownOpen" x-transition 
+               class="absolute left-0 right-0 top-full mt-1.5 z-50 bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden max-h-72 flex flex-col">
+            <div class="p-2.5 border-b border-slate-100 bg-slate-50/80 sticky top-0 z-10">
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <input type="text" 
+                       x-ref="customerSearchInput" 
+                       x-model="searchQuery" 
+                       placeholder="Search by company, contact, or email..." 
+                       class="w-full pl-8 pr-8 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500">
+                <button type="button" x-show="searchQuery" @click="searchQuery = ''; $refs.customerSearchInput.focus()" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="overflow-y-auto max-h-48 p-1.5 space-y-1 divide-y divide-slate-50">
+              <template x-for="c in filteredCustomers" :key="c.id">
+                <div @click="selectCustomer(c)" 
+                     class="p-2 rounded-xl flex items-center justify-between cursor-pointer transition hover:bg-emerald-50/80 group"
+                     :class="selectedId === c.id ? 'bg-emerald-50/60 border border-emerald-200/60' : 'border border-transparent'">
+                  <div class="min-w-0 pr-2">
+                    <div class="font-bold text-xs text-slate-900 group-hover:text-emerald-950 truncate" x-text="c.company_name"></div>
+                    <div class="text-[11px] text-slate-500 font-mono truncate" x-text="(c.contact_name ? c.contact_name + ' &bull; ' : '') + c.email"></div>
+                  </div>
+                  <div x-show="selectedId === c.id" class="shrink-0 text-emerald-600">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                  </div>
+                </div>
+              </template>
+
+              <div x-show="filteredCustomers.length === 0" class="p-4 text-center space-y-2">
+                <p class="text-xs text-slate-500">No customers found matching "<span class="font-semibold text-slate-800" x-text="searchQuery"></span>"</p>
+                <button type="button" @click="openQuickAdd(searchQuery)" class="btn-secondary text-xs py-1.5 px-3">
+                  <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                  <span>+ Create "<span x-text="searchQuery"></span>"</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="p-2 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
+              <span class="text-[10px] text-slate-400 font-mono" x-text="filteredCustomers.length + ' client' + (filteredCustomers.length === 1 ? '' : 's')"></span>
+              <button type="button" @click="openQuickAdd(searchQuery)" class="text-[11px] font-bold text-[#b47828] hover:text-[#8a5818] flex items-center gap-1 hover:underline">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                <span>+ Add New Customer</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div>
+          <label class="form-label">Invoice Type</label>
+          <select name="invoice_type" class="form-input text-xs font-semibold">
+            <option value="FULL">100% Tax Invoice</option>
+            <option value="PARTIAL_DEPOSIT">Mobilization / Deposit Invoice</option>
+            <option value="PARTIAL_BALANCE">Final Balance Invoice</option>
+            <option value="ADD_ON">Supplementary / Add-on Invoice</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Payment Due In (Days)</label>
+          <input type="number" name="due_days" value="30" class="form-input text-xs font-mono font-bold">
+        </div>
+      </div>
+
+      <!-- MULTI-ROW LINE ITEMS BUILDER -->
+      <div class="space-y-2">
+        <div class="flex justify-between items-center">
+          <label class="form-label mb-0">Invoice Line Items &amp; Products <span class="text-rose-500">*</span></label>
+          <button type="button" @click="addItem()" class="text-xs font-bold text-[#b47828] hover:text-[#8a5818] flex items-center gap-1 hover:underline cursor-pointer">
+            <svg class="w-3.5 h-3.5 text-[#b47828]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+            <span>+ Add Another Row</span>
+          </button>
+        </div>
+
+        <div class="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50/50 shadow-sm">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-slate-100/90 border-b border-slate-200 text-slate-600 font-bold">
+                <th class="py-2.5 px-3">Item / Service Description</th>
+                <th class="py-2.5 px-2 w-20 text-center">Qty</th>
+                <th class="py-2.5 px-2 w-28 text-right">Unit Price (N$)</th>
+                <th class="py-2.5 px-3 w-28 text-right">Amount (N$)</th>
+                <th class="py-2.5 px-2 w-10 text-center"></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200/60 bg-white">
+              <template x-for="(item, idx) in items" :key="idx">
+                <tr class="hover:bg-slate-50/70 transition">
+                  <td class="p-2">
+                    <input type="text" name="descriptions[]" x-model="item.description" required
+                           placeholder="e.g. Doors, Aluminium Windows, Freight Consignment" 
+                           class="form-input text-xs py-1.5 font-medium">
+                  </td>
+                  <td class="p-2">
+                    <input type="number" step="0.01" min="0.01" name="quantities[]" x-model="item.quantity" required
+                           class="form-input text-xs py-1.5 text-center font-mono">
+                  </td>
+                  <td class="p-2">
+                    <input type="number" step="0.01" min="0" name="unit_prices[]" x-model="item.unit_price" required
+                           placeholder="0.00" class="form-input text-xs py-1.5 text-right font-mono font-bold">
+                  </td>
+                  <td class="p-2 text-right font-mono font-bold text-slate-800" x-text="'N$ ' + getItemTotal(item)">
+                  </td>
+                  <td class="p-2 text-center">
+                    <button type="button" @click="removeItem(idx)" :disabled="items.length === 1" 
+                            :class="items.length === 1 ? 'opacity-30 cursor-not-allowed' : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer'"
+                            class="p-1 rounded-lg transition" title="Delete Row">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+
+          <!-- Totals Bar -->
+          <div class="p-3 bg-slate-100/90 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <button type="button" @click="addItem()" class="btn-outline text-xs py-1 px-2.5 flex items-center gap-1">
+              <svg class="w-3.5 h-3.5 text-[#b47828]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+              <span>+ Add Row</span>
+            </button>
+
+            <div class="flex flex-wrap items-center gap-3 text-xs font-mono">
+              <div class="text-slate-500">Subtotal: <strong class="text-slate-900" x-text="'N$ ' + subtotal"></strong></div>
+              <div class="text-slate-500">VAT (<span x-text="vatRate + '%'"></span>): <strong class="text-slate-900" x-text="'N$ ' + vatAmount"></strong></div>
+              <div class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">
+                Invoice Total: <span x-text="'N$ ' + totalAmount"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label class="form-label">Invoice Notes / Bank Instructions</label>
+        <input type="text" name="notes" value="Payment strictly according to agreed terms. Direct EFT into Menard Trading CC bank account." class="form-input text-xs font-medium">
+      </div>
+
+      <div class="flex items-center gap-2 pt-1">
+        <input type="checkbox" id="send_email_inv" name="send_email" value="1" class="rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+        <label for="send_email_inv" class="text-xs text-slate-700 cursor-pointer select-none">
+          Email official Tax Invoice PDF immediately to client (<span class="font-mono text-slate-500" x-text="selectedCustomer ? selectedCustomer.email : 'if provided'"></span>)
+        </label>
+      </div>
+
+      <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-100">
+        <button type="button" @click="activeModal = null" class="btn-outline">Cancel</button>
+        <button type="submit" class="btn-primary">
+          <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span>Create &amp; Issue Invoice</span>
         </button>
       </div>
     </form>

@@ -163,11 +163,11 @@ class CreateQuotationView(PermissionRequiredMixin, View):
         from apps.quotes.models import QuoteLineItem
         from decimal import Decimal
 
-        customer_id = request.POST.get('customer_id')
+        customer_id = request.POST.get('customer_id') or request.POST.get('customer')
         customer = get_object_or_404(Customer, pk=customer_id)
         
         notes = request.POST.get('notes', 'Standard freight transport terms apply.')
-        valid_days = int(request.POST.get('valid_days', 14))
+        valid_days = int(request.POST.get('validity_days') or request.POST.get('valid_days') or 14)
 
         quote = Quotation.objects.create(
             customer=customer,
@@ -176,22 +176,51 @@ class CreateQuotationView(PermissionRequiredMixin, View):
             status=Quotation.Status.DRAFT
         )
 
-        desc = request.POST.get('description', 'Freight Service')
-        qty = Decimal(request.POST.get('quantity', '1.00'))
-        price = Decimal(request.POST.get('unit_price', '0.00'))
-        item_type = request.POST.get('item_type', QuoteLineItem.ItemType.FREIGHT)
+        descriptions = request.POST.getlist('descriptions[]') or request.POST.getlist('description')
+        quantities = request.POST.getlist('quantities[]') or request.POST.getlist('quantity')
+        unit_prices = request.POST.getlist('unit_prices[]') or request.POST.getlist('unit_price')
+        item_types = request.POST.getlist('item_types[]') or request.POST.getlist('item_type')
 
-        QuoteLineItem.objects.create(
-            quote=quote,
-            description=desc,
-            quantity=qty,
-            unit_price=price,
-            item_type=item_type
-        )
+        items_created = 0
+        if descriptions:
+            for idx, desc in enumerate(descriptions):
+                desc_str = str(desc).strip()
+                if not desc_str:
+                    continue
+                qty_raw = quantities[idx] if idx < len(quantities) else '1.00'
+                price_raw = unit_prices[idx] if idx < len(unit_prices) else '0.00'
+                itype = item_types[idx] if idx < len(item_types) else QuoteLineItem.ItemType.OTHER
+                try:
+                    qty = Decimal(str(qty_raw).strip() or '1.00')
+                except Exception:
+                    qty = Decimal('1.00')
+                try:
+                    price = Decimal(str(price_raw).strip() or '0.00')
+                except Exception:
+                    price = Decimal('0.00')
+
+                QuoteLineItem.objects.create(
+                    quote=quote,
+                    description=desc_str,
+                    quantity=qty,
+                    unit_price=price,
+                    item_type=itype if itype in QuoteLineItem.ItemType.values else QuoteLineItem.ItemType.OTHER
+                )
+                items_created += 1
+
+        if items_created == 0:
+            QuoteLineItem.objects.create(
+                quote=quote,
+                description=request.POST.get('description', 'General Supply & Logistics Service') or 'General Supply & Logistics Service',
+                quantity=Decimal(request.POST.get('quantity', '1.00') or '1.00'),
+                unit_price=Decimal(request.POST.get('unit_price', '0.00') or '0.00'),
+                item_type=QuoteLineItem.ItemType.OTHER
+            )
+
         quote.recalculate_totals()
         generate_quotation_pdf(quote)
 
-        messages.success(request, f"Created Quotation #{quote.quote_number} for {customer.company_name} (Total: R{quote.total_amount}).")
+        messages.success(request, f"Created Quotation #{quote.quote_number} for {customer.company_name} (Total: N$ {quote.total_amount}).")
         return redirect('quotes_list')
 
 

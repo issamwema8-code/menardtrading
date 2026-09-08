@@ -243,3 +243,103 @@ class QuotationPDFDownloadView(PermissionRequiredMixin, View):
         response = HttpResponse(pdf_bytes or (quote.quote_pdf.read() if quote.quote_pdf else b""), content_type='application/pdf')
         response['Content-Disposition'] = f'inline; filename="{quote.quote_number}.pdf"'
         return response
+
+
+class CreateDirectInvoiceView(PermissionRequiredMixin, View):
+    """
+    Directly create a new Tax Invoice without requiring a pre-existing Quotation or Logistics Job.
+    Supports multi-row line items with descriptions, quantities, and unit prices.
+    """
+    permission_required = 'invoices.create'
+
+    def post(self, request):
+        from apps.customers.models import Customer
+        from apps.accounts.models import CompanySettings
+
+        customer_id = request.POST.get('customer_id') or request.POST.get('customer')
+        customer = get_object_or_404(Customer, pk=customer_id)
+
+        invoice_type = request.POST.get('invoice_type', Invoice.InvoiceType.FULL)
+        if invoice_type not in Invoice.InvoiceType.values:
+            invoice_type = Invoice.InvoiceType.FULL
+
+        due_days = int(request.POST.get('due_days', 30))
+        due_date = timezone.now().date() + timezone.timedelta(days=due_days)
+        notes = request.POST.get('notes', 'Payment strictly according to agreed terms. Direct EFT into Menard Trading CC bank account.')
+
+        # Get active company VAT rate
+        settings_vat = CompanySettings.get_settings().vat_rate
+
+        inv = Invoice.objects.create(
+            customer=customer,
+            invoice_type=invoice_type,
+            due_date=due_date,
+            vat_rate=settings_vat,
+            notes=notes,
+            status=Invoice.Status.ISSUED
+        )
+
+        descriptions = request.POST.getlist('descriptions[]') or request.POST.getlist('description')
+        quantities = request.POST.getlist('quantities[]') or request.POST.getlist('quantity')
+        unit_prices = request.POST.getlist('unit_prices[]') or request.POST.getlist('unit_price')
+
+        items_created = 0
+        if descriptions:
+            for idx, desc in enumerate(descriptions):
+                desc_str = str(desc).strip()
+                if not desc_str:
+                    continue
+                qty_raw = quantities[idx] if idx < len(quantities) else '1.00'
+                price_raw = unit_prices[idx] if idx < len(unit_prices) else '0.00'
+                try:
+                    qty = Decimal(str(qty_raw).strip() or '1.00')
+                except Exception:
+                    qty = Decimal('1.00')
+                try:
+                    price = Decimal(str(price_raw).strip() or '0.00')
+                except Exception:
+                    price = Decimal('0.00')
+
+                InvoiceLineItem.objects.create(
+                    invoice=inv,
+                    description=desc_str,
+                    quantity=qty,
+                    unit_price=price
+                )
+                items_created += 1
+
+        if items_created == 0:
+            InvoiceLineItem.objects.create(
+                invoice=inv,
+                description=request.POST.get('description', 'Direct Supply & Logistics Service') or 'Direct Supply & Logistics Service',
+                quantity=Decimal(request.POST.get('quantity', '1.00') or '1.00'),
+                unit_price=Decimal(request.POST.get('unit_price', '0.00') or '0.00')
+            )
+
+        inv.recalculate_totals()
+        pdf_bytes = generate_invoice_pdf(inv)
+
+        log_audit_event(
+            request=request,
+            user=request.user,
+            action='DIRECT_INVOICE_CREATED',
+            resource_type='Invoice',
+            resource_id=inv.invoice_number,
+            details={'customer': customer.company_name, 'total_amount': str(inv.total_amount), 'items': items_created},
+            result='SUCCESS'
+        )
+
+        # Send email to customer if requested
+        if request.POST.get('send_email') == '1' and inv.customer.email:
+            send_departmental_email(
+                department='invoicing',
+                recipient_list=[inv.customer.email],
+                subject=f"Tax Invoice #{inv.invoice_number} – Menard Trading CC",
+                template_name='emails/invoice_sent.html',
+                context={'invoice': inv},
+                attachments=[(f"{inv.invoice_number}.pdf", pdf_bytes or inv.invoice_pdf.read(), 'application/pdf')] if (pdf_bytes or inv.invoice_pdf) else None
+            )
+
+        messages.success(request, f"Created Tax Invoice #{inv.invoice_number} for {customer.company_name} (Total: N$ {inv.total_amount}).")
+        return redirect('billing_list')
+

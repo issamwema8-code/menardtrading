@@ -43,6 +43,7 @@ from apps.billing.views import (
     QuotationPDFDownloadView,
     InvoicePreviewView,
     ReceiptPreviewView,
+    CreateDirectInvoiceView,
 )
 from apps.webhooks.views import BrevoInboundWebhookView
 
@@ -134,6 +135,7 @@ urlpatterns = [
     # 5. Billing & Invoices Page & Actions
     path('billing/', BillingInvoicesListView.as_view(), name='billing_list'),
     path('invoices/', BillingInvoicesListView.as_view(), name='invoices_list'),
+    path('invoices/create/', CreateDirectInvoiceView.as_view(), name='create_invoice'),
     path('invoices/<int:pk>/preview/', InvoicePreviewView.as_view(), name='invoice_preview'),
     path('jobs/<int:job_id>/issue-invoice/', IssueInvoiceActionView.as_view(), name='issue_invoice_action'),
     path('invoices/<int:invoice_id>/record-payment/', RecordPaymentActionView.as_view(), name='record_payment_action'),

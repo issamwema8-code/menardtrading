@@ -20,26 +20,38 @@
         <p class="page-description">Track purchase orders, quotations, deliveries, and customer billing.</p>
       </div>
 
-      <div class="flex flex-wrap items-center gap-2.5">
+      <div class="flex flex-wrap items-center gap-2">
         <!-- Sync Email Action -->
         <form id="sync_inbox_form" method="POST" action="{% url 'sync_inbox' %}" class="inline">
           {% csrf_token %}
-          <button type="submit" class="btn-outline" title="Check for new order emails">
-            <svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-            <span>Sync Email</span>
+          <button type="submit" class="btn-outline text-xs py-2 px-3" title="Check for new order emails">
+            <svg class="w-3.5 h-3.5 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+            <span>Sync</span>
           </button>
         </form>
 
         <!-- Quick Action: Upload PO -->
-        <button @click="activeModal = 'upload_po_modal'" class="btn-primary">
-          <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+        <button @click="activeModal = 'upload_po_modal'" class="btn-outline text-xs py-2 px-3">
+          <svg class="w-3.5 h-3.5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
           <span>Upload PO</span>
         </button>
 
+        <!-- Quick Action: Create Quote -->
+        <button @click="activeModal = 'create_quote_modal'" class="btn-outline text-xs py-2 px-3">
+          <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          <span>New Quote</span>
+        </button>
+
+        <!-- Quick Action: Create Invoice -->
+        <button @click="activeModal = 'create_invoice_modal'" class="btn-primary text-xs py-2 px-3">
+          <svg class="w-3.5 h-3.5 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          <span>New Invoice</span>
+        </button>
+
         <!-- Quick Action: Add Customer -->
-        <button @click="activeModal = 'create_customer_modal'" class="btn-secondary">
-          <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
-          <span>Add Customer</span>
+        <button @click="activeModal = 'create_customer_modal'" class="btn-secondary text-xs py-2 px-3">
+          <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+          <span>Add Client</span>
         </button>
       </div>
     </div>

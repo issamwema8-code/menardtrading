@@ -199,3 +199,56 @@ class DocumentDesignSystemTestCase(TestCase):
 
         receipt_pdf = generate_receipt_pdf(self.receipt)
         self.assertTrue(receipt_pdf.startswith(b'%PDF-'))
+
+    def test_create_custom_multi_item_quotation(self):
+        """Test creating a new standalone quotation with multiple line items."""
+        url = reverse('create_quotation')
+        data = {
+            'customer': self.customer.id,
+            'descriptions[]': ['Aluminium Double Doors (Custom)', 'Tinted Glass Windows 1200x900', 'Delivery & Installation'],
+            'quantities[]': ['2.00', '6.00', '1.00'],
+            'unit_prices[]': ['4500.00', '1200.00', '2500.00'],
+            'validity_days': '21',
+            'notes': 'Fabrication timeline 5 working days upon deposit.'
+        }
+        response = self.client.post(url, data, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        # Retrieve created quote
+        quote = Quotation.objects.filter(customer=self.customer, notes__icontains='Fabrication timeline').latest('created_at')
+        self.assertIsNone(quote.purchase_order)
+        self.assertEqual(quote.line_items.count(), 3)
+        # Expected subtotal: (2 * 4500) + (6 * 1200) + (1 * 2500) = 9000 + 7200 + 2500 = 18700
+        self.assertEqual(quote.subtotal, Decimal('18700.00'))
+        # VAT 15% of 18700 = 2805.00, Total = 21505.00
+        self.assertEqual(quote.vat_amount, Decimal('2805.00'))
+        self.assertEqual(quote.total_amount, Decimal('21505.00'))
+
+    def test_create_direct_multi_item_invoice(self):
+        """Test creating a direct standalone invoice with multiple line items without requiring a quote."""
+        url = reverse('create_invoice')
+        data = {
+            'customer': self.customer.id,
+            'invoice_type': 'FULL',
+            'payment_terms': 'Immediate EFT / Cash',
+            'descriptions[]': ['Heavy Duty Steel Security Gate', 'Padlocks & Anchor Bolts'],
+            'quantities[]': ['1.00', '4.00'],
+            'unit_prices[]': ['8500.00', '350.00'],
+            'notes': 'Direct walk-in counter sale.'
+        }
+        response = self.client.post(url, data, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        # Retrieve created invoice
+        invoice = Invoice.objects.filter(customer=self.customer, notes__icontains='Direct walk-in').latest('created_at')
+        self.assertIsNone(invoice.job)
+        self.assertIsNone(invoice.quote)
+        self.assertEqual(invoice.line_items.count(), 2)
+        # Expected subtotal: (1 * 8500) + (4 * 350) = 8500 + 1400 = 9900.00
+        self.assertEqual(invoice.subtotal, Decimal('9900.00'))
+        # VAT 15% of 9900 = 1485.00, Total = 11385.00
+        self.assertEqual(invoice.vat_amount, Decimal('1485.00'))
+        self.assertEqual(invoice.total_amount, Decimal('11385.00'))
+        self.assertEqual(invoice.balance_due, Decimal('11385.00'))
+        self.assertEqual(invoice.status, 'ISSUED')
+
