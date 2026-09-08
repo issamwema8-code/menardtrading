@@ -17,7 +17,13 @@ from menard_core.views import (
     EmailQueueStatusView,
     MarkNotificationReadView,
 )
-from apps.orders.views import UploadPurchaseOrderView, PurchaseOrderDetailView, ReplyPurchaseOrderView
+from apps.orders.views import (
+    UploadPurchaseOrderView,
+    PurchaseOrderDetailView,
+    ReplyPurchaseOrderView,
+    PurchaseOrderDataAPIView,
+    MergePurchaseOrdersView,
+)
 from apps.customers.views import (
     CreateCustomerView,
     CustomerSearchAPIView,
@@ -119,6 +125,8 @@ urlpatterns = [
     # 2. Inbound Orders Page & Actions
     path('orders/', InboundOrdersListView.as_view(), name='orders_list'),
     path('orders/upload/', UploadPurchaseOrderView.as_view(), name='upload_purchase_order'),
+    path('orders/merge/', MergePurchaseOrdersView.as_view(), name='merge_purchase_orders'),
+    path('orders/<int:pk>/data/', PurchaseOrderDataAPIView.as_view(), name='po_data_api'),
     path('orders/<int:pk>/', PurchaseOrderDetailView.as_view(), name='purchase_order_detail'),
     path('orders/<int:pk>/reply/', ReplyPurchaseOrderView.as_view(), name='reply_purchase_order'),
 

@@ -17,6 +17,7 @@ def branding_context(request):
         invoices_count = Invoice.objects.exclude(status='CANCELLED').count()
         global_customers = list(Customer.objects.all().order_by('company_name')[:100])
         global_payment_terms = list(PaymentTermOption.get_all_terms())
+        global_purchase_orders = list(PurchaseOrder.objects.exclude(status=PurchaseOrder.Status.CANCELLED).select_related('customer').order_by('-created_at')[:100])
     except Exception:
         orders_count = 0
         quotes_count = 0
@@ -24,6 +25,7 @@ def branding_context(request):
         invoices_count = 0
         global_customers = []
         global_payment_terms = []
+        global_purchase_orders = []
 
     try:
         from apps.accounts.models import AdminNotification
@@ -53,5 +55,6 @@ def branding_context(request):
         'recent_notifications': recent_notifications,
         'global_customers': global_customers,
         'global_payment_terms': global_payment_terms,
+        'global_purchase_orders': global_purchase_orders,
     }
 

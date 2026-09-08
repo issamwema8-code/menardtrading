@@ -6,6 +6,7 @@ from django.utils import timezone
 import datetime
 
 from apps.customers.models import Customer
+from apps.orders.models import PurchaseOrder, OrderCommunication
 from apps.quotes.models import Quotation, QuoteLineItem
 from apps.logistics.models import LogisticsJob
 from apps.billing.models import Invoice, InvoiceLineItem, PaymentReceipt
@@ -332,5 +333,129 @@ class DocumentDesignSystemTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         # Quote must still exist because self.job is linked
         self.assertTrue(Quotation.objects.filter(id=self.quote.id).exists())
+
+    def test_purchase_order_data_api(self):
+        """Test the JSON data endpoint for a purchase order."""
+        po = PurchaseOrder.objects.create(
+            po_number='PO-API-001',
+            customer=self.customer,
+            cargo_description='Mining Drill Bits & Lubricants',
+            weight_tons=Decimal('14.50'),
+            volume_cbm=Decimal('22.00'),
+            quantity_pallets=10,
+            pickup_location='Swakopmund Yard',
+            delivery_location='Rundu Logistics Depot'
+        )
+        url = reverse('po_data_api', kwargs={'pk': po.id})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertEqual(data['po_number'], 'PO-API-001')
+        self.assertEqual(data['weight_tons'], '14.50')
+        self.assertEqual(data['quantity_pallets'], 10)
+
+    def test_merge_purchase_orders(self):
+        """Test consolidating two separate customer POs into a single master order."""
+        # Create Primary PO
+        po1 = PurchaseOrder.objects.create(
+            po_number='PO-MERGE-001',
+            customer=self.customer,
+            cargo_description='10x Steel Structural Beams',
+            weight_tons=Decimal('12.00'),
+            volume_cbm=Decimal('15.00'),
+            quantity_pallets=4,
+            pickup_location='Windhoek Industrial Hub',
+            delivery_location='Walvis Bay Port',
+            special_instructions='Crane required for offloading.'
+        )
+        quote1 = Quotation.objects.create(
+            purchase_order=po1,
+            customer=self.customer,
+            quote_number='QT-MERGE-001',
+            status='DRAFT'
+        )
+        QuoteLineItem.objects.create(
+            quote=quote1,
+            description='Steel Beams Freight transit',
+            quantity=Decimal('12.00'),
+            unit_price=Decimal('1000.00'),
+            total_price=Decimal('12000.00')
+        )
+        quote1.recalculate_totals()
+
+        # Create Secondary PO
+        po2 = PurchaseOrder.objects.create(
+            po_number='PO-MERGE-002',
+            customer=self.customer,
+            cargo_description='5x Anchor Bolts & Fittings',
+            weight_tons=Decimal('3.50'),
+            volume_cbm=Decimal('5.00'),
+            quantity_pallets=2,
+            pickup_location='Windhoek Industrial Hub',
+            delivery_location='Walvis Bay Port',
+            special_instructions='Handle with care.'
+        )
+        quote2 = Quotation.objects.create(
+            purchase_order=po2,
+            customer=self.customer,
+            quote_number='QT-MERGE-002',
+            status='DRAFT'
+        )
+        QuoteLineItem.objects.create(
+            quote=quote2,
+            description='Anchor Bolts Freight add-on',
+            quantity=Decimal('3.50'),
+            unit_price=Decimal('800.00'),
+            total_price=Decimal('2800.00')
+        )
+        quote2.recalculate_totals()
+
+        # Add communication on secondary PO
+        OrderCommunication.objects.create(
+            purchase_order=po2,
+            sender_department='orders',
+            recipient_email=self.customer.email,
+            subject='PO Confirmation',
+            message_body='Received second batch PO'
+        )
+
+        url = reverse('merge_purchase_orders')
+        data = {
+            'primary_po_id': po1.id,
+            'secondary_po_id': po2.id,
+            'combined_po_number': 'PO-MERGE-001 / PO-MERGE-002',
+            'weight_tons': '15.50',
+            'volume_cbm': '20.00',
+            'quantity_pallets': '6',
+        }
+        response = self.client.post(url, data, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        po1.refresh_from_db()
+        po2.refresh_from_db()
+
+        # Verify Master PO is updated
+        self.assertEqual(po1.po_number, 'PO-MERGE-001 / PO-MERGE-002')
+        self.assertEqual(po1.weight_tons, Decimal('15.50'))
+        self.assertEqual(po1.volume_cbm, Decimal('20.00'))
+        self.assertEqual(po1.quantity_pallets, 6)
+        self.assertIn('Steel Structural Beams', po1.cargo_description)
+        self.assertIn('Anchor Bolts & Fittings', po1.cargo_description)
+
+        # Verify Secondary PO is cancelled/archived
+        self.assertEqual(po2.status, PurchaseOrder.Status.CANCELLED)
+        self.assertIn('Merged into PO', po2.special_instructions)
+
+        # Verify communication transfer
+        self.assertEqual(po1.communications.count(), 1)
+
+        # Verify Quotation line item transfer: primary quote now has both items
+        quote1.refresh_from_db()
+        self.assertEqual(quote1.line_items.count(), 2)
+        # Expected subtotal: 12000 + 2800 = 14800.00
+        self.assertEqual(quote1.subtotal, Decimal('14800.00'))
+        self.assertFalse(Quotation.objects.filter(id=quote2.id).exists())
+
 
 

@@ -1458,3 +1458,230 @@
   </div>
 </div>
 
+<!-- ============================================================ -->
+<!-- 13. MERGE PURCHASE ORDERS MODAL                              -->
+<!-- ============================================================ -->
+<div x-show="activeModal === 'merge_pos_modal'"
+     x-data="{
+       orders: [
+         {% for p in global_purchase_orders %}
+         {
+           id: '{{ p.id }}',
+           po_number: '{{ p.po_number|escapejs }}',
+           customer: '{{ p.customer.company_name|default:p.raw_email_sender|default:'Unassigned'|escapejs }}',
+           cargo: '{{ p.cargo_description|default:''|escapejs }}',
+           weight: '{{ p.weight_tons|default:'' }}',
+           volume: '{{ p.volume_cbm|default:'' }}',
+           pallets: '{{ p.quantity_pallets|default:'' }}',
+           pickup: '{{ p.pickup_location|default:''|escapejs }}',
+           delivery: '{{ p.delivery_location|default:''|escapejs }}',
+           instructions: '{{ p.special_instructions|default:''|escapejs }}'
+         }{% if not forloop.last %},{% endif %}
+         {% endfor %}
+       ],
+       primaryId: '',
+       secondaryId: '',
+       combinedPoNumber: '',
+       combinedCargo: '',
+       combinedWeight: '',
+       combinedVolume: '',
+       combinedPallets: '',
+       combinedInstructions: '',
+       get primaryOrder() {
+         return this.orders.find(o => String(o.id) === String(this.primaryId)) || null;
+       },
+       get secondaryOrder() {
+         return this.orders.find(o => String(o.id) === String(this.secondaryId)) || null;
+       },
+       get availableSecondaryOrders() {
+         return this.orders.filter(o => String(o.id) !== String(this.primaryId));
+       },
+       openWithPrimary(id) {
+         this.primaryId = id;
+         this.secondaryId = '';
+         activeModal = 'merge_pos_modal';
+         this.updateCombined();
+       },
+       onPrimaryChange() {
+         if (this.secondaryId === this.primaryId) {
+           this.secondaryId = '';
+         }
+         this.updateCombined();
+       },
+       onSecondaryChange() {
+         this.updateCombined();
+       },
+       updateCombined() {
+         const p = this.primaryOrder;
+         const s = this.secondaryOrder;
+
+         if (!p && !s) {
+           this.combinedPoNumber = '';
+           this.combinedCargo = '';
+           this.combinedWeight = '';
+           this.combinedVolume = '';
+           this.combinedPallets = '';
+           this.combinedInstructions = '';
+           return;
+         }
+
+         if (p && !s) {
+           this.combinedPoNumber = p.po_number;
+           this.combinedCargo = p.cargo;
+           this.combinedWeight = p.weight;
+           this.combinedVolume = p.volume;
+           this.combinedPallets = p.pallets;
+           this.combinedInstructions = p.instructions;
+           return;
+         }
+
+         if (p && s) {
+           this.combinedPoNumber = `${p.po_number} / ${s.po_number}`;
+           
+           // Cargo
+           const cargoLines = [];
+           if (p.cargo) cargoLines.push(p.cargo.trim());
+           if (s.cargo) cargoLines.push(`[Merged from PO #${s.po_number}]: ${s.cargo.trim()}`);
+           this.combinedCargo = cargoLines.join('\n');
+
+           // Weights
+           const w1 = parseFloat(p.weight) || 0;
+           const w2 = parseFloat(s.weight) || 0;
+           const totalW = w1 + w2;
+           this.combinedWeight = totalW > 0 ? totalW.toFixed(2) : '';
+
+           // Volumes
+           const v1 = parseFloat(p.volume) || 0;
+           const v2 = parseFloat(s.volume) || 0;
+           const totalV = v1 + v2;
+           this.combinedVolume = totalV > 0 ? totalV.toFixed(2) : '';
+
+           // Pallets
+           const pal1 = parseInt(p.pallets) || 0;
+           const pal2 = parseInt(s.pallets) || 0;
+           const totalPal = pal1 + pal2;
+           this.combinedPallets = totalPal > 0 ? totalPal : '';
+
+           // Instructions
+           const instrLines = [];
+           if (p.instructions) instrLines.push(p.instructions.trim());
+           if (s.instructions) instrLines.push(`[Merged from PO #${s.po_number}]: ${s.instructions.trim()}`);
+           this.combinedInstructions = instrLines.join('\n');
+         }
+       }
+     }"
+     @open-merge-pos.window="openWithPrimary($event.detail.primaryId)"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 overflow-y-auto" x-cloak>
+  <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 sm:p-7 max-w-2xl w-full shadow-2xl space-y-5 border border-slate-200 my-8">
+    <div class="flex justify-between items-start border-b border-slate-100 pb-4">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="badge-gold text-[10px]">Consolidate Orders</span>
+        </div>
+        <h3 class="font-extrabold text-lg text-slate-900">Merge Purchase Orders</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Combine two separate customer POs into a single master order with unified cargo, weights, and quotes.</p>
+      </div>
+      <button @click="activeModal = null" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition text-lg font-bold leading-none">&times;</button>
+    </div>
+
+    <form method="POST" action="{% url 'merge_purchase_orders' %}" class="space-y-4">
+      {% csrf_token %}
+
+      <!-- PO Selection Grid (Primary vs Secondary) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
+        <!-- 1. Primary PO (Master to Keep) -->
+        <div>
+          <label class="form-label text-[11px] font-bold text-slate-900 flex items-center gap-1.5 mb-1">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+            <span>Primary Master PO <span class="text-rose-500">*</span></span>
+          </label>
+          <select name="primary_po_id" x-model="primaryId" @change="onPrimaryChange()" required class="form-input text-xs py-2 font-mono font-bold bg-white">
+            <option value="">-- Select Master PO --</option>
+            <template x-for="po in orders" :key="'p-' + po.id">
+              <option :value="po.id" x-text="`PO #${po.po_number} — ${po.customer}`"></option>
+            </template>
+          </select>
+          <p class="text-[10px] text-slate-400 mt-1">This PO will remain active and absorb all items.</p>
+        </div>
+
+        <!-- 2. Secondary PO (To Merge & Absorb) -->
+        <div>
+          <label class="form-label text-[11px] font-bold text-slate-900 flex items-center gap-1.5 mb-1">
+            <span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>
+            <span>Secondary PO to Merge <span class="text-rose-500">*</span></span>
+          </label>
+          <select name="secondary_po_id" x-model="secondaryId" @change="onSecondaryChange()" required class="form-input text-xs py-2 font-mono font-bold bg-white">
+            <option value="">-- Select PO to Merge --</option>
+            <template x-for="po in availableSecondaryOrders" :key="'s-' + po.id">
+              <option :value="po.id" x-text="`PO #${po.po_number} — ${po.customer}`"></option>
+            </template>
+          </select>
+          <p class="text-[10px] text-slate-400 mt-1">This PO will be archived and linked to the master.</p>
+        </div>
+      </div>
+
+      <!-- Live Combined Preview Box (Shown when both selected) -->
+      <div x-show="primaryOrder && secondaryOrder" x-transition class="space-y-3.5 pt-1">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+          <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Consolidated Master PO Preview</h4>
+          <span class="badge-emerald text-[10px]">Auto-Consolidated</span>
+        </div>
+
+        <div>
+          <label class="form-label text-[11px]">Consolidated PO Reference Number <span class="text-rose-500">*</span></label>
+          <input type="text" name="combined_po_number" x-model="combinedPoNumber" required class="form-input text-xs py-1.5 font-mono font-bold">
+        </div>
+
+        <div>
+          <label class="form-label text-[11px]">Combined Cargo Description <span class="text-rose-500">*</span></label>
+          <textarea name="cargo_description" x-model="combinedCargo" rows="3" required class="form-input text-xs font-medium"></textarea>
+        </div>
+
+        <!-- Logistics Totals Grid -->
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="form-label text-[10px]">Combined Weight (T)</label>
+            <input type="number" step="0.01" min="0" name="weight_tons" x-model="combinedWeight" placeholder="0.00" class="form-input text-xs py-1.5 text-center font-mono font-bold">
+          </div>
+          <div>
+            <label class="form-label text-[10px]">Combined Volume (CBM)</label>
+            <input type="number" step="0.01" min="0" name="volume_cbm" x-model="combinedVolume" placeholder="0.00" class="form-input text-xs py-1.5 text-center font-mono font-bold">
+          </div>
+          <div>
+            <label class="form-label text-[10px]">Total Pallets</label>
+            <input type="number" step="1" min="0" name="quantity_pallets" x-model="combinedPallets" placeholder="0" class="form-input text-xs py-1.5 text-center font-mono font-bold">
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label text-[11px]">Combined Special Instructions &amp; Notes</label>
+          <textarea name="special_instructions" x-model="combinedInstructions" rows="2" class="form-input text-xs"></textarea>
+        </div>
+
+        <!-- Consolidation Summary Banner -->
+        <div class="p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-amber-900 text-xs flex items-start gap-2.5">
+          <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <div class="space-y-0.5">
+            <p class="font-bold text-[11px]">What happens when you merge:</p>
+            <p class="text-[11px] text-amber-800">
+              Secondary PO #<span class="font-bold font-mono" x-text="secondaryOrder ? secondaryOrder.po_number : ''"></span> will be marked as Cancelled/Merged. Its communications, email attachments, and quotation line items will transfer to Master PO #<span class="font-bold font-mono" x-text="primaryOrder ? primaryOrder.po_number : ''"></span>.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-100">
+        <button type="button" @click="activeModal = null" class="btn-outline">Cancel</button>
+        <button type="submit" :disabled="!primaryId || !secondaryId || primaryId === secondaryId" 
+                :class="(!primaryId || !secondaryId || primaryId === secondaryId) ? 'opacity-50 cursor-not-allowed' : ''"
+                class="btn-primary">
+          <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+          <span>Confirm &amp; Merge POs</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+

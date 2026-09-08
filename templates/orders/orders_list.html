@@ -56,6 +56,11 @@
           </button>
         </form>
 
+        <button @click="activeModal = 'merge_pos_modal'" class="btn-outline" title="Merge two POs into one master order">
+          <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+          <span>Merge POs</span>
+        </button>
+
         <button @click="activeModal = 'upload_po_modal'" class="btn-primary">
           <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
           <span>Upload PO</span>
@@ -241,13 +246,20 @@
 
             <!-- 8. Actions -->
             <td class="table-body-cell whitespace-nowrap text-right" onclick="event.stopPropagation();">
-              <div class="inline-flex items-center justify-end gap-2">
-                <a href="{% url 'purchase_order_detail' po.id %}" class="btn-outline text-xs py-1.5 px-3 whitespace-nowrap">
-                  <span>View Order &rarr;</span>
+              <div class="inline-flex items-center justify-end gap-1.5">
+                <a href="{% url 'purchase_order_detail' po.id %}" class="btn-outline text-xs py-1.5 px-2.5 whitespace-nowrap">
+                  <span>View &rarr;</span>
                 </a>
+
+                <button type="button" @click="$dispatch('open-merge-pos', { primaryId: '{{ po.id }}' })" 
+                        class="btn-outline text-xs py-1.5 px-2.5 whitespace-nowrap text-amber-600 hover:text-amber-700 hover:bg-amber-50" title="Merge this PO with another PO">
+                  <svg class="w-3.5 h-3.5 text-amber-500 inline-block mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                  <span>Merge</span>
+                </button>
+
                 {% if po.quotation %}
-                <a href="{% url 'quotes_list' %}" class="badge-gold text-xs py-1 px-2.5 hover:bg-amber-100 transition font-mono whitespace-nowrap" title="Linked Quotation">
-                  Quote #{{ po.quotation.quote_number }}
+                <a href="{% url 'quote_preview' po.quotation.id %}" class="badge-gold text-xs py-1 px-2 hover:bg-amber-100 transition font-mono whitespace-nowrap" title="Linked Quotation">
+                  #{{ po.quotation.quote_number }}
                 </a>
                 {% endif %}
               </div>
