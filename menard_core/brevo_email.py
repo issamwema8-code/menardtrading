@@ -14,6 +14,7 @@ LOOPBACK_DISALLOWED_PATTERNS = [
     'quotes@menardtrading.com',
     'accounts@menardtrading.com',
     'logistics@menardtrading.com',
+    'support@menardtrading.com',
     'info@menardtrading.com',
     'no-reply@menardtrading.com',
     'mailer-daemon',

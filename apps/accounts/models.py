@@ -472,7 +472,7 @@ class CompanySettings(models.Model):
             'vat_rate': vat_rate_val,
             'vat_percentage': pct_str,
             'company_reg_number': self.company_reg_number or '',
-            'support_email': self.email or self.orders_email or 'info@menardtrading.com',
+            'support_email': self.email or 'support@menardtrading.com',
             'orders_email': self.orders_email or self.email or 'orders@menardtrading.com',
             'quotes_email': self.quotes_email or self.email or 'quotes@menardtrading.com',
             'accounts_email': self.accounts_email or self.email or 'accounts@menardtrading.com',

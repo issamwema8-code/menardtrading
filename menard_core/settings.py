@@ -315,7 +315,7 @@ EMAIL_BRANDING = {
     'text_color': '#334155',
     'bg_color': '#f8fafc',
     'website_url': 'https://menardtrading.com',
-    'support_email': 'info@menardtrading.com',
+    'support_email': 'support@menardtrading.com',
     'accounts_email': 'accounts@menardtrading.com',
     'orders_email': 'orders@menardtrading.com',
     'quotes_email': 'quotes@menardtrading.com',
