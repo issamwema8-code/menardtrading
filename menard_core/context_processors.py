@@ -24,6 +24,14 @@ def branding_context(request):
         global_customers = []
 
     try:
+        from apps.accounts.models import AdminNotification
+        unread_notifications_count = AdminNotification.objects.filter(is_read=False).count()
+        recent_notifications = list(AdminNotification.objects.all().order_by('-created_at')[:5])
+    except Exception:
+        unread_notifications_count = 0
+        recent_notifications = []
+
+    try:
         from apps.accounts.models import CompanySettings
         company_info = CompanySettings.get_settings().as_branding_dict()
     except Exception:
@@ -38,7 +46,9 @@ def branding_context(request):
             'quotes_count': quotes_count,
             'jobs_count': jobs_count,
             'invoices_count': invoices_count,
+            'unread_notifications_count': unread_notifications_count,
         },
+        'recent_notifications': recent_notifications,
         'global_customers': global_customers,
     }
 

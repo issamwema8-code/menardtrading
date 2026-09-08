@@ -6,8 +6,10 @@ from decimal import Decimal
 from django.utils import timezone
 from django.conf import settings
 from django.core.files.base import ContentFile
-from apps.orders.models import PurchaseOrder
+from apps.orders.models import PurchaseOrder, InboundEmailMessage, EmailQueueMessage
 from apps.orders.services import process_inbound_purchase_order
+from apps.orders.email_worker import process_inbound_queue, process_outbound_queue
+from menard_core.brevo_email import queue_departmental_email, clean_email
 
 logger = logging.getLogger(__name__)
 
@@ -31,14 +33,20 @@ def get_unique_po_number(base_ref: str) -> str:
 
 def sync_orders_mailbox():
     """
-    Connects to the orders@menardtrading.com mailbox via IMAP (SSL),
-    fetches any incoming emails with Purchase Orders or attachments,
-    ingests them into the database, extracts data, and generates draft quotes.
+    Autonomous IMAP Ingestion Service:
+    - Connects to the orders@menardtrading.com mailbox via IMAP (SSL).
+    - Ingests incoming emails into InboundEmailMessage with deduplication.
+    - Queues optimistic auto-acknowledgments and creates PurchaseOrders.
+    - Can be executed independently in the background via cron or management command.
     """
     host = getattr(settings, 'IMAP_HOST', 'mail.menardtrading.com')
     port = getattr(settings, 'IMAP_PORT', 993)
     user = getattr(settings, 'IMAP_USER', 'orders@menardtrading.com')
-    password = getattr(settings, 'EMAIL_PASSWORD', 'menardtrading@2026')
+    password = getattr(settings, 'EMAIL_PASSWORD', '')
+
+    if not password:
+        logger.warning("IMAP sync skipped: EMAIL_PASSWORD is not configured in settings/environment.")
+        return {'status': 'skipped', 'message': 'EMAIL_PASSWORD not set', 'synced_count': 0, 'orders': []}
 
     created_orders = []
 
@@ -77,22 +85,41 @@ def sync_orders_mailbox():
                             subject_str += text.decode(encoding or 'utf-8', errors='ignore')
                         else:
                             subject_str += str(text)
-                    
+
                     sender_raw = msg.get('From', '')
                     sender_name, sender_email = email.utils.parseaddr(sender_raw)
-                    sender_email = sender_email.strip().lower() or sender_raw.strip().lower()
+                    sender_email = clean_email(sender_email or sender_raw)
+
+                    # Extract Reply-To
+                    reply_to_raw = msg.get('Reply-To', '')
+                    _, reply_to_email = email.utils.parseaddr(reply_to_raw)
+                    reply_to_email = clean_email(reply_to_email) or sender_email
+
+                    # RFC Message-ID for strict idempotency
+                    rfc_msg_id = (msg.get('Message-ID') or msg.get('Message-Id') or f"IMAP-{msg_id.decode()}-{sender_email}").strip()
 
                     # Ignore automated bounce / delivery notification emails
                     lower_sender = sender_raw.lower()
                     lower_subject = subject_str.lower()
-                    if any(bad in lower_sender for bad in ['mailer-daemon', 'postmaster', 'no-reply@parkside', 'bounce']) or \
-                       any(bad in lower_subject for bad in ['undelivered mail', 'delivery status notification', 'failure notice', 'returned to sender']):
+                    if any(bad in lower_sender for bad in ['mailer-daemon', 'postmaster', 'no-reply', 'bounce', 'donotreply']) or \
+                       any(bad in lower_subject for bad in ['undelivered mail', 'delivery status notification', 'failure notice', 'returned to sender', 'message blocked', 'message rejected']):
                         continue
 
-                    # Check if already processed to avoid duplicates
-                    existing_po = PurchaseOrder.objects.filter(raw_email_subject=subject_str, raw_email_sender=sender_email).first()
-                    if existing_po:
-                        continue
+                    # Atomic Idempotency Check
+                    inbound_record, created = InboundEmailMessage.objects.get_or_create(
+                        message_id=rfc_msg_id,
+                        defaults={
+                            'sender_email': sender_email,
+                            'sender_name': sender_name,
+                            'recipient_email': user,
+                            'reply_to': reply_to_email,
+                            'subject': subject_str,
+                            'status': InboundEmailMessage.Status.RECEIVED,
+                        }
+                    )
+
+                    if not created:
+                        continue  # Already ingested
 
                     # Extract body text and PDF attachments
                     body_text = ""
@@ -116,10 +143,12 @@ def sync_orders_mailbox():
 
                         filename = part.get_filename()
                         if filename:
-                            # Check for PDF or document
                             if filename.lower().endswith('.pdf') or 'pdf' in content_type:
                                 pdf_filename = filename
                                 pdf_bytes = part.get_payload(decode=True)
+
+                    inbound_record.body_text = body_text.strip()
+                    inbound_record.save(update_fields=['body_text'])
 
                     unique_po_ref = get_unique_po_number(f"PO-{msg_id.decode()}")
 
@@ -128,24 +157,50 @@ def sync_orders_mailbox():
                         raw_email_sender=sender_email,
                         raw_email_subject=subject_str,
                         raw_email_body=body_text.strip(),
+                        source=PurchaseOrder.Source.EMAIL,
                         status=PurchaseOrder.Status.RECEIVED
                     )
+                    inbound_record.purchase_order = po
+                    inbound_record.save(update_fields=['purchase_order'])
 
                     if pdf_bytes and pdf_filename:
                         po.po_file.save(pdf_filename, ContentFile(pdf_bytes), save=True)
+
+                    # Queue optimistic auto-acknowledgement
+                    if reply_to_email or sender_email:
+                        ack_target = reply_to_email or sender_email
+                        queue_departmental_email(
+                            department='no-reply',
+                            recipient_list=[ack_target],
+                            subject=f"Purchase Order Received – #{po.po_number} | Menard Trading CC",
+                            template_name='emails/po_received_noreply.html',
+                            context={
+                                'po': po,
+                                'customer_name': sender_name or "Procurement / Logistics"
+                            },
+                            reply_to='orders@menardtrading.com',
+                            purchase_order=po,
+                            inbound_email=inbound_record
+                        )
 
                     # Trigger extraction and quote creation
                     process_inbound_purchase_order(po)
                     created_orders.append(po.po_number)
 
             except Exception as item_err:
-                logger.error(f"Error processing message {msg_id}: {item_err}", exc_info=True)
+                logger.error(f"Error processing IMAP message {msg_id}: {item_err}", exc_info=True)
                 continue
 
         try:
             mail.logout()
         except Exception:
             pass
+
+        # Trigger quick worker cycle
+        try:
+            process_outbound_queue(batch_size=10)
+        except Exception as q_err:
+            logger.warning(f"IMAP sync outbound queue flush notice: {q_err}")
 
         return {
             'status': 'success',
@@ -161,4 +216,3 @@ def sync_orders_mailbox():
             'synced_count': 0,
             'orders': []
         }
-

@@ -150,9 +150,15 @@
               title="Notifications"
             >
               <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+              {% if header_counts.unread_notifications_count %}
+              <span class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white font-bold text-[10px] flex items-center justify-center shadow animate-pulse">
+                {{ header_counts.unread_notifications_count }}
+              </span>
+              {% else %}
               <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-slate-950 font-semibold text-[10px] flex items-center justify-center shadow">
                 {{ header_counts.orders_count|default:"0" }}
               </span>
+              {% endif %}
             </button>
 
             <!-- Notifications Popover -->
@@ -164,34 +170,38 @@
               x-transition:leave="transition ease-in duration-150"
               x-transition:leave-start="opacity-100 translate-y-0"
               x-transition:leave-end="opacity-0 translate-y-2"
-              class="absolute right-0 mt-3 w-80 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 divide-y divide-slate-800"
+              class="absolute right-0 mt-3 w-84 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 divide-y divide-slate-800"
               style="display: none;"
             >
               <div class="p-4 bg-slate-950/80 flex items-center justify-between">
                 <div>
-                  <h4 class="font-semibold text-sm text-white">Activity</h4>
-                  <p class="text-[11px] text-slate-400">Recent orders and deliveries</p>
+                  <h4 class="font-semibold text-sm text-white">Notifications</h4>
+                  <p class="text-[11px] text-slate-400">Autonomous email &amp; order alerts</p>
                 </div>
-                <span class="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded font-semibold">Active</span>
+                <span class="text-[10px] bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded font-semibold">{{ header_counts.unread_notifications_count|default:"0" }} Unread</span>
               </div>
-              <!-- Notification items -->
-              <div class="p-3 space-y-2 text-xs">
-                <a href="{% url 'orders_list' %}" class="flex items-center justify-between p-2 rounded-lg bg-slate-800/60 hover:bg-slate-800 transition">
-                  <span class="text-slate-300 font-normal">Purchase Orders</span>
-                  <span class="px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 font-semibold text-[10px]">{{ header_counts.orders_count|default:"0" }}</span>
-                </a>
-                <a href="{% url 'quotes_list' %}" class="flex items-center justify-between p-2 rounded-lg bg-slate-800/60 hover:bg-slate-800 transition">
-                  <span class="text-slate-300 font-normal">Quotations</span>
-                  <span class="px-2 py-0.5 rounded-full bg-blue-500/30 text-blue-300 font-semibold text-[10px]">{{ header_counts.quotes_count|default:"0" }}</span>
-                </a>
-                <a href="{% url 'logistics_list' %}" class="flex items-center justify-between p-2 rounded-lg bg-slate-800/60 hover:bg-slate-800 transition">
-                  <span class="text-slate-300 font-normal">Deliveries</span>
-                  <span class="px-2 py-0.5 rounded-full bg-purple-500/30 text-purple-300 font-semibold text-[10px]">{{ header_counts.jobs_count|default:"0" }}</span>
-                </a>
+              
+              <!-- Real-time Notification Items -->
+              <div class="p-2 space-y-1.5 text-xs max-h-72 overflow-y-auto">
+                {% if recent_notifications %}
+                  {% for notif in recent_notifications %}
+                  <a href="{{ notif.link_url|default:'#' }}" class="block p-2.5 rounded-xl {% if not notif.is_read %}bg-slate-800 border border-amber-500/30{% else %}bg-slate-800/40 hover:bg-slate-800/80{% endif %} transition space-y-1">
+                    <div class="flex items-center justify-between">
+                      <span class="font-bold text-slate-100 text-xs truncate">{{ notif.title }}</span>
+                      <span class="font-mono text-[9px] text-slate-400">{{ notif.created_at|timesince }} ago</span>
+                    </div>
+                    <p class="text-[11px] text-slate-300 line-clamp-2 leading-relaxed">{{ notif.message }}</p>
+                  </a>
+                  {% endfor %}
+                {% else %}
+                  <div class="p-4 text-center text-slate-400 text-xs">
+                    No recent notifications
+                  </div>
+                {% endif %}
               </div>
               <div class="p-2.5 bg-slate-950 text-center">
-                <a href="{% url 'dashboard_overview' %}" class="text-xs text-amber-400 hover:text-amber-300 font-semibold block">
-                  View Overview &rarr;
+                <a href="{% url 'orders_list' %}" class="text-xs text-amber-400 hover:text-amber-300 font-semibold block">
+                  View All Orders &rarr;
                 </a>
               </div>
             </div>

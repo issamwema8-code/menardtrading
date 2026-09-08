@@ -228,29 +228,21 @@ def process_inbound_purchase_order(po: PurchaseOrder) -> Quotation:
     else:
         quote = po.quotation
 
-    # Send confirmation email to customer (strictly once)
-    if po.customer and po.customer.email and not po.acknowledgment_sent:
+    # Send/Queue confirmation email to customer (strictly once)
+    already_queued = po.queued_emails.filter(department='no-reply').exists()
+    if po.customer and po.customer.email and not po.acknowledgment_sent and not already_queued:
         try:
-            success, msg = send_departmental_email(
+            from menard_core.brevo_email import queue_departmental_email
+            queue_departmental_email(
                 department='no-reply',
                 recipient_list=[po.customer.email],
                 subject=f"Purchase Order Received – #{po.po_number} | Menard Trading CC",
                 template_name='emails/po_received_noreply.html',
-                context={'po': po, 'customer_name': po.customer.contact_name or po.customer.company_name}
+                context={'po': po, 'customer_name': po.customer.contact_name or po.customer.company_name},
+                reply_to='orders@menardtrading.com',
+                purchase_order=po
             )
-            if success:
-                po.acknowledgment_sent = True
-                po.acknowledgment_sent_at = timezone.now()
-                po.save(update_fields=['acknowledgment_sent', 'acknowledgment_sent_at'])
-
-                OrderCommunication.objects.create(
-                    purchase_order=po,
-                    sender_department='no-reply',
-                    recipient_email=po.customer.email,
-                    subject=f"Purchase Order Received – #{po.po_number} | Menard Trading CC",
-                    message_body="Automated acknowledgment notice sent upon purchase order receipt."
-                )
         except Exception as email_err:
-            logger.error(f"Failed to send acknowledgment email for PO #{po.po_number}: {email_err}")
+            logger.error(f"Failed to queue acknowledgment email for PO #{po.po_number}: {email_err}")
 
     return quote

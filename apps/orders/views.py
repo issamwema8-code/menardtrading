@@ -100,6 +100,7 @@ class PurchaseOrderDetailView(PermissionRequiredMixin, View):
             'quote': quote,
             'job': job,
             'communications': communications,
+            'queued_emails': po.queued_emails.all().order_by('-created_at'),
             'default_reply_subject': f"Re: {po.raw_email_subject or ('PO #' + po.po_number)} | Menard Trading CC",
             'default_recipient': clean_recipient,
         }

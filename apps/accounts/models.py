@@ -488,3 +488,32 @@ class CompanySettings(models.Model):
                 'swift_code': self.swift_code or '',
             }
         }
+
+
+class AdminNotification(models.Model):
+    class NotificationType(models.TextChoices):
+        NEW_ORDER = 'NEW_ORDER', 'New Purchase Order'
+        EMAIL_FAILED = 'EMAIL_FAILED', 'Email Delivery Failed'
+        QUOTE_APPROVED = 'QUOTE_APPROVED', 'Quote Approved'
+        PAYMENT_RECEIVED = 'PAYMENT_RECEIVED', 'Payment Received'
+        SYSTEM = 'SYSTEM', 'System Alert'
+
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    notification_type = models.CharField(
+        max_length=30,
+        choices=NotificationType.choices,
+        default=NotificationType.NEW_ORDER,
+        db_index=True
+    )
+    link_url = models.CharField(max_length=300, blank=True, default='')
+    is_read = models.BooleanField(default=False, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Admin Notification'
+        verbose_name_plural = 'Admin Notifications'
+
+    def __str__(self):
+        return f"{self.get_notification_type_display()}: {self.title}"

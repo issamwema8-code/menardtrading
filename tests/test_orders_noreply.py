@@ -4,8 +4,9 @@ from decimal import Decimal
 from django.test import TestCase
 from django.utils import timezone
 from apps.customers.models import Customer
-from apps.orders.models import PurchaseOrder, OrderCommunication
+from apps.orders.models import PurchaseOrder, OrderCommunication, EmailQueueMessage
 from apps.orders.services import process_inbound_purchase_order
+from apps.orders.email_worker import process_outbound_queue
 from apps.quotes.models import Quotation
 
 
@@ -28,8 +29,8 @@ class PurchaseOrderNoReplyEmailTest(TestCase):
             status=PurchaseOrder.Status.RECEIVED
         )
 
-    @patch('apps.orders.services.send_departmental_email')
-    def test_single_no_reply_email_sent_and_marked(self, mock_send_email):
+    @patch('apps.orders.email_worker.send_departmental_email')
+    def test_single_no_reply_email_queued_and_dispatched(self, mock_send_email):
         mock_send_email.return_value = (True, "Dispatched successfully")
 
         # Initial PO processing
@@ -37,6 +38,14 @@ class PurchaseOrderNoReplyEmailTest(TestCase):
         self.assertIsNone(self.po.acknowledgment_sent_at)
 
         quote = process_inbound_purchase_order(self.po)
+
+        # Verify queued in EmailQueueMessage
+        queued = EmailQueueMessage.objects.filter(purchase_order=self.po, department='no-reply').first()
+        self.assertIsNotNone(queued)
+        self.assertEqual(queued.recipient_list, ['alice@acmelogistics.com'])
+
+        # Process queue
+        process_outbound_queue(batch_size=10)
 
         # Refresh from DB
         self.po.refresh_from_db()
@@ -56,18 +65,20 @@ class PurchaseOrderNoReplyEmailTest(TestCase):
         self.assertIsNotNone(comm)
         self.assertEqual(comm.recipient_email, 'alice@acmelogistics.com')
 
-    @patch('apps.orders.services.send_departmental_email')
+    @patch('apps.orders.email_worker.send_departmental_email')
     def test_reprocessing_does_not_resend_no_reply_email(self, mock_send_email):
         mock_send_email.return_value = (True, "Dispatched successfully")
 
         # First run
         process_inbound_purchase_order(self.po)
+        process_outbound_queue(batch_size=10)
         self.assertEqual(mock_send_email.call_count, 1)
         self.assertEqual(OrderCommunication.objects.filter(purchase_order=self.po).count(), 1)
 
         # Second run (e.g. operator triggers re-parse or webhook retry)
         self.po.refresh_from_db()
         quote2 = process_inbound_purchase_order(self.po)
+        process_outbound_queue(batch_size=10)
 
         # Mock count should STILL be exactly 1
         self.assertEqual(mock_send_email.call_count, 1)
@@ -76,9 +87,10 @@ class PurchaseOrderNoReplyEmailTest(TestCase):
         # Third run
         self.po.refresh_from_db()
         quote3 = process_inbound_purchase_order(self.po)
+        process_outbound_queue(batch_size=10)
         self.assertEqual(mock_send_email.call_count, 1)
 
-    @patch('apps.orders.services.send_departmental_email')
+    @patch('apps.orders.email_worker.send_departmental_email')
     def test_po_without_customer_email_handles_cleanly(self, mock_send_email):
         mock_send_email.return_value = (True, "Dispatched successfully")
         po_no_email = PurchaseOrder.objects.create(
@@ -88,10 +100,12 @@ class PurchaseOrderNoReplyEmailTest(TestCase):
         )
         quote = process_inbound_purchase_order(po_no_email)
         self.assertIsNotNone(quote)
+        process_outbound_queue(batch_size=10)
         po_no_email.refresh_from_db()
         self.assertTrue(po_no_email.acknowledgment_sent)
         self.assertEqual(mock_send_email.call_count, 1)
 
         # Reprocessing still sends 0 additional emails
         process_inbound_purchase_order(po_no_email)
+        process_outbound_queue(batch_size=10)
         self.assertEqual(mock_send_email.call_count, 1)

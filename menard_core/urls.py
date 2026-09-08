@@ -13,7 +13,8 @@ from menard_core.views import (
     PaymentReceiptsListView,
     CustomersListView,
     SyncInboxView,
-    AutoPollInboxView,
+    EmailQueueStatusView,
+    MarkNotificationReadView,
 )
 from apps.orders.views import UploadPurchaseOrderView, PurchaseOrderDetailView, ReplyPurchaseOrderView
 from apps.customers.views import CreateCustomerView
@@ -141,9 +142,10 @@ urlpatterns = [
     path('customers/', CustomersListView.as_view(), name='customers_list'),
     path('customers/create/', CreateCustomerView.as_view(), name='create_customer'),
 
-    # System Utilities & Sync
+    # System Utilities & Email Queue Monitoring
     path('system/sync-inbox/', SyncInboxView.as_view(), name='sync_inbox'),
-    path('system/auto-poll-inbox/', AutoPollInboxView.as_view(), name='auto_poll_inbox'),
+    path('system/email-queue-status/', EmailQueueStatusView.as_view(), name='email_queue_status'),
+    path('system/notifications/<int:pk>/read/', MarkNotificationReadView.as_view(), name='mark_notification_read'),
 
     # Brevo Inbound Webhook Listener
     path('api/webhooks/brevo/', BrevoInboundWebhookView.as_view(), name='brevo_inbound_webhook'),

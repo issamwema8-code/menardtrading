@@ -186,18 +186,44 @@ class SyncInboxView(PermissionRequiredMixin, View):
         return redirect(request.META.get('HTTP_REFERER', 'orders_list'))
 
 
-class AutoPollInboxView(PermissionRequiredMixin, View):
+class EmailQueueStatusView(PermissionRequiredMixin, View):
     """
-    Asynchronous polling endpoint called by frontend every 20-30s.
-    Checks orders@menardtrading.com mailbox and returns JSON status.
+    Passive, read-only status endpoint.
+    Returns background email queue counts (queued, sent, failed) without triggering email ingestion.
     """
     permission_required = 'orders.view'
 
     def get(self, request):
         from django.http import JsonResponse
-        from apps.orders.imap_service import sync_orders_mailbox
+        from apps.orders.models import EmailQueueMessage, InboundEmailMessage
         try:
-            result = sync_orders_mailbox()
-            return JsonResponse(result)
+            queued_count = EmailQueueMessage.objects.filter(status=EmailQueueMessage.Status.QUEUED).count()
+            sending_count = EmailQueueMessage.objects.filter(status=EmailQueueMessage.Status.SENDING).count()
+            failed_count = EmailQueueMessage.objects.filter(status=EmailQueueMessage.Status.FAILED).count()
+            inbound_pending = InboundEmailMessage.objects.filter(status=InboundEmailMessage.Status.RECEIVED).count()
+
+            return JsonResponse({
+                'status': 'healthy',
+                'queued_outbound': queued_count,
+                'sending_outbound': sending_count,
+                'failed_outbound': failed_count,
+                'inbound_pending': inbound_pending,
+            })
         except Exception as e:
-            return JsonResponse({'status': 'error', 'error': str(e), 'synced_count': 0})
+            return JsonResponse({'status': 'error', 'error': str(e)})
+
+
+class MarkNotificationReadView(LoginRequiredMixin, View):
+    """
+    Marks an AdminNotification as read.
+    """
+    def post(self, request, pk):
+        from django.http import JsonResponse
+        from apps.accounts.models import AdminNotification
+        notif = AdminNotification.objects.filter(pk=pk).first()
+        if notif:
+            notif.is_read = True
+            notif.save(update_fields=['is_read'])
+            return JsonResponse({'status': 'success', 'id': notif.id})
+        return JsonResponse({'status': 'not_found'}, status=404)
+
