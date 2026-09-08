@@ -218,8 +218,11 @@
       color: #475569;
       line-height: 1.4;
     }
-    .doc-footer {
+    .doc-bottom-section {
       margin-top: 25px;
+    }
+    .doc-footer {
+      margin-top: 20px;
       padding-top: 10px;
       border-top: 1px solid #e2e8f0;
       text-align: center;
@@ -229,7 +232,8 @@
   </style>
 </head>
 <body>
-
+<div class="doc-page-wrapper">
+  <div class="doc-content-body">
   <!-- Header -->
   <table class="header-table">
     <tr>
@@ -352,49 +356,53 @@
       {% endfor %}
     </tbody>
   </table>
+  </div> <!-- end .doc-content-body -->
 
   <!-- Bottom Split: Terms & Approvals (Left) vs Summary Totals (Right) -->
-  <table class="footer-split-table">
-    <tr>
-      <!-- Terms & Notes -->
-      <td style="width: 52%; vertical-align: top; padding-right: 15px;">
-        <div class="terms-box">
-          <strong style="color: #0f172a; text-transform: uppercase; font-size: 8pt; display: block; margin-bottom: 3px;">Transport Terms &amp; Scope:</strong>
-          &bull; Quotation covers point-to-point freight transit, standard border/toll processing, and professional driver allowances.<br>
-          &bull; Free loading/offloading time: 48 hours at each bay. Demurrage charged thereafter at standard tariff.<br>
-          &bull; Rates are subject to standard Menard Trading CC Conditions of Carriage.<br>
-          &bull; <strong>To approve this quote</strong>, click "Approve" in your customer email portal or reply with formal Purchase Order.
-        </div>
-      </td>
+  <div class="doc-bottom-section">
+    <table class="footer-split-table">
+      <tr>
+        <!-- Terms & Notes -->
+        <td style="width: 52%; vertical-align: top; padding-right: 15px;">
+          <div class="terms-box">
+            <strong style="color: #0f172a; text-transform: uppercase; font-size: 8pt; display: block; margin-bottom: 3px;">Transport Terms &amp; Scope:</strong>
+            &bull; Quotation covers point-to-point freight transit, standard border/toll processing, and professional driver allowances.<br>
+            &bull; Free loading/offloading time: 48 hours at each bay. Demurrage charged thereafter at standard tariff.<br>
+            &bull; Rates are subject to standard Menard Trading CC Conditions of Carriage.<br>
+            &bull; <strong>To approve this quote</strong>, click "Approve" in your customer email portal or reply with formal Purchase Order.
+          </div>
+        </td>
 
-      <!-- Totals Summary Table -->
-      <td style="width: 48%; vertical-align: top;">
-        <table class="totals-table">
-          <tr>
-            <td class="totals-label">SUBTOTAL</td>
-            <td class="totals-value font-mono">N$ {{ quote.subtotal|floatformat:2 }}</td>
-          </tr>
-          <tr>
-            <td class="totals-label">VAT RATE</td>
-            <td class="totals-value font-mono">{{ quote.vat_rate|floatformat:2 }}%</td>
-          </tr>
-          <tr>
-            <td class="totals-label">VAT / TAX AMOUNT</td>
-            <td class="totals-value font-mono">N$ {{ quote.vat_amount|floatformat:2 }}</td>
-          </tr>
-          <tr class="total-row">
-            <td class="totals-label">TOTAL ESTIMATE</td>
-            <td class="totals-value font-mono">N$ {{ quote.total_amount|floatformat:2 }}</td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
+        <!-- Totals Summary Table -->
+        <td style="width: 48%; vertical-align: top;">
+          <table class="totals-table">
+            <tr>
+              <td class="totals-label">SUBTOTAL</td>
+              <td class="totals-value font-mono">N$ {{ quote.subtotal|floatformat:2 }}</td>
+            </tr>
+            <tr>
+              <td class="totals-label">VAT RATE</td>
+              <td class="totals-value font-mono">{{ quote.vat_rate|floatformat:2 }}%</td>
+            </tr>
+            <tr>
+              <td class="totals-label">VAT / TAX AMOUNT</td>
+              <td class="totals-value font-mono">N$ {{ quote.vat_amount|floatformat:2 }}</td>
+            </tr>
+            <tr class="total-row">
+              <td class="totals-label">TOTAL ESTIMATE</td>
+              <td class="totals-value font-mono">N$ {{ quote.total_amount|floatformat:2 }}</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
 
-  <!-- Footer -->
-  <div class="doc-footer">
-    {{ branding.brand_name|default:branding.company_name|default:"MENARD TRADING CC" }} &bull; {{ branding.tagline|default:"ALWAYS ON TIME" }} &bull; {{ branding.company_address|default:"P O BOX 497-19001, RUNDU - NAMIBIA" }}
-  </div>
+    <!-- Footer -->
+    <div class="doc-footer">
+      {{ branding.brand_name|default:branding.company_name|default:"MENARD TRADING CC" }} &bull; {{ branding.tagline|default:"ALWAYS ON TIME" }} &bull; {{ branding.company_address|default:"P O BOX 497-19001, RUNDU - NAMIBIA" }}
+    </div>
+  </div> <!-- end .doc-bottom-section -->
+</div> <!-- end .doc-page-wrapper -->
 
 </body>
 </html>

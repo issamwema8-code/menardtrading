@@ -220,8 +220,11 @@
       color: #0f172a;
       margin-bottom: 3px;
     }
-    .doc-footer {
+    .doc-bottom-section {
       margin-top: 25px;
+    }
+    .doc-footer {
+      margin-top: 20px;
       padding-top: 10px;
       border-top: 1px solid #e2e8f0;
       text-align: center;
@@ -231,7 +234,8 @@
   </style>
 </head>
 <body>
-
+<div class="doc-page-wrapper">
+  <div class="doc-content-body">
   <!-- Header -->
   <table class="header-table">
     <tr>
@@ -341,69 +345,73 @@
       {% endfor %}
     </tbody>
   </table>
+  </div> <!-- end .doc-content-body -->
 
   <!-- Bottom Split: Notes/Banking (Left) vs Summary Totals (Right) -->
-  <table class="footer-split-table">
-    <tr>
-      <!-- Banking Details & Notes -->
-      <td style="width: 52%; vertical-align: top; padding-right: 15px;">
-        <div style="font-size: 8.5pt; font-weight: bold; color: #0f172a; margin-bottom: 6px;">
-          Thank you for your business!
-        </div>
-        
-        {% if branding.bank_details.bank_name or branding.bank_details.account_number %}
-        <div class="bank-box">
-          <div class="bank-box-title">Bank Settlement Details &amp; Remittance:</div>
-          {% if branding.bank_details.bank_name %}Bank: <strong>{{ branding.bank_details.bank_name }}</strong><br>{% endif %}
-          {% if branding.bank_details.account_name %}Account Name: <strong>{{ branding.bank_details.account_name }}</strong><br>{% endif %}
-          {% if branding.bank_details.account_number %}Account Number: <strong>{{ branding.bank_details.account_number }}</strong>{% endif %}{% if branding.bank_details.account_number and branding.bank_details.branch_code %} &bull; {% endif %}{% if branding.bank_details.branch_code %}Branch Code: <strong>{{ branding.bank_details.branch_code }}</strong>{% endif %}<br>
-          {% if branding.bank_details.swift_code %}Swift Code: <strong>{{ branding.bank_details.swift_code }}</strong> &bull; {% endif %}Reference: <strong style="color: #b47828;">{{ invoice.invoice_number }}</strong>
-        </div>
-        {% endif %}
-
-        <div style="font-size: 7.5pt; color: #64748b; margin-top: 8px;">
-          If you have any questions about this invoice, please contact Accounts at {{ branding.accounts_email|default:branding.support_email|default:"accounts@menardtrading.com" }}.
-        </div>
-      </td>
-
-      <!-- Totals Summary Table (Matches Simple service invoice1.xlsx) -->
-      <td style="width: 48%; vertical-align: top;">
-        <table class="totals-table">
-          <tr>
-            <td class="totals-label">SUBTOTAL</td>
-            <td class="totals-value font-mono">N$ {{ invoice.subtotal|floatformat:2 }}</td>
-          </tr>
-          <tr>
-            <td class="totals-label">VAT RATE</td>
-            <td class="totals-value font-mono">{{ invoice.vat_rate|floatformat:2 }}%</td>
-          </tr>
-          <tr>
-            <td class="totals-label">VAT / TAX AMOUNT</td>
-            <td class="totals-value font-mono">N$ {{ invoice.vat_amount|floatformat:2 }}</td>
-          </tr>
-          <tr class="total-row">
-            <td class="totals-label">TOTAL INVOICE</td>
-            <td class="totals-value font-mono">N$ {{ invoice.total_amount|floatformat:2 }}</td>
-          </tr>
-          {% if invoice.amount_paid > 0 %}
-          <tr>
-            <td class="totals-label" style="color: #16a34a;">AMOUNT PAID (EFT)</td>
-            <td class="totals-value font-mono" style="color: #16a34a;">- N$ {{ invoice.amount_paid|floatformat:2 }}</td>
-          </tr>
+  <div class="doc-bottom-section">
+    <table class="footer-split-table">
+      <tr>
+        <!-- Banking Details & Notes -->
+        <td style="width: 52%; vertical-align: top; padding-right: 15px;">
+          <div style="font-size: 8.5pt; font-weight: bold; color: #0f172a; margin-bottom: 6px;">
+            Thank you for your business!
+          </div>
+          
+          {% if branding.bank_details.bank_name or branding.bank_details.account_number %}
+          <div class="bank-box">
+            <div class="bank-box-title">Bank Settlement Details &amp; Remittance:</div>
+            {% if branding.bank_details.bank_name %}Bank: <strong>{{ branding.bank_details.bank_name }}</strong><br>{% endif %}
+            {% if branding.bank_details.account_name %}Account Name: <strong>{{ branding.bank_details.account_name }}</strong><br>{% endif %}
+            {% if branding.bank_details.account_number %}Account Number: <strong>{{ branding.bank_details.account_number }}</strong>{% endif %}{% if branding.bank_details.account_number and branding.bank_details.branch_code %} &bull; {% endif %}{% if branding.bank_details.branch_code %}Branch Code: <strong>{{ branding.bank_details.branch_code }}</strong>{% endif %}<br>
+            {% if branding.bank_details.swift_code %}Swift Code: <strong>{{ branding.bank_details.swift_code }}</strong> &bull; {% endif %}Reference: <strong style="color: #b47828;">{{ invoice.invoice_number }}</strong>
+          </div>
           {% endif %}
-          <tr class="balance-row">
-            <td class="totals-label">BALANCE DUE</td>
-            <td class="totals-value font-mono">N$ {{ invoice.balance_due|floatformat:2 }}</td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
 
-  <!-- Footer -->
-  <div class="doc-footer">
-    {{ branding.brand_name|default:branding.company_name|default:"MENARD TRADING CC" }} &bull; {{ branding.tagline|default:"ALWAYS ON TIME" }} &bull; {{ branding.company_address|default:"P O BOX 497-19001, RUNDU - NAMIBIA" }}
-  </div>
+          <div style="font-size: 7.5pt; color: #64748b; margin-top: 8px;">
+            If you have any questions about this invoice, please contact Accounts at {{ branding.accounts_email|default:branding.support_email|default:"accounts@menardtrading.com" }}.
+          </div>
+        </td>
+
+        <!-- Totals Summary Table (Matches Simple service invoice1.xlsx) -->
+        <td style="width: 48%; vertical-align: top;">
+          <table class="totals-table">
+            <tr>
+              <td class="totals-label">SUBTOTAL</td>
+              <td class="totals-value font-mono">N$ {{ invoice.subtotal|floatformat:2 }}</td>
+            </tr>
+            <tr>
+              <td class="totals-label">VAT RATE</td>
+              <td class="totals-value font-mono">{{ invoice.vat_rate|floatformat:2 }}%</td>
+            </tr>
+            <tr>
+              <td class="totals-label">VAT / TAX AMOUNT</td>
+              <td class="totals-value font-mono">N$ {{ invoice.vat_amount|floatformat:2 }}</td>
+            </tr>
+            <tr class="total-row">
+              <td class="totals-label">TOTAL INVOICE</td>
+              <td class="totals-value font-mono">N$ {{ invoice.total_amount|floatformat:2 }}</td>
+            </tr>
+            {% if invoice.amount_paid > 0 %}
+            <tr>
+              <td class="totals-label" style="color: #16a34a;">AMOUNT PAID (EFT)</td>
+              <td class="totals-value font-mono" style="color: #16a34a;">- N$ {{ invoice.amount_paid|floatformat:2 }}</td>
+            </tr>
+            {% endif %}
+            <tr class="balance-row">
+              <td class="totals-label">BALANCE DUE</td>
+              <td class="totals-value font-mono">N$ {{ invoice.balance_due|floatformat:2 }}</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Footer -->
+    <div class="doc-footer">
+      {{ branding.brand_name|default:branding.company_name|default:"MENARD TRADING CC" }} &bull; {{ branding.tagline|default:"ALWAYS ON TIME" }} &bull; {{ branding.company_address|default:"P O BOX 497-19001, RUNDU - NAMIBIA" }}
+    </div>
+  </div> <!-- end .doc-bottom-section -->
+</div> <!-- end .doc-page-wrapper -->
 
 </body>
 </html>

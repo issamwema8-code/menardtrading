@@ -180,8 +180,11 @@
       color: #334155;
       line-height: 1.45;
     }
+    .doc-bottom-section {
+      margin-top: 25px;
+    }
     .doc-footer {
-      margin-top: 35px;
+      margin-top: 20px;
       padding-top: 10px;
       border-top: 1px solid #e2e8f0;
       text-align: center;
@@ -191,7 +194,8 @@
   </style>
 </head>
 <body>
-
+<div class="doc-page-wrapper">
+  <div class="doc-content-body">
   <!-- Header -->
   <table class="header-table">
     <tr>
@@ -284,22 +288,26 @@
       </tr>
     </tbody>
   </table>
+  </div> <!-- end .doc-content-body -->
 
   <!-- Confirmation Notes & Remittance Notice -->
-  <div class="notes-box">
-    <strong style="color: #0f172a; text-transform: uppercase; font-size: 8pt; display: block; margin-bottom: 4px;">Official Payment Confirmation:</strong>
-    Thank you for your payment. This document confirms that the amount of <strong>N$ {{ receipt.amount_paid|floatformat:2 }}</strong> was successfully received and credited against Tax Invoice <strong>#{{ receipt.invoice.invoice_number }}</strong>.
-    {% if receipt.invoice.balance_due == 0 %}
-    <br><span style="color: #16a34a; font-weight: bold;">This invoice has been fully settled in our accounts ledger.</span>
-    {% else %}
-    <br><span style="color: #b45309; font-weight: bold;">The remaining balance due on this invoice is N$ {{ receipt.invoice.balance_due|floatformat:2 }}.</span>
-    {% endif %}
-  </div>
+  <div class="doc-bottom-section">
+    <div class="notes-box">
+      <strong style="color: #0f172a; text-transform: uppercase; font-size: 8pt; display: block; margin-bottom: 4px;">Official Payment Confirmation:</strong>
+      Thank you for your payment. This document confirms that the amount of <strong>N$ {{ receipt.amount_paid|floatformat:2 }}</strong> was successfully received and credited against Tax Invoice <strong>#{{ receipt.invoice.invoice_number }}</strong>.
+      {% if receipt.invoice.balance_due == 0 %}
+      <br><span style="color: #16a34a; font-weight: bold;">This invoice has been fully settled in our accounts ledger.</span>
+      {% else %}
+      <br><span style="color: #b45309; font-weight: bold;">The remaining balance due on this invoice is N$ {{ receipt.invoice.balance_due|floatformat:2 }}.</span>
+      {% endif %}
+    </div>
 
-  <!-- Footer -->
-  <div class="doc-footer">
-    {{ branding.brand_name|default:branding.company_name|default:"MENARD TRADING CC" }} &bull; {{ branding.tagline|default:"ALWAYS ON TIME" }} &bull; {{ branding.company_address|default:"P O BOX 497-19001, RUNDU - NAMIBIA" }}
-  </div>
+    <!-- Footer -->
+    <div class="doc-footer">
+      {{ branding.brand_name|default:branding.company_name|default:"MENARD TRADING CC" }} &bull; {{ branding.tagline|default:"ALWAYS ON TIME" }} &bull; {{ branding.company_address|default:"P O BOX 497-19001, RUNDU - NAMIBIA" }}
+    </div>
+  </div> <!-- end .doc-bottom-section -->
+</div> <!-- end .doc-page-wrapper -->
 
 </body>
 </html>
