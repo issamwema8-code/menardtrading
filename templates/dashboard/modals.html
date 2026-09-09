@@ -2,6 +2,31 @@
 <!-- GLOBAL MODALS                                                -->
 <!-- ============================================================ -->
 
+<!-- Global JSON Data Scripts for Clean Alpine Component Hydration -->
+<script id="global-customers-data" type="application/json">{{ global_customers_json|default:'[]'|safe }}</script>
+<script id="global-payment-terms-data" type="application/json">{{ global_payment_terms_json|default:'[]'|safe }}</script>
+<script id="global-orders-data" type="application/json">{{ global_purchase_orders_json|default:'[]'|safe }}</script>
+<script>
+  window.getGlobalCustomers = function() {
+    try {
+      const el = document.getElementById('global-customers-data');
+      return el ? JSON.parse(el.textContent || '[]') : [];
+    } catch(e) { return []; }
+  };
+  window.getGlobalPaymentTerms = function() {
+    try {
+      const el = document.getElementById('global-payment-terms-data');
+      return el ? JSON.parse(el.textContent || '[]') : [];
+    } catch(e) { return []; }
+  };
+  window.getGlobalPurchaseOrders = function() {
+    try {
+      const el = document.getElementById('global-orders-data');
+      return el ? JSON.parse(el.textContent || '[]') : [];
+    } catch(e) { return []; }
+  };
+</script>
+
 <!-- MODAL 1: UPLOAD PURCHASE ORDER (PDF) -->
 <div x-show="activeModal === 'upload_po_modal'" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4" x-cloak>
   <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 sm:p-7 max-w-lg w-full shadow-2xl space-y-5 border border-slate-200">
@@ -61,7 +86,7 @@
 <!-- MODAL 2: REGISTER NEW CUSTOMER -->
 <div x-show="activeModal === 'create_customer_modal'" 
      x-data="{
-       paymentTerms: {{ global_payment_terms_json|default:'[]'|safe }},
+       paymentTerms: window.getGlobalPaymentTerms(),
        selectedTerm: '50_DEPOSIT_50_POD',
        showAddTerm: false,
        newTermName: '',
@@ -203,8 +228,8 @@
 <!-- MODAL 3: CREATE QUOTATION -->
 <div x-show="activeModal === 'create_quote_modal'" 
      x-data="{
-       customers: {{ global_customers_json|default:'[]'|safe }},
-       paymentTerms: {{ global_payment_terms_json|default:'[]'|safe }},
+       customers: window.getGlobalCustomers(),
+       paymentTerms: window.getGlobalPaymentTerms(),
        selectedId: '',
        selectedCustomer: null,
        dropdownOpen: false,
@@ -681,8 +706,8 @@
 <!-- MODAL 4: CREATE DIRECT INVOICE -->
 <div x-show="activeModal === 'create_invoice_modal'" 
      x-data="{
-        customers: {{ global_customers_json|default:'[]'|safe }},
-        paymentTerms: {{ global_payment_terms_json|default:'[]'|safe }},
+        customers: window.getGlobalCustomers(),
+        paymentTerms: window.getGlobalPaymentTerms(),
         selectedId: '',
         selectedCustomer: null,
         dropdownOpen: false,
@@ -1175,7 +1200,7 @@
        quoteNumber: '',
        isLoading: false,
        errorMessage: '',
-       customers: {{ global_customers_json|default:'[]'|safe }},
+       customers: window.getGlobalCustomers(),
        selectedId: '',
        selectedCustomer: null,
        dropdownOpen: false,
@@ -1453,22 +1478,7 @@
 <!-- ============================================================ -->
 <div x-show="activeModal === 'merge_pos_modal'"
      x-data="{
-       orders: [
-         {% for p in global_purchase_orders %}
-         {
-           id: '{{ p.id }}',
-           po_number: '{{ p.po_number|escapejs }}',
-           customer: '{{ p.customer.company_name|default:p.raw_email_sender|default:'Unassigned'|escapejs }}',
-           cargo: '{{ p.cargo_description|default:''|escapejs }}',
-           weight: '{{ p.weight_tons|default:'' }}',
-           volume: '{{ p.volume_cbm|default:'' }}',
-           pallets: '{{ p.quantity_pallets|default:'' }}',
-           pickup: '{{ p.pickup_location|default:''|escapejs }}',
-           delivery: '{{ p.delivery_location|default:''|escapejs }}',
-           instructions: '{{ p.special_instructions|default:''|escapejs }}'
-         }{% if not forloop.last %},{% endif %}
-         {% endfor %}
-       ],
+       orders: window.getGlobalPurchaseOrders(),
        primaryId: '',
        secondaryId: '',
        combinedPoNumber: '',

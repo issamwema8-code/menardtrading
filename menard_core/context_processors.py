@@ -60,6 +60,22 @@ def branding_context(request):
         for t in global_payment_terms
     ]
 
+    orders_data = [
+        {
+            'id': str(p.id),
+            'po_number': p.po_number or '',
+            'customer': p.customer.company_name if p.customer else (p.raw_email_sender or 'Unassigned'),
+            'cargo': p.cargo_description or '',
+            'weight': str(p.weight_tons) if p.weight_tons is not None else '',
+            'volume': str(p.volume_cbm) if p.volume_cbm is not None else '',
+            'pallets': str(p.quantity_pallets) if p.quantity_pallets is not None else '',
+            'pickup': p.pickup_location or '',
+            'delivery': p.delivery_location or '',
+            'instructions': p.special_instructions or '',
+        }
+        for p in global_purchase_orders
+    ]
+
     return {
         'branding': company_info,
         'company': company_info,
@@ -77,5 +93,6 @@ def branding_context(request):
         'global_purchase_orders': global_purchase_orders,
         'global_customers_json': json.dumps(customers_data),
         'global_payment_terms_json': json.dumps(terms_data),
+        'global_purchase_orders_json': json.dumps(orders_data),
     }
 
