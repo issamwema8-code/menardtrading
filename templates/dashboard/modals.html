@@ -245,7 +245,7 @@
        items: [
          { description: '', quantity: '1.00', unit_price: '' }
        ],
-       vatRate: {{ branding.vat_rate|default_if_none:0.0 }},
+       vatRate: parseFloat("{{ branding.vat_rate|default:'0.00' }}") || 0.0,
        addItem() {
          this.items.push({ description: '', quantity: '1.00', unit_price: '' });
        },
@@ -736,7 +736,7 @@
         items: [
           { description: '', quantity: '1.00', unit_price: '' }
         ],
-        vatRate: {{ branding.vat_rate|default_if_none:0.0 }},
+        vatRate: parseFloat("{{ branding.vat_rate|default:'0.00' }}") || 0.0,
         addItem() {
           this.items.push({ description: '', quantity: '1.00', unit_price: '' });
         },
@@ -1224,7 +1224,7 @@
        validUntil: '',
        status: 'DRAFT',
        notes: '',
-       vatRate: {{ company_settings.vat_rate|default_if_none:0.00|stringformat:".2f" }},
+       vatRate: parseFloat("{{ branding.vat_rate|default:'0.00' }}") || 0.0,
        items: [],
        async loadQuote(id) {
          this.quoteId = id;
