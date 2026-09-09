@@ -221,9 +221,9 @@ class DocumentDesignSystemTestCase(TestCase):
         self.assertEqual(quote.line_items.count(), 3)
         # Expected subtotal: (2 * 4500) + (6 * 1200) + (1 * 2500) = 9000 + 7200 + 2500 = 18700
         self.assertEqual(quote.subtotal, Decimal('18700.00'))
-        # VAT 15% of 18700 = 2805.00, Total = 21505.00
-        self.assertEqual(quote.vat_amount, Decimal('2805.00'))
-        self.assertEqual(quote.total_amount, Decimal('21505.00'))
+        # Default VAT 0% of 18700 = 0.00, Total = 18700.00
+        self.assertEqual(quote.vat_amount, Decimal('0.00'))
+        self.assertEqual(quote.total_amount, Decimal('18700.00'))
 
     def test_create_direct_multi_item_invoice(self):
         """Test creating a direct standalone invoice with multiple line items without requiring a quote."""
@@ -247,10 +247,10 @@ class DocumentDesignSystemTestCase(TestCase):
         self.assertEqual(invoice.line_items.count(), 2)
         # Expected subtotal: (1 * 8500) + (4 * 350) = 8500 + 1400 = 9900.00
         self.assertEqual(invoice.subtotal, Decimal('9900.00'))
-        # VAT 15% of 9900 = 1485.00, Total = 11385.00
-        self.assertEqual(invoice.vat_amount, Decimal('1485.00'))
-        self.assertEqual(invoice.total_amount, Decimal('11385.00'))
-        self.assertEqual(invoice.balance_due, Decimal('11385.00'))
+        # Default VAT 0% of 9900 = 0.00, Total = 9900.00
+        self.assertEqual(invoice.vat_amount, Decimal('0.00'))
+        self.assertEqual(invoice.total_amount, Decimal('9900.00'))
+        self.assertEqual(invoice.balance_due, Decimal('9900.00'))
         self.assertEqual(invoice.status, 'ISSUED')
 
     def test_quotation_data_api(self):
@@ -300,9 +300,9 @@ class DocumentDesignSystemTestCase(TestCase):
         self.assertEqual(new_quote.line_items.count(), 2)
         # Expected subtotal: (2 * 3500) + (4 * 1500) = 7000 + 6000 = 13000
         self.assertEqual(new_quote.subtotal, Decimal('13000.00'))
-        # VAT 15% of 13000 = 1950.00, Total = 14950.00
-        self.assertEqual(new_quote.vat_amount, Decimal('1950.00'))
-        self.assertEqual(new_quote.total_amount, Decimal('14950.00'))
+        # Default VAT 0% of 13000 = 0.00, Total = 13000.00
+        self.assertEqual(new_quote.vat_amount, Decimal('0.00'))
+        self.assertEqual(new_quote.total_amount, Decimal('13000.00'))
 
     def test_delete_quotation(self):
         """Test deleting a standalone quotation without linked jobs."""

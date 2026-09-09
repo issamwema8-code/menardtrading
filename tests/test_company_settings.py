@@ -100,6 +100,7 @@ class CompanySettingsTestCase(TestCase):
         
         # Verify defaults
         self.assertEqual(settings_obj.vat_number, "")
+        self.assertEqual(settings_obj.vat_rate, Decimal('0.00'))
         self.assertEqual(settings_obj.company_reg_number, "")
         self.assertEqual(settings_obj.phone, "+264 81 445 5188")
 

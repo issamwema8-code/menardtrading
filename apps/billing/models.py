@@ -91,7 +91,7 @@ class Invoice(models.Model):
     due_date = models.DateField()
 
     subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
-    vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('15.00'))
+    vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'))
     vat_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     amount_paid = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
@@ -115,10 +115,10 @@ class Invoice(models.Model):
                 from apps.accounts.models import CompanySettings
                 settings_vat = CompanySettings.get_settings().vat_rate
                 if self.quote and self.quote.vat_rate is not None:
-                    if self.vat_rate == Decimal('15.00') or self.vat_rate is None:
+                    if self.vat_rate == Decimal('0.00') or self.vat_rate is None:
                         self.vat_rate = self.quote.vat_rate
                 elif settings_vat is not None:
-                    if self.vat_rate == Decimal('15.00') or self.vat_rate is None:
+                    if self.vat_rate == Decimal('0.00') or self.vat_rate is None:
                         self.vat_rate = settings_vat
             except Exception:
                 pass
@@ -132,9 +132,9 @@ class Invoice(models.Model):
                     self.vat_rate = self.quote.vat_rate
                 else:
                     settings_vat = CompanySettings.get_settings().vat_rate
-                    self.vat_rate = settings_vat if settings_vat is not None else Decimal('15.00')
+                    self.vat_rate = settings_vat if settings_vat is not None else Decimal('0.00')
             except Exception:
-                self.vat_rate = Decimal('15.00')
+                self.vat_rate = Decimal('0.00')
 
         items_total = sum((item.total_price for item in self.line_items.all()), Decimal('0.00'))
         self.subtotal = items_total

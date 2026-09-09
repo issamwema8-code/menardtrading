@@ -55,7 +55,7 @@ class Quotation(models.Model):
     approval_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     
     subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
-    vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('15.00'))
+    vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'))
     vat_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
 
@@ -82,10 +82,8 @@ class Quotation(models.Model):
             try:
                 from apps.accounts.models import CompanySettings
                 settings_vat = CompanySettings.get_settings().vat_rate
-                if settings_vat is not None:
-                    # If vat_rate is still default 15.00, apply configured company settings rate
-                    if self.vat_rate == Decimal('15.00') or self.vat_rate is None:
-                        self.vat_rate = settings_vat
+                if settings_vat is not None and (self.vat_rate == Decimal('0.00') or self.vat_rate is None):
+                    self.vat_rate = settings_vat
             except Exception:
                 pass
         super().save(*args, **kwargs)
@@ -95,9 +93,9 @@ class Quotation(models.Model):
             try:
                 from apps.accounts.models import CompanySettings
                 settings_vat = CompanySettings.get_settings().vat_rate
-                self.vat_rate = settings_vat if settings_vat is not None else Decimal('15.00')
+                self.vat_rate = settings_vat if settings_vat is not None else Decimal('0.00')
             except Exception:
-                self.vat_rate = Decimal('15.00')
+                self.vat_rate = Decimal('0.00')
 
         items_total = sum((item.total_price for item in self.line_items.all()), Decimal('0.00'))
         self.subtotal = items_total
