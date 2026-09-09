@@ -41,6 +41,25 @@ def branding_context(request):
     except Exception:
         company_info = getattr(settings, 'EMAIL_BRANDING', {})
 
+    import json
+    customers_data = [
+        {
+            'id': str(c.id),
+            'company_name': c.company_name or '',
+            'contact_name': c.contact_name or '',
+            'email': c.email or '',
+            'phone': c.phone or '',
+        }
+        for c in global_customers
+    ]
+    terms_data = [
+        {
+            'code': t.code if hasattr(t, 'code') else (t.get('code', '') if isinstance(t, dict) else str(t)),
+            'name': t.name if hasattr(t, 'name') else (t.get('name', '') if isinstance(t, dict) else str(t)),
+        }
+        for t in global_payment_terms
+    ]
+
     return {
         'branding': company_info,
         'company': company_info,
@@ -56,5 +75,7 @@ def branding_context(request):
         'global_customers': global_customers,
         'global_payment_terms': global_payment_terms,
         'global_purchase_orders': global_purchase_orders,
+        'global_customers_json': json.dumps(customers_data),
+        'global_payment_terms_json': json.dumps(terms_data),
     }
 

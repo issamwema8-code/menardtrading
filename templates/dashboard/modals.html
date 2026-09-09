@@ -61,11 +61,7 @@
 <!-- MODAL 2: REGISTER NEW CUSTOMER -->
 <div x-show="activeModal === 'create_customer_modal'" 
      x-data="{
-       paymentTerms: [
-         {% for t in global_payment_terms %}
-         { code: '{{ t.code|escapejs }}', name: '{{ t.name|escapejs }}' }{% if not forloop.last %},{% endif %}
-         {% endfor %}
-       ],
+       paymentTerms: {{ global_payment_terms_json|default:'[]'|safe }},
        selectedTerm: '50_DEPOSIT_50_POD',
        showAddTerm: false,
        newTermName: '',
@@ -207,22 +203,8 @@
 <!-- MODAL 3: CREATE QUOTATION -->
 <div x-show="activeModal === 'create_quote_modal'" 
      x-data="{
-       customers: [
-         {% for c in global_customers %}
-         { 
-           id: '{{ c.id }}', 
-           company_name: '{{ c.company_name|escapejs }}', 
-           contact_name: '{{ c.contact_name|escapejs }}', 
-           email: '{{ c.email|escapejs }}', 
-           phone: '{{ c.phone|escapejs }}' 
-         }{% if not forloop.last %},{% endif %}
-         {% endfor %}
-       ],
-       paymentTerms: [
-         {% for t in global_payment_terms %}
-         { code: '{{ t.code|escapejs }}', name: '{{ t.name|escapejs }}' }{% if not forloop.last %},{% endif %}
-         {% endfor %}
-       ],
+       customers: {{ global_customers_json|default:'[]'|safe }},
+       paymentTerms: {{ global_payment_terms_json|default:'[]'|safe }},
        selectedId: '',
        selectedCustomer: null,
        dropdownOpen: false,
@@ -699,22 +681,8 @@
 <!-- MODAL 4: CREATE DIRECT INVOICE -->
 <div x-show="activeModal === 'create_invoice_modal'" 
      x-data="{
-        customers: [
-          {% for c in global_customers %}
-          { 
-            id: '{{ c.id }}', 
-            company_name: '{{ c.company_name|escapejs }}', 
-            contact_name: '{{ c.contact_name|escapejs }}', 
-            email: '{{ c.email|escapejs }}', 
-            phone: '{{ c.phone|escapejs }}' 
-          }{% if not forloop.last %},{% endif %}
-          {% endfor %}
-        ],
-        paymentTerms: [
-          {% for t in global_payment_terms %}
-          { code: '{{ t.code|escapejs }}', name: '{{ t.name|escapejs }}' }{% if not forloop.last %},{% endif %}
-          {% endfor %}
-        ],
+        customers: {{ global_customers_json|default:'[]'|safe }},
+        paymentTerms: {{ global_payment_terms_json|default:'[]'|safe }},
         selectedId: '',
         selectedCustomer: null,
         dropdownOpen: false,
@@ -1207,17 +1175,7 @@
        quoteNumber: '',
        isLoading: false,
        errorMessage: '',
-       customers: [
-         {% for c in global_customers %}
-         {
-           id: '{{ c.id }}',
-           company_name: '{{ c.company_name|escapejs }}',
-           contact_name: '{{ c.contact_name|escapejs }}',
-           email: '{{ c.email|escapejs }}',
-           phone: '{{ c.phone|escapejs }}'
-         }{% if not forloop.last %},{% endif %}
-         {% endfor %}
-       ],
+       customers: {{ global_customers_json|default:'[]'|safe }},
        selectedId: '',
        selectedCustomer: null,
        dropdownOpen: false,
