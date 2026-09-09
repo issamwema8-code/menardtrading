@@ -214,18 +214,27 @@
       color: #0f172a;
       width: 45%;
     }
+    .vat-rate-row td {
+      background-color: #B47828 !important;
+      color: #ffffff !important;
+      font-weight: bold;
+    }
+    .vat-rate-row .totals-label,
+    .vat-rate-row .totals-value {
+      color: #ffffff !important;
+    }
     .total-row td {
-      background-color: #0f172a;
-      color: #ffffff;
+      background-color: #B47828 !important;
+      color: #ffffff !important;
       font-weight: bold;
       font-size: 10pt;
       padding: 7px 8px;
     }
     .total-row .totals-label {
-      color: #ffffff;
+      color: #ffffff !important;
     }
     .total-row .totals-value {
-      color: #f59e0b;
+      color: #ffffff !important;
     }
     .terms-box {
       background-color: #f8fafc;
@@ -399,17 +408,17 @@
               <td class="totals-label">SUBTOTAL</td>
               <td class="totals-value font-mono">N$ {{ quote.subtotal|money }}</td>
             </tr>
-            <tr>
-              <td class="totals-label">VAT RATE</td>
-              <td class="totals-value font-mono">{{ quote.vat_rate|money }}%</td>
+            <tr class="vat-rate-row" style="background-color: #B47828;">
+              <td class="totals-label" style="background-color: #B47828; color: #ffffff;">VAT RATE</td>
+              <td class="totals-value font-mono" style="background-color: #B47828; color: #ffffff;">{{ quote.vat_rate|money }}%</td>
             </tr>
             <tr>
               <td class="totals-label">VAT / TAX AMOUNT</td>
               <td class="totals-value font-mono">N$ {{ quote.vat_amount|money }}</td>
             </tr>
-            <tr class="total-row">
-              <td class="totals-label">TOTAL ESTIMATE</td>
-              <td class="totals-value font-mono">N$ {{ quote.total_amount|money }}</td>
+            <tr class="total-row" style="background-color: #B47828;">
+              <td class="totals-label" style="background-color: #B47828; color: #ffffff;">TOTAL ESTIMATE</td>
+              <td class="totals-value font-mono" style="background-color: #B47828; color: #ffffff;">N$ {{ quote.total_amount|money }}</td>
             </tr>
           </table>
         </td>

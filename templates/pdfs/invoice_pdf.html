@@ -195,18 +195,27 @@
       color: #0f172a;
       width: 45%;
     }
+    .vat-rate-row td {
+      background-color: #B47828 !important;
+      color: #ffffff !important;
+      font-weight: bold;
+    }
+    .vat-rate-row .totals-label,
+    .vat-rate-row .totals-value {
+      color: #ffffff !important;
+    }
     .total-row td {
-      background-color: #0f172a;
-      color: #ffffff;
+      background-color: #B47828 !important;
+      color: #ffffff !important;
       font-weight: bold;
       font-size: 10pt;
       padding: 7px 8px;
     }
     .total-row .totals-label {
-      color: #ffffff;
+      color: #ffffff !important;
     }
     .total-row .totals-value {
-      color: #f59e0b;
+      color: #ffffff !important;
     }
     .balance-row td {
       background-color: #fef2f2;
@@ -398,17 +407,17 @@
               <td class="totals-label">SUBTOTAL</td>
               <td class="totals-value font-mono">N$ {{ invoice.subtotal|money }}</td>
             </tr>
-            <tr>
-              <td class="totals-label">VAT RATE</td>
-              <td class="totals-value font-mono">{{ invoice.vat_rate|money }}%</td>
+            <tr class="vat-rate-row" style="background-color: #B47828;">
+              <td class="totals-label" style="background-color: #B47828; color: #ffffff;">VAT RATE</td>
+              <td class="totals-value font-mono" style="background-color: #B47828; color: #ffffff;">{{ invoice.vat_rate|money }}%</td>
             </tr>
             <tr>
               <td class="totals-label">VAT / TAX AMOUNT</td>
               <td class="totals-value font-mono">N$ {{ invoice.vat_amount|money }}</td>
             </tr>
-            <tr class="total-row">
-              <td class="totals-label">TOTAL INVOICE</td>
-              <td class="totals-value font-mono">N$ {{ invoice.total_amount|money }}</td>
+            <tr class="total-row" style="background-color: #B47828;">
+              <td class="totals-label" style="background-color: #B47828; color: #ffffff;">TOTAL INVOICE</td>
+              <td class="totals-value font-mono" style="background-color: #B47828; color: #ffffff;">N$ {{ invoice.total_amount|money }}</td>
             </tr>
             {% if invoice.amount_paid > 0 %}
             <tr>

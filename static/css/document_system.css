@@ -259,20 +259,31 @@
   width: 40%;
 }
 
+.vat-rate-row td {
+  background-color: #B47828 !important;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.vat-rate-row .totals-label,
+.vat-rate-row .totals-value {
+  color: #ffffff !important;
+}
+
+.total-row td,
 .total-due-row td {
-  background-color: #0f172a;
-  color: #ffffff;
+  background-color: #B47828 !important;
+  color: #ffffff !important;
   font-weight: 800;
   font-size: 10.5pt;
   padding: 8px;
 }
 
-.total-due-row .totals-label {
-  color: #ffffff;
-}
-
+.total-row .totals-label,
+.total-row .totals-value,
+.total-due-row .totals-label,
 .total-due-row .totals-value {
-  color: #f59e0b;
+  color: #ffffff !important;
 }
 
 .balance-due-row td {
