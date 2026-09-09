@@ -1190,7 +1190,6 @@
          this.isLoading = true;
          this.errorMessage = '';
          this.items = [];
-         activeModal = 'edit_quote_modal';
          try {
            const res = await fetch(`/quotes/${id}/data/`);
            const data = await res.json();
@@ -1272,7 +1271,7 @@
          return (sub + vat).toFixed(2);
        }
      }"
-     @open-edit-quote.window="loadQuote($event.detail.id)"
+     @open-edit-quote.window="activeModal = 'edit_quote_modal'; loadQuote($event.detail.id)"
      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 overflow-y-auto" x-cloak>
   <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 sm:p-7 max-w-2xl w-full shadow-2xl space-y-5 border border-slate-200 my-8">
     <div class="flex justify-between items-start border-b border-slate-100 pb-4">

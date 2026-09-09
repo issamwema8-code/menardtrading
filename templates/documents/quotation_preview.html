@@ -25,7 +25,7 @@
     <!-- Actions: Edit, Delete, PDF, Approval Portal -->
     <div class="flex flex-wrap items-center gap-2">
 
-      <button type="button" @click="$dispatch('open-edit-quote', { id: {{ quote.id }} })" 
+      <button type="button" @click="activeModal = 'edit_quote_modal'; $dispatch('open-edit-quote', { id: {{ quote.id }} })" 
               class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-slate-800 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 rounded-xl transition cursor-pointer">
         <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
         Edit Quote
