@@ -7,6 +7,21 @@
     @page {
       size: a4 portrait;
       margin: 1.2cm;
+      margin-top: 1.2cm;
+      margin-bottom: 0cm;
+      @frame content_frame {
+        left: 1.2cm;
+        right: 1.2cm;
+        top: 1.2cm;
+        bottom: 9.2cm;
+      }
+      @frame footer_frame {
+        -pdf-frame-content: doc_bottom_section;
+        left: 1.2cm;
+        right: 1.2cm;
+        bottom: 0.8cm;
+        height: 8.2cm;
+      }
     }
     body {
       font-family: Helvetica, Arial, sans-serif;
@@ -348,7 +363,7 @@
   </div> <!-- end .doc-content-body -->
 
   <!-- Bottom Split: Notes/Banking (Left) vs Summary Totals (Right) -->
-  <div class="doc-bottom-section">
+  <div id="doc_bottom_section" class="doc-bottom-section">
     <table class="footer-split-table">
       <tr>
         <!-- Banking Details & Notes -->

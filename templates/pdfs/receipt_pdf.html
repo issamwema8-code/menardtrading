@@ -7,6 +7,21 @@
     @page {
       size: a4 portrait;
       margin: 1.2cm;
+      margin-top: 1.2cm;
+      margin-bottom: 0cm;
+      @frame content_frame {
+        left: 1.2cm;
+        right: 1.2cm;
+        top: 1.2cm;
+        bottom: 6.5cm;
+      }
+      @frame footer_frame {
+        -pdf-frame-content: doc_bottom_section;
+        left: 1.2cm;
+        right: 1.2cm;
+        bottom: 0.8cm;
+        height: 5.5cm;
+      }
     }
     body {
       font-family: Helvetica, Arial, sans-serif;
@@ -291,7 +306,7 @@
   </div> <!-- end .doc-content-body -->
 
   <!-- Confirmation Notes & Remittance Notice -->
-  <div class="doc-bottom-section">
+  <div id="doc_bottom_section" class="doc-bottom-section">
     <div class="notes-box">
       <strong style="color: #0f172a; text-transform: uppercase; font-size: 8pt; display: block; margin-bottom: 4px;">Official Payment Confirmation:</strong>
       Thank you for your payment. This document confirms that the amount of <strong>N$ {{ receipt.amount_paid|floatformat:2 }}</strong> was successfully received and credited against Tax Invoice <strong>#{{ receipt.invoice.invoice_number }}</strong>.
