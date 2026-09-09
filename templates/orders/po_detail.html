@@ -15,18 +15,6 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
         </a>
         <div>
-          <div class="flex flex-wrap items-center gap-2 mb-0.5">
-            <span class="badge-gold text-[10px]">Purchase Order</span>
-            <span class="{% if po.status == 'QUOTED' %}badge-sky{% elif po.status == 'JOB_CREATED' %}badge-purple{% elif po.status == 'COMPLETED' %}badge-emerald{% else %}badge-slate{% endif %} text-[10px]">
-              {{ po.get_status_display }}
-            </span>
-            {% if po.acknowledgment_sent %}
-            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-              <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-              <span>Auto-Reply Dispatched</span>
-            </span>
-            {% endif %}
-          </div>
           <h1 class="page-title font-mono">PO #{{ po.po_number }}</h1>
           <p class="page-description">Received on {{ po.created_at|date:"l, d F Y \a\\t H:i" }} &bull; Sender: <span class="font-mono text-slate-700">{{ po.raw_email_sender|default:"Manual Upload" }}</span></p>
         </div>
