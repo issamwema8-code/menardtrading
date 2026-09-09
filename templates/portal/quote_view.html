@@ -28,17 +28,13 @@
       </div>
     </div>
 
-    <!-- Total Callout & Actions: Print, PDF, 1-Click Approve -->
+    <!-- Total Callout & Actions: PDF, 1-Click Approve -->
     <div class="flex flex-wrap items-center gap-2.5">
       <div class="bg-slate-950 px-3.5 py-1.5 rounded-xl border border-slate-800 text-right mr-1">
         <span class="text-[9px] text-slate-400 uppercase tracking-wider block">Total (Incl. VAT)</span>
         <span class="text-base font-bold text-[#dca048] font-mono">N$ {{ quote.total_amount|money }}</span>
       </div>
 
-      <button onclick="window.print()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition border border-slate-700">
-        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-        Print
-      </button>
       <a href="{% url 'quote_pdf_download' quote.id %}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition border border-slate-700">
         <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
         Download PDF
