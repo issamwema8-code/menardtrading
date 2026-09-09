@@ -35,7 +35,7 @@ class IssueInvoiceActionView(PermissionRequiredMixin, View):
                 customer=job.customer,
                 invoice_type=Invoice.InvoiceType.FULL,
                 due_date=due_date,
-                notes="100% Tax Invoice for transport consignment."
+                notes="Standard Full Invoice for transport consignment."
             )
             for item in job.quote.line_items.all():
                 InvoiceLineItem.objects.create(

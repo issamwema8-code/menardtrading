@@ -36,7 +36,7 @@ def generate_receipt_number():
 
 class Invoice(models.Model):
     class InvoiceType(models.TextChoices):
-        FULL = 'FULL', 'Full 100% Tax Invoice'
+        FULL = 'FULL', 'Standard Full Invoice'
         PARTIAL_DEPOSIT = 'PARTIAL_DEPOSIT', 'Mobilization / Deposit Invoice'
         PARTIAL_BALANCE = 'PARTIAL_BALANCE', 'Final Balance on POD Invoice'
         ADD_ON = 'ADD_ON', 'Supplementary / Add-on Invoice (Demurrage/Tolls)'
