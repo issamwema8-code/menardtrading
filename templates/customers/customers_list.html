@@ -35,11 +35,10 @@
   <div class="page-header-card">
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div class="space-y-1.5">
-        <div class="flex items-center gap-2">
-          <span class="badge badge-sky">Customers</span>
-          <span class="text-xs font-medium text-slate-400 font-mono">{{ customers|length }} Account{{ customers|length|pluralize }}</span>
+        <div class="flex items-center gap-2.5">
+          <h1 class="page-title">Customers</h1>
+          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200/80 font-mono">{{ customers|length }} Account{{ customers|length|pluralize }}</span>
         </div>
-        <h1 class="page-title">Customers</h1>
         <p class="page-description max-w-2xl">
           Manage your customer accounts, contact details, and payment terms.
         </p>
