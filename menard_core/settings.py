@@ -267,22 +267,26 @@ EMAIL_CONFIGS = {
         **BREVO_EMAIL_SETTINGS,
         'DEFAULT_FROM_EMAIL': 'Menard Trading No-Reply <no-reply@menardtrading.com>',
     },
+    'support': {
+        **BREVO_EMAIL_SETTINGS,
+        'DEFAULT_FROM_EMAIL': 'Menard Trading Support <support@menardtrading.com>',
+    },
     'info': {
         **BREVO_EMAIL_SETTINGS,
-        'DEFAULT_FROM_EMAIL': 'Menard Trading <info@menardtrading.com>',
+        'DEFAULT_FROM_EMAIL': 'Menard Trading Support <support@menardtrading.com>',
     },
 }
 
-# Production Email Settings (Default: info)
+# Production Email Settings (Default: support)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = EMAIL_CONFIGS['info']['EMAIL_HOST']
-EMAIL_PORT = EMAIL_CONFIGS['info']['EMAIL_PORT']
-EMAIL_USE_TLS = EMAIL_CONFIGS['info']['EMAIL_USE_TLS']
-EMAIL_USE_SSL = EMAIL_CONFIGS['info']['EMAIL_USE_SSL']
-EMAIL_HOST_USER = EMAIL_CONFIGS['info']['EMAIL_HOST_USER']
-EMAIL_HOST_PASSWORD = EMAIL_CONFIGS['info']['EMAIL_HOST_PASSWORD']
-DEFAULT_FROM_EMAIL = EMAIL_CONFIGS['info']['DEFAULT_FROM_EMAIL']
-SERVER_EMAIL = EMAIL_CONFIGS['info']['EMAIL_HOST_USER']
+EMAIL_HOST = EMAIL_CONFIGS['support']['EMAIL_HOST']
+EMAIL_PORT = EMAIL_CONFIGS['support']['EMAIL_PORT']
+EMAIL_USE_TLS = EMAIL_CONFIGS['support']['EMAIL_USE_TLS']
+EMAIL_USE_SSL = EMAIL_CONFIGS['support']['EMAIL_USE_SSL']
+EMAIL_HOST_USER = EMAIL_CONFIGS['support']['EMAIL_HOST_USER']
+EMAIL_HOST_PASSWORD = EMAIL_CONFIGS['support']['EMAIL_HOST_PASSWORD']
+DEFAULT_FROM_EMAIL = EMAIL_CONFIGS['support']['DEFAULT_FROM_EMAIL']
+SERVER_EMAIL = EMAIL_CONFIGS['support']['EMAIL_HOST_USER']
 
 BASE_URL = config('BASE_URL', default='https://menardtrading.com')
 
