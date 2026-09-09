@@ -373,6 +373,7 @@ class CompanySettingsTestCase(TestCase):
         post_data['vat_rate'] = '0.00'
         resp = self.client.post(reverse('administration-company-settings'), post_data, follow=True)
         self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'value="0.00"')
 
         quote_zero = Quotation.objects.create(
             customer=self.customer,

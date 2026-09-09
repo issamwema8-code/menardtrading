@@ -340,7 +340,7 @@
                 min="0"
                 max="100"
                 name="vat_rate" 
-                value="{{ company_settings.vat_rate|default:'15.00' }}" 
+                value="{{ company_settings.vat_rate|default_if_none:'15.00' }}" 
                 {% if not can_edit %}disabled{% endif %}
                 class="w-full pl-4 pr-10 py-2.5 rounded-xl border border-slate-300 text-sm font-bold font-mono text-slate-900 focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition"
                 placeholder="15.00"
