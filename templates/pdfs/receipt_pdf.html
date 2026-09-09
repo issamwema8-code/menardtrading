@@ -222,7 +222,9 @@
         {% include 'pdfs/components/document_brand_header.html' %}
         <div class="company-meta">
           {{ branding.company_address|default:"P O BOX 497-19001, RUNDU - NAMIBIA" }}<br>
-          {% if branding.vat_number %}VAT Reg: <strong>{{ branding.vat_number }}</strong>{% endif %}{% if branding.vat_number and branding.company_reg_number %} &bull; {% endif %}{% if branding.company_reg_number %}Company Reg: {{ branding.company_reg_number }}{% endif %}{% if branding.vat_number or branding.company_reg_number %}<br>{% endif %}
+          {% if branding.company_reg_number or branding.tax_number or branding.vat_number %}
+          Company Reg: <strong>{{ branding.company_reg_number|default:"CC/2022/03892" }}</strong> &bull; Tax No: <strong>{{ branding.tax_number|default:branding.vat_number|default:"13009715-11" }}</strong><br>
+          {% endif %}
           Email: {{ branding.accounts_email|default:branding.support_email|default:"accounts@menardtrading.com" }}{% if branding.telephone and branding.mobile %} &bull; Tel: {{ branding.telephone }} &bull; Mob: {{ branding.mobile }}{% elif branding.phone %} &bull; Tel: {{ branding.phone }}{% endif %}
         </div>
       </td>

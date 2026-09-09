@@ -333,10 +333,10 @@ class CompanySettings(models.Model):
     city = models.CharField(max_length=100, default="RUNDU", blank=True, help_text="City / Town")
     country = models.CharField(max_length=100, default="NAMIBIA", blank=True, help_text="Country")
     
-    # Legal & Tax Registration (Empty by default unless explicitly configured)
-    vat_number = models.CharField(max_length=100, blank=True, default="", help_text="Official VAT Registration Number")
+    # Legal & Tax Registration
+    vat_number = models.CharField(max_length=100, blank=True, default="13009715-11", help_text="Official Tax / VAT Registration Number")
     vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'), help_text="Default VAT Rate Percentage (e.g. 15.00, 0, 10)")
-    company_reg_number = models.CharField(max_length=100, blank=True, default="", help_text="Company / Close Corporation Registration Number")
+    company_reg_number = models.CharField(max_length=100, blank=True, default="CC/2022/03892", help_text="Company / Close Corporation Registration Number")
     
     # Contact & Communication
     phone = models.CharField(max_length=50, blank=True, default="+264 81 445 5188", help_text="Primary telephone number")
@@ -386,12 +386,12 @@ class CompanySettings(models.Model):
                 city="RUNDU",
                 country="NAMIBIA",
                 physical_address="",
-                vat_number="",
+                vat_number="13009715-11",
                 vat_rate=Decimal('0.00'),
-                company_reg_number="",
+                company_reg_number="CC/2022/03892",
                 phone="+264 81 445 5188",
                 mobile="+264 81 445 5188",
-                email="support@menardtrading.com",
+                email="info@menardtrading.com",
                 orders_email="orders@menardtrading.com",
                 quotes_email="quotes@menardtrading.com",
                 accounts_email="accounts@menardtrading.com",
@@ -468,11 +468,12 @@ class CompanySettings(models.Model):
             'city': self.city or '',
             'country': self.country or '',
             'company_address': self.get_formatted_address(),
-            'vat_number': self.vat_number or '',
+            'vat_number': self.vat_number or '13009715-11',
+            'tax_number': self.vat_number or '13009715-11',
             'vat_rate': vat_rate_val,
             'vat_percentage': pct_str,
-            'company_reg_number': self.company_reg_number or '',
-            'support_email': self.email or 'support@menardtrading.com',
+            'company_reg_number': self.company_reg_number or 'CC/2022/03892',
+            'support_email': self.email or 'info@menardtrading.com',
             'orders_email': self.orders_email or self.email or 'orders@menardtrading.com',
             'quotes_email': self.quotes_email or self.email or 'quotes@menardtrading.com',
             'accounts_email': self.accounts_email or self.email or 'accounts@menardtrading.com',
