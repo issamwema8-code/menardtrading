@@ -211,7 +211,7 @@
        customers: [
          {% for c in global_customers %}
          { 
-           id: {{ c.id }}, 
+           id: '{{ c.id }}', 
            company_name: '{{ c.company_name|escapejs }}', 
            contact_name: '{{ c.contact_name|escapejs }}', 
            email: '{{ c.email|escapejs }}', 
@@ -702,7 +702,7 @@
         customers: [
           {% for c in global_customers %}
           { 
-            id: {{ c.id }}, 
+            id: '{{ c.id }}', 
             company_name: '{{ c.company_name|escapejs }}', 
             contact_name: '{{ c.contact_name|escapejs }}', 
             email: '{{ c.email|escapejs }}', 
