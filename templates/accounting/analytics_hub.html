@@ -74,6 +74,7 @@
                 <table class="w-full text-left text-sm text-slate-600">
                     <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
                         <tr>
+                            <th class="px-4 py-3 text-center w-12">S/No.</th>
                             <th class="px-6 py-3">Customer</th>
                             <th class="px-6 py-3 text-center">Invoices</th>
                             <th class="px-6 py-3 text-right">Total Invoiced</th>
@@ -82,12 +83,13 @@
                     <tbody class="divide-y divide-slate-100">
                         {% for c in analytics.top_customers %}
                         <tr class="hover:bg-slate-50">
+                            <td class="px-4 py-3.5 text-center text-xs font-semibold text-slate-500">{{ forloop.counter }}</td>
                             <td class="px-6 py-3.5 font-semibold text-slate-900">{{ c.customer__company_name }}</td>
                             <td class="px-6 py-3.5 text-center text-slate-500">{{ c.invoice_count }}</td>
                             <td class="px-6 py-3.5 text-right font-bold text-slate-900">N$ {{ c.total_revenue|money }}</td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="3" class="px-6 py-6 text-center text-slate-400">No customer billing history available.</td></tr>
+                        <tr><td colspan="4" class="px-6 py-6 text-center text-slate-400">No customer billing history available.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -107,6 +109,7 @@
                 <table class="w-full text-left text-sm text-slate-600">
                     <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
                         <tr>
+                            <th class="px-4 py-3 text-center w-12">S/No.</th>
                             <th class="px-6 py-3">Expense Category</th>
                             <th class="px-6 py-3 text-center">Transactions</th>
                             <th class="px-6 py-3 text-right">Total (Excl. VAT)</th>
@@ -115,12 +118,13 @@
                     <tbody class="divide-y divide-slate-100">
                         {% for exp in analytics.top_expense_categories %}
                         <tr class="hover:bg-slate-50">
+                            <td class="px-4 py-3.5 text-center text-xs font-semibold text-slate-500">{{ forloop.counter }}</td>
                             <td class="px-6 py-3.5 font-semibold text-slate-900">{{ exp.category__name|default:"Uncategorized" }}</td>
                             <td class="px-6 py-3.5 text-center text-slate-500">{{ exp.count }}</td>
                             <td class="px-6 py-3.5 text-right font-bold text-amber-700">N$ {{ exp.total|money }}</td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="3" class="px-6 py-6 text-center text-slate-400">No expenses recorded yet.</td></tr>
+                        <tr><td colspan="4" class="px-6 py-6 text-center text-slate-400">No expenses recorded yet.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>

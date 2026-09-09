@@ -179,17 +179,19 @@ html {
   box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
 }
 
-/* Standardized Table Styles — Unified Theme Background (#fef9ee) */
+/* Standardized Table Styles — Clean Enterprise Zebra Striped */
 .table-container {
-  background-color: #fef9ee;
-  border: 1px solid #fae3b4;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 1rem;
   overflow: hidden;
-  box-shadow: 0 1px 3px 0 rgba(180, 120, 40, 0.05);
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
 }
 
 table {
-  background-color: #fef9ee;
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #ffffff;
 }
 
 .table-header-cell,
@@ -200,30 +202,46 @@ thead.bg-slate-100 th {
   font-size: 0.6875rem; /* ~11px */
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #784e12;
-  background-color: #fef9ee !important;
-  border-bottom: 1px solid #fae3b4 !important;
+  letter-spacing: 0.05em;
+  color: #475569;
+  background-color: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
   white-space: nowrap;
 }
 
 table thead tr {
-  background-color: #fef9ee !important;
-  border-bottom: 1px solid #fae3b4 !important;
+  background-color: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
 }
 
 .table-body-row,
 table tbody tr {
-  background-color: #fef9ee;
-  transition: background-color 0.15s ease;
-  border-bottom: 1px solid #fae3b4;
+  transition: background-color 0.12s ease;
+  border-bottom: 1px solid #f1f5f9;
 }
 
-.table-body-row:hover,
+/* Subtle Zebra Striping */
+table tbody tr:nth-child(odd),
+table tbody tr:nth-child(odd) td,
+tbody.bg-white tr:nth-child(odd) td,
+.table-body-row:nth-child(odd) .table-body-cell {
+  background-color: #ffffff !important;
+}
+
+table tbody tr:nth-child(even),
+table tbody tr:nth-child(even) td,
+tbody.bg-white tr:nth-child(even) td,
+.table-body-row:nth-child(even) .table-body-cell {
+  background-color: #f8fafc !important;
+}
+
+/* Subtle Row Hover State */
 table tbody tr:hover,
 table tbody tr:hover td,
-.table-body-row:hover .table-body-cell {
-  background-color: #fef4dd !important;
+.table-body-row:hover,
+.table-body-row:hover .table-body-cell,
+tbody.bg-white tr:hover td {
+  background-color: #fdf8ee !important;
 }
 
 .table-body-cell,
@@ -231,37 +249,8 @@ table tbody td {
   padding: 0.8125rem 1rem;
   font-size: 0.8125rem;
   color: #334155;
-  background-color: #fef9ee !important;
-  border-bottom: 1px solid #fae3b4;
+  border-bottom: 1px solid #f1f5f9;
   vertical-align: middle;
-}
-
-tbody.bg-white,
-tbody.bg-white td,
-tbody.divide-slate-200\/60 td,
-tbody.divide-slate-200\/70 td,
-tbody.divide-slate-100 td {
-  background-color: #fef9ee !important;
-  border-color: #fae3b4 !important;
-}
-
-tbody.bg-white tr,
-tbody.divide-slate-200\/60 tr,
-tbody.divide-slate-200\/70 tr,
-tbody.divide-slate-100 tr {
-  background-color: #fef9ee !important;
-  border-color: #fae3b4 !important;
-}
-
-tbody.bg-white tr:hover,
-tbody.bg-white tr:hover td,
-tbody.divide-slate-200\/60 tr:hover,
-tbody.divide-slate-200\/60 tr:hover td,
-tbody.divide-slate-200\/70 tr:hover,
-tbody.divide-slate-200\/70 tr:hover td,
-tbody.divide-slate-100 tr:hover,
-tbody.divide-slate-100 tr:hover td {
-  background-color: #fef4dd !important;
 }
 
 /* Button System */

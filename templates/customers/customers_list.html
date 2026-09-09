@@ -113,6 +113,7 @@
       <table class="w-full text-left border-collapse min-w-[1000px]">
         <thead>
           <tr class="border-b border-slate-200 bg-slate-50/75">
+            <th class="table-header-cell w-14 text-center">S/No.</th>
             <th class="table-header-cell w-[220px]">Company Name</th>
             <th class="table-header-cell w-[180px]">Primary Contact</th>
             <th class="table-header-cell w-[220px]">Email Address</th>
@@ -128,6 +129,9 @@
             class="table-body-row" 
             x-show="matches('{{ cust.company_name|escapejs }}', '{{ cust.contact_name|escapejs }}', '{{ cust.email|escapejs }}', '{{ cust.phone|escapejs }}', '{{ cust.vat_number|default:''|escapejs }}', '{{ cust.payment_terms }}')"
           >
+            <!-- 0. S/No. -->
+            <td class="table-body-cell text-center font-mono text-xs text-slate-400 font-semibold">{{ forloop.counter }}</td>
+
             <td class="table-body-cell whitespace-nowrap">
               <span class="font-bold text-slate-900 block truncate max-w-[210px]" title="{{ cust.company_name }}">{{ cust.company_name }}</span>
             </td>
@@ -154,7 +158,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="7" class="px-6 py-14 text-center">
+            <td colspan="8" class="px-6 py-14 text-center">
               <div class="max-w-sm mx-auto space-y-3">
                 <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>

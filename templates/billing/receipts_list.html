@@ -114,6 +114,7 @@
       <table class="w-full text-left border-collapse min-w-[950px]">
         <thead>
           <tr class="border-b border-slate-200 bg-slate-50/75">
+            <th class="table-header-cell w-14 text-center">S/No.</th>
             <th class="table-header-cell w-[160px]">Receipt #</th>
             <th class="table-header-cell w-[240px]">Customer</th>
             <th class="table-header-cell w-[140px]">Invoice Ref</th>
@@ -130,6 +131,9 @@
             class="table-body-row" 
             x-show="matches('{{ rcp.receipt_number|escapejs }}', '{{ rcp.customer.company_name|escapejs }}', '{{ rcp.customer.email|escapejs }}', '{{ rcp.invoice.invoice_number|escapejs }}', '{{ rcp.transaction_reference|escapejs }}', '{{ rcp.payment_method }}')"
           >
+            <!-- 0. S/No. -->
+            <td class="table-body-cell text-center font-mono text-xs text-slate-400 font-semibold">{{ forloop.counter }}</td>
+
             <td class="table-body-cell whitespace-nowrap">
               <span class="font-bold text-slate-900 font-mono">{{ rcp.receipt_number }}</span>
             </td>
@@ -167,7 +171,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="8" class="px-6 py-14 text-center">
+            <td colspan="9" class="px-6 py-14 text-center">
               <div class="max-w-sm mx-auto space-y-3">
                 <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>

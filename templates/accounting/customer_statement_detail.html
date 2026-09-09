@@ -71,6 +71,7 @@
             <table class="w-full text-left text-sm text-slate-600">
                 <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
                     <tr>
+                        <th class="px-6 py-3.5 text-center w-14">S/No.</th>
                         <th class="px-6 py-3.5">Date</th>
                         <th class="px-6 py-3.5">Transaction Type</th>
                         <th class="px-6 py-3.5">Reference #</th>
@@ -83,6 +84,7 @@
                 <tbody class="divide-y divide-slate-100">
                     <!-- Opening Balance Row -->
                     <tr class="bg-slate-50/50 font-semibold text-slate-800">
+                        <td class="px-6 py-3.5 text-center font-mono text-slate-400 font-semibold text-xs">—</td>
                         <td class="px-6 py-3.5">{{ statement.start_date|date:"d M Y" }}</td>
                         <td class="px-6 py-3.5"><span class="px-2 py-0.5 rounded text-xs bg-slate-200 text-slate-700 font-bold">BALANCE</span></td>
                         <td class="px-6 py-3.5">—</td>
@@ -94,6 +96,7 @@
 
                     {% for item in statement.transactions %}
                     <tr class="hover:bg-slate-50/80 transition-colors">
+                        <td class="px-6 py-4 text-center font-mono text-slate-400 font-semibold text-xs">{{ forloop.counter }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">{{ item.date|date:"d M Y" }}</td>
                         <td class="px-6 py-4">
                             {% if item.type == 'INVOICE' %}
@@ -116,7 +119,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" class="px-6 py-8 text-center text-slate-400">
+                        <td colspan="8" class="px-6 py-8 text-center text-slate-400">
                             No billing or payment transactions recorded in this period.
                         </td>
                     </tr>
@@ -124,6 +127,7 @@
 
                     <!-- Closing Balance Row -->
                     <tr class="bg-slate-100 font-bold text-slate-900">
+                        <td class="px-6 py-4 text-center font-mono text-slate-400 font-semibold text-xs">—</td>
                         <td class="px-6 py-4">{{ statement.end_date|date:"d M Y" }}</td>
                         <td class="px-6 py-4"><span class="px-2 py-0.5 rounded text-xs bg-slate-800 text-white font-bold">TOTAL</span></td>
                         <td class="px-6 py-4">—</td>

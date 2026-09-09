@@ -72,6 +72,7 @@
       <table class="w-full text-xs text-left">
         <thead class="bg-slate-100 text-slate-700 text-[11px] uppercase tracking-wider border-b border-slate-200">
           <tr>
+            <th class="py-3 px-3.5 text-center w-12">S/No.</th>
             <th class="py-3 px-3.5">Customer Name</th>
             <th class="py-3 px-3.5">Payment Terms</th>
             <th class="py-3 px-3.5 text-center">Unpaid Invoices</th>
@@ -84,6 +85,7 @@
         <tbody class="divide-y divide-slate-100">
           {% for item in ar.customer_balances %}
           <tr class="hover:bg-slate-50 {% if item.total_due > 0 %}font-medium{% endif %}">
+            <td class="py-3 px-3.5 text-center font-mono text-slate-400 font-semibold text-xs">{{ forloop.counter }}</td>
             <td class="py-3 px-3.5">
               <span class="font-semibold text-slate-900 block">{{ item.customer.company_name }}</span>
               <span class="text-[11px] text-slate-500">{{ item.customer.contact_name }} &bull; {{ item.customer.phone }}</span>
@@ -113,7 +115,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="7" class="py-8 text-center text-slate-400">
+            <td colspan="8" class="py-8 text-center text-slate-400">
               No outstanding receivables. All customer accounts are fully settled.
             </td>
           </tr>
@@ -133,6 +135,7 @@
       <table class="w-full text-xs text-left">
         <thead class="bg-slate-100 text-slate-700 text-[11px] uppercase tracking-wider border-b border-slate-200">
           <tr>
+            <th class="py-3 px-3.5 text-center w-12">S/No.</th>
             <th class="py-3 px-3.5">Invoice #</th>
             <th class="py-3 px-3.5">Issue Date</th>
             <th class="py-3 px-3.5">Due Date</th>
@@ -148,6 +151,7 @@
         <tbody class="divide-y divide-slate-100">
           {% for inv in ar.unpaid_invoices %}
           <tr class="hover:bg-slate-50">
+            <td class="py-3 px-3.5 text-center font-mono text-slate-400 font-semibold text-xs">{{ forloop.counter }}</td>
             <td class="py-3 px-3.5 font-mono font-semibold text-slate-900">{{ inv.invoice_number }}</td>
             <td class="py-3 px-3.5 font-mono text-slate-500">{{ inv.issue_date|date:"Y-m-d" }}</td>
             <td class="py-3 px-3.5 font-mono {% if inv.status == 'OVERDUE' %}text-rose-600 font-semibold{% else %}text-slate-700{% endif %}">
@@ -178,7 +182,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="10" class="py-8 text-center text-slate-400">
+            <td colspan="11" class="py-8 text-center text-slate-400">
               No outstanding invoices. All customer accounts are fully paid.
             </td>
           </tr>

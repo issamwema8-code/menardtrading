@@ -35,6 +35,7 @@
             <table class="w-full text-left text-sm text-slate-600">
                 <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
                     <tr>
+                        <th class="px-6 py-3.5 text-center w-14">S/No.</th>
                         <th class="px-6 py-3.5">Customer / Company</th>
                         <th class="px-6 py-3.5">Contact Person</th>
                         <th class="px-6 py-3.5">Email</th>
@@ -46,6 +47,7 @@
                 <tbody class="divide-y divide-slate-100">
                     {% for item in customers %}
                     <tr class="hover:bg-slate-50/80 transition-colors">
+                        <td class="px-6 py-4 text-center font-mono text-slate-400 font-semibold text-xs">{{ forloop.counter }}</td>
                         <td class="px-6 py-4 font-semibold text-slate-900">
                             <a href="{% url 'accounting:customer_statement_detail' item.customer.pk %}" class="hover:text-blue-600">
                                 {{ item.customer.company_name }}
@@ -71,7 +73,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="px-6 py-12 text-center text-slate-400">
+                        <td colspan="7" class="px-6 py-12 text-center text-slate-400">
                             No customers found in database.
                         </td>
                     </tr>

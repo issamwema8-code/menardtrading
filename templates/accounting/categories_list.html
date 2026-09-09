@@ -28,6 +28,7 @@
         <table class="w-full text-xs text-left">
           <thead class="bg-slate-100 text-slate-700 text-[11px] uppercase tracking-wider">
             <tr>
+              <th class="py-3 px-3.5 text-center w-12">S/No.</th>
               <th class="py-3 px-3.5">Category Name</th>
               <th class="py-3 px-3.5">Code</th>
               <th class="py-3 px-3.5">Description</th>
@@ -38,6 +39,7 @@
           <tbody class="divide-y divide-slate-100">
             {% for cat in categories %}
             <tr class="hover:bg-slate-50">
+              <td class="py-3 px-3.5 text-center font-mono text-slate-400 font-semibold text-xs">{{ forloop.counter }}</td>
               <td class="py-3 px-3.5 font-medium text-slate-900">{{ cat.name }}</td>
               <td class="py-3 px-3.5 font-mono text-slate-500">{{ cat.code|default:"-" }}</td>
               <td class="py-3 px-3.5 text-slate-600 text-[11px] max-w-xs">{{ cat.description|default:"-" }}</td>

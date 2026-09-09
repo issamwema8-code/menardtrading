@@ -114,6 +114,7 @@
       <table class="w-full text-left border-collapse min-w-[1060px]">
         <thead>
           <tr class="border-b border-slate-200 bg-slate-50/75">
+            <th class="table-header-cell w-14 text-center">S/No.</th>
             <th class="table-header-cell w-[200px]">User / Name</th>
             <th class="table-header-cell w-[220px]">Email Address</th>
             <th class="table-header-cell min-w-[220px]">Assigned Roles</th>
@@ -129,6 +130,9 @@
             class="table-body-row" 
             x-show="matches('{{ u.username|escapejs }}', '{{ u.get_full_name|default:u.username|escapejs }}', '{{ u.email|escapejs }}', '{% for r in u.profile.roles.all %}{{ r.name }} {% endfor %}{% if u.is_superuser %}Superuser{% endif %}', '{% if u.is_active %}ACTIVE{% else %}INACTIVE{% endif %}')"
           >
+            <!-- 0. S/No. -->
+            <td class="table-body-cell text-center font-mono text-xs text-slate-400 font-semibold">{{ forloop.counter }}</td>
+
             <!-- User Name / Handle -->
             <td class="table-body-cell whitespace-nowrap">
               <div class="flex items-center gap-2.5">

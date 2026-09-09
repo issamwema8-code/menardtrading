@@ -75,6 +75,7 @@
             <table class="w-full text-left text-sm text-slate-600">
                 <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
                     <tr>
+                        <th class="px-6 py-3.5 text-center w-14">S/No.</th>
                         <th class="px-6 py-3.5">Invoice #</th>
                         <th class="px-6 py-3.5">Date</th>
                         <th class="px-6 py-3.5">Customer</th>
@@ -87,6 +88,7 @@
                 <tbody class="divide-y divide-slate-100">
                     {% for inv in sales_invoices %}
                     <tr class="hover:bg-slate-50">
+                        <td class="px-6 py-4 text-center font-mono text-slate-400 font-semibold text-xs">{{ forloop.counter }}</td>
                         <td class="px-6 py-4 font-mono font-medium text-slate-900">{{ inv.invoice_number }}</td>
                         <td class="px-6 py-4">{{ inv.issue_date|date:"d M Y" }}</td>
                         <td class="px-6 py-4 font-medium text-slate-900">{{ inv.customer.company_name }}</td>
@@ -100,7 +102,7 @@
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="7" class="px-6 py-8 text-center text-slate-400">No sales invoices in selected period.</td></tr>
+                    <tr><td colspan="8" class="px-6 py-8 text-center text-slate-400">No sales invoices in selected period.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -118,6 +120,7 @@
             <table class="w-full text-left text-sm text-slate-600">
                 <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
                     <tr>
+                        <th class="px-6 py-3.5 text-center w-14">S/No.</th>
                         <th class="px-6 py-3.5">Receipt #</th>
                         <th class="px-6 py-3.5">Date</th>
                         <th class="px-6 py-3.5">Invoice #</th>
@@ -130,6 +133,7 @@
                 <tbody class="divide-y divide-slate-100">
                     {% for p in payments %}
                     <tr class="hover:bg-slate-50">
+                        <td class="px-6 py-4 text-center font-mono text-slate-400 font-semibold text-xs">{{ forloop.counter }}</td>
                         <td class="px-6 py-4 font-mono font-medium text-slate-900">{{ p.receipt_number }}</td>
                         <td class="px-6 py-4">{{ p.payment_date|date:"d M Y" }}</td>
                         <td class="px-6 py-4 font-mono text-slate-700">{{ p.invoice.invoice_number }}</td>
@@ -139,7 +143,7 @@
                         <td class="px-6 py-4 text-right font-bold text-emerald-700">N$ {{ p.amount_paid|money }}</td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="7" class="px-6 py-8 text-center text-slate-400">No payments recorded in selected period.</td></tr>
+                    <tr><td colspan="8" class="px-6 py-8 text-center text-slate-400">No payments recorded in selected period.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -201,6 +205,7 @@
             <table class="w-full text-left text-sm text-slate-600">
                 <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
                     <tr>
+                        <th class="px-6 py-3.5 text-center w-14">S/No.</th>
                         <th class="px-6 py-3.5">Expense #</th>
                         <th class="px-6 py-3.5">Date</th>
                         <th class="px-6 py-3.5">Category</th>
@@ -214,6 +219,7 @@
                 <tbody class="divide-y divide-slate-100">
                     {% for exp in expenses %}
                     <tr class="hover:bg-slate-50">
+                        <td class="px-6 py-4 text-center font-mono text-slate-400 font-semibold text-xs">{{ forloop.counter }}</td>
                         <td class="px-6 py-4 font-mono font-medium text-slate-900">{{ exp.expense_number }}</td>
                         <td class="px-6 py-4">{{ exp.expense_date|date:"d M Y" }}</td>
                         <td class="px-6 py-4 font-medium">{{ exp.category.name }}</td>
@@ -228,7 +234,7 @@
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="8" class="px-6 py-8 text-center text-slate-400">No expenses recorded in selected period.</td></tr>
+                    <tr><td colspan="9" class="px-6 py-8 text-center text-slate-400">No expenses recorded in selected period.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

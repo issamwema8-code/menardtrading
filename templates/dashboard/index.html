@@ -253,6 +253,7 @@
         <table class="w-full text-left text-sm">
           <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
             <tr>
+              <th class="px-4 py-3 text-center w-12 text-xs font-bold uppercase tracking-wider text-slate-500">S/No.</th>
               <th class="px-4 py-3">PO Number</th>
               <th class="px-4 py-3">Customer / Sender</th>
               <th class="px-4 py-3">Route &amp; Cargo</th>
@@ -265,6 +266,7 @@
           <tbody class="divide-y divide-slate-100">
             {% for po in orders %}
             <tr class="hover:bg-amber-50/40 transition cursor-pointer group" onclick="window.location='{% url 'purchase_order_detail' po.id %}';">
+              <td class="px-4 py-3 text-center text-xs font-semibold text-slate-500" onclick="event.stopPropagation();">{{ forloop.counter }}</td>
               <td class="px-4 py-3 font-bold text-slate-900 group-hover:text-amber-600 transition">
                 <div class="flex items-center gap-1.5">
                   <svg class="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -301,7 +303,7 @@
             </tr>
             {% empty %}
             <tr>
-              <td colspan="7" class="px-4 py-8 text-center text-slate-400">No purchase orders uploaded yet. Click "+ Upload Customer PO File" above or send to Brevo inbound.</td>
+              <td colspan="8" class="px-4 py-8 text-center text-slate-400">No purchase orders uploaded yet. Click "+ Upload Customer PO File" above or send to Brevo inbound.</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -331,6 +333,7 @@
         <table class="w-full text-left text-sm">
           <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
             <tr>
+              <th class="px-4 py-3 text-center w-12 text-xs font-bold uppercase tracking-wider text-slate-500">S/No.</th>
               <th class="px-4 py-3">Quote #</th>
               <th class="px-4 py-3">Customer</th>
               <th class="px-4 py-3">Subtotal</th>
@@ -343,6 +346,7 @@
           <tbody class="divide-y divide-slate-100">
             {% for quote in quotes %}
             <tr class="hover:bg-slate-50 transition">
+              <td class="px-4 py-3 text-center text-xs font-semibold text-slate-500">{{ forloop.counter }}</td>
               <td class="px-4 py-3 font-bold text-slate-900">{{ quote.quote_number }}</td>
               <td class="px-4 py-3 font-medium text-slate-900">{{ quote.customer.company_name }}</td>
               <td class="px-4 py-3 text-slate-600">R {{ quote.subtotal|money }}</td>
@@ -372,7 +376,7 @@
             </tr>
             {% empty %}
             <tr>
-              <td colspan="7" class="px-4 py-8 text-center text-slate-400">No quotations generated yet.</td>
+              <td colspan="8" class="px-4 py-8 text-center text-slate-400">No quotations generated yet.</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -525,6 +529,7 @@
         <table class="w-full text-left text-sm">
           <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
             <tr>
+              <th class="px-4 py-3 text-center w-12 text-xs font-bold uppercase tracking-wider text-slate-500">S/No.</th>
               <th class="px-4 py-3">Invoice #</th>
               <th class="px-4 py-3">Customer</th>
               <th class="px-4 py-3">Type</th>
@@ -538,6 +543,7 @@
           <tbody class="divide-y divide-slate-100">
             {% for inv in invoices %}
             <tr class="hover:bg-slate-50 transition">
+              <td class="px-4 py-3 text-center text-xs font-semibold text-slate-500">{{ forloop.counter }}</td>
               <td class="px-4 py-3 font-bold text-slate-900">{{ inv.invoice_number }}</td>
               <td class="px-4 py-3 font-medium text-slate-900">{{ inv.customer.company_name }}</td>
               <td class="px-4 py-3 text-xs text-slate-600">{{ inv.get_invoice_type_display }}</td>
@@ -610,7 +616,7 @@
 
             {% empty %}
             <tr>
-              <td colspan="8" class="px-4 py-8 text-center text-slate-400">No invoices generated yet.</td>
+              <td colspan="9" class="px-4 py-8 text-center text-slate-400">No invoices generated yet.</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -636,6 +642,7 @@
         <table class="w-full text-left text-sm">
           <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
             <tr>
+              <th class="px-4 py-3 text-center w-12 text-xs font-bold uppercase tracking-wider text-slate-500">S/No.</th>
               <th class="px-4 py-3">Receipt #</th>
               <th class="px-4 py-3">Customer</th>
               <th class="px-4 py-3">Invoice Ref</th>
@@ -649,6 +656,7 @@
           <tbody class="divide-y divide-slate-100">
             {% for rcp in receipts %}
             <tr class="hover:bg-slate-50 transition">
+              <td class="px-4 py-3 text-center text-xs font-semibold text-slate-500">{{ forloop.counter }}</td>
               <td class="px-4 py-3 font-bold text-slate-900">{{ rcp.receipt_number }}</td>
               <td class="px-4 py-3 font-medium text-slate-900">{{ rcp.customer.company_name }}</td>
               <td class="px-4 py-3 text-slate-600">{{ rcp.invoice.invoice_number }}</td>
@@ -664,7 +672,7 @@
             </tr>
             {% empty %}
             <tr>
-              <td colspan="8" class="px-4 py-8 text-center text-slate-400">No payment receipts recorded yet.</td>
+              <td colspan="9" class="px-4 py-8 text-center text-slate-400">No payment receipts recorded yet.</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -693,6 +701,7 @@
         <table class="w-full text-left text-sm">
           <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
             <tr>
+              <th class="px-4 py-3 text-center w-12 text-xs font-bold uppercase tracking-wider text-slate-500">S/No.</th>
               <th class="px-4 py-3">Company Name</th>
               <th class="px-4 py-3">Contact Person</th>
               <th class="px-4 py-3">Email</th>
@@ -704,6 +713,7 @@
           <tbody class="divide-y divide-slate-100">
             {% for cust in customers %}
             <tr class="hover:bg-slate-50 transition">
+              <td class="px-4 py-3 text-center text-xs font-semibold text-slate-500">{{ forloop.counter }}</td>
               <td class="px-4 py-3 font-bold text-slate-900">{{ cust.company_name }}</td>
               <td class="px-4 py-3 font-medium text-slate-900">{{ cust.contact_name }}</td>
               <td class="px-4 py-3 text-slate-600">{{ cust.email }}</td>
@@ -717,7 +727,7 @@
             </tr>
             {% empty %}
             <tr>
-              <td colspan="6" class="px-4 py-8 text-center text-slate-400">No customers registered yet. Click "+ Register New Customer" above to add your real clients.</td>
+              <td colspan="7" class="px-4 py-8 text-center text-slate-400">No customers registered yet. Click "+ Register New Customer" above to add your real clients.</td>
             </tr>
             {% endfor %}
           </tbody>
