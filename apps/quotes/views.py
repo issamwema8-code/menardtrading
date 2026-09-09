@@ -1,4 +1,6 @@
+import re
 import logging
+from decimal import Decimal
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
@@ -58,17 +60,28 @@ class CustomerApproveQuoteView(View):
         )
 
         # 2. Automatically generate first invoice according to Customer Payment Terms
-        terms = quote.customer.payment_terms
+        terms = (quote.customer.payment_terms if quote.customer else '50_DEPOSIT_50_POD') or '50_DEPOSIT_50_POD'
         due_date = timezone.now().date() + timezone.timedelta(days=7)
+        inv = None
 
-        if terms == '100_UPFRONT':
+        pct = None
+        if terms == '50_DEPOSIT_50_POD':
+            pct = 50
+        elif terms == '30_DEPOSIT_70_POD':
+            pct = 30
+        elif 'DEPOSIT' in str(terms).upper():
+            m = re.search(r'(\d+)', str(terms))
+            if m:
+                pct = int(m.group(1))
+
+        if terms == '100_UPFRONT' or (pct is None and terms in ['COD', '30_DAYS_NET', '14_DAYS_NET', '7_DAYS_NET', 'CUSTOM']):
             inv = Invoice.objects.create(
                 job=job,
                 quote=quote,
                 customer=quote.customer,
                 invoice_type=Invoice.InvoiceType.FULL,
                 due_date=due_date,
-                notes="100% Upfront payment before truck dispatch."
+                notes="100% Upfront payment before truck dispatch." if terms == '100_UPFRONT' else "Payment strictly according to agreed terms."
             )
             for item in quote.line_items.all():
                 InvoiceLineItem.objects.create(
@@ -80,8 +93,7 @@ class CustomerApproveQuoteView(View):
             inv.recalculate_totals()
             generate_invoice_pdf(inv)
 
-        elif terms in ['50_DEPOSIT_50_POD', '30_DEPOSIT_70_POD']:
-            pct = 50 if terms == '50_DEPOSIT_50_POD' else 30
+        elif pct:
             inv = Invoice.objects.create(
                 job=job,
                 quote=quote,
@@ -90,11 +102,11 @@ class CustomerApproveQuoteView(View):
                 due_date=due_date,
                 notes=f"{pct}% Mobilization deposit required prior to loading."
             )
-            deposit_subtotal = (quote.subtotal * (pct / 100))
+            deposit_subtotal = (quote.subtotal * (Decimal(str(pct)) / Decimal('100.00'))).quantize(Decimal('0.01'))
             InvoiceLineItem.objects.create(
                 invoice=inv,
                 description=f"{pct}% Mobilization Deposit for Job #{job.job_number} ({quote.quote_number})",
-                quantity=1,
+                quantity=Decimal('1.00'),
                 unit_price=deposit_subtotal,
             )
             inv.recalculate_totals()
