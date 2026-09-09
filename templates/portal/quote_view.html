@@ -32,7 +32,7 @@
     <div class="flex flex-wrap items-center gap-2.5">
       <div class="bg-slate-950 px-3.5 py-1.5 rounded-xl border border-slate-800 text-right mr-1">
         <span class="text-[9px] text-slate-400 uppercase tracking-wider block">Total (Incl. VAT)</span>
-        <span class="text-base font-bold text-[#dca048] font-mono">N$ {{ quote.total_amount|floatformat:2 }}</span>
+        <span class="text-base font-bold text-[#dca048] font-mono">N$ {{ quote.total_amount|money }}</span>
       </div>
 
       <button onclick="window.print()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition border border-slate-700">
@@ -79,7 +79,7 @@
       title: 'Approve Quotation?',
       html: '<div class="text-xs text-slate-600 text-left space-y-2 mt-2">' +
             '<p>You are about to formally approve <strong>Quotation #{{ quote.quote_number }}</strong> for <strong>{{ quote.customer.company_name }}</strong>.</p>' +
-            '<div class="p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-center text-sm font-bold text-slate-900">Total: N$ {{ quote.total_amount|floatformat:2 }}</div>' +
+            '<div class="p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-center text-sm font-bold text-slate-900">Total: N$ {{ quote.total_amount|money }}</div>' +
             '<p class="text-[11px] text-slate-500">Upon approval, our operations team will immediately allocate a dedicated logistics vehicle and schedule dispatch.</p>' +
             '</div>',
       icon: 'question',

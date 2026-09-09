@@ -212,7 +212,8 @@ class PaymentReceipt(models.Model):
         verbose_name_plural = 'Payment Receipts'
 
     def __str__(self):
-        return f"{self.receipt_number} - R{self.amount_paid} for {self.invoice.invoice_number}"
+        from menard_core.formatters import format_money
+        return f"{self.receipt_number} - {format_money(self.amount_paid, 'R')} for {self.invoice.invoice_number}"
 
     def save(self, *args, **kwargs):
         is_new = self.pk is None

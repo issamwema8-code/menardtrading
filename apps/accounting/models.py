@@ -162,8 +162,9 @@ class Expense(models.Model):
         verbose_name_plural = 'Expenses'
 
     def __str__(self):
+        from menard_core.formatters import format_money
         payee_name = self.vendor.name if self.vendor else (self.payee or 'Payee')
-        return f"{self.expense_number} - {self.category.name} (R{self.total_amount}) to {payee_name}"
+        return f"{self.expense_number} - {self.category.name} ({format_money(self.total_amount, 'R')}) to {payee_name}"
 
     def save(self, *args, **kwargs):
         # Automatically calculate VAT and total if subtotal provided
@@ -232,7 +233,8 @@ class SupplierBill(models.Model):
         verbose_name_plural = 'Supplier Bills (Accounts Payable)'
 
     def __str__(self):
-        return f"{self.bill_number} - {self.vendor.name} (R{self.total_amount}) [{self.get_status_display()}]"
+        from menard_core.formatters import format_money
+        return f"{self.bill_number} - {self.vendor.name} ({format_money(self.total_amount, 'R')}) [{self.get_status_display()}]"
 
     def recalculate_totals(self):
         self.vat_amount = (self.subtotal * (self.vat_rate / Decimal('100.00'))).quantize(Decimal('0.01'))
@@ -294,7 +296,8 @@ class SupplierBillPayment(models.Model):
         verbose_name_plural = 'Bill Payments'
 
     def __str__(self):
-        return f"{self.payment_number} - R{self.amount_paid} for {self.bill.bill_number}"
+        from menard_core.formatters import format_money
+        return f"{self.payment_number} - {format_money(self.amount_paid, 'R')} for {self.bill.bill_number}"
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)

@@ -74,7 +74,8 @@ class Quotation(models.Model):
         verbose_name_plural = 'Quotations'
 
     def __str__(self):
-        return f"{self.quote_number} - {self.customer.company_name} (R{self.total_amount})"
+        from menard_core.formatters import format_money
+        return f"{self.quote_number} - {self.customer.company_name} ({format_money(self.total_amount, 'R')})"
 
     def save(self, *args, **kwargs):
         is_new = self._state.adding

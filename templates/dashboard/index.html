@@ -41,7 +41,7 @@
     <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
       <div>
         <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Revenue Collected</p>
-        <p class="text-2xl font-black text-emerald-600 mt-1">R {{ metrics.total_revenue|floatformat:2 }}</p>
+        <p class="text-2xl font-black text-emerald-600 mt-1">R {{ metrics.total_revenue|money }}</p>
         <p class="text-[11px] text-slate-400 mt-0.5">&check; Fully receipted via Brevo</p>
       </div>
       <div class="p-3 bg-emerald-50 rounded-xl text-emerald-600">
@@ -55,7 +55,7 @@
     <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
       <div>
         <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Outstanding Invoices</p>
-        <p class="text-2xl font-black text-rose-600 mt-1">R {{ metrics.unpaid_balance|floatformat:2 }}</p>
+        <p class="text-2xl font-black text-rose-600 mt-1">R {{ metrics.unpaid_balance|money }}</p>
         <p class="text-[11px] text-slate-400 mt-0.5">Across active &amp; staged jobs</p>
       </div>
       <div class="p-3 bg-rose-50 rounded-xl text-rose-600">
@@ -178,8 +178,8 @@
               <p class="text-xs text-slate-500 mt-0.5">{{ job.customer.company_name }} &bull; {{ job.pickup_address|truncatechars:25 }} &rarr; {{ job.delivery_address|truncatechars:25 }}</p>
             </div>
             <div class="text-right">
-              <span class="text-xs font-bold text-slate-900 block">R {{ job.quote_total|floatformat:2 }}</span>
-              <span class="text-[10px] text-slate-400">Invoiced: R {{ job.total_invoiced|floatformat:2 }}</span>
+              <span class="text-xs font-bold text-slate-900 block">R {{ job.quote_total|money }}</span>
+              <span class="text-[10px] text-slate-400">Invoiced: R {{ job.total_invoiced|money }}</span>
             </div>
           </div>
           {% empty %}
@@ -209,8 +209,8 @@
               <p class="text-xs text-slate-500 mt-0.5">{{ inv.customer.company_name }} &bull; Due: {{ inv.due_date|date:"d M Y" }}</p>
             </div>
             <div class="text-right">
-              <span class="text-xs font-bold text-slate-900 block">R {{ inv.total_amount|floatformat:2 }}</span>
-              <span class="text-[11px] font-bold text-rose-600">Bal: R {{ inv.balance_due|floatformat:2 }}</span>
+              <span class="text-xs font-bold text-slate-900 block">R {{ inv.total_amount|money }}</span>
+              <span class="text-[11px] font-bold text-rose-600">Bal: R {{ inv.balance_due|money }}</span>
             </div>
           </div>
           {% empty %}
@@ -345,9 +345,9 @@
             <tr class="hover:bg-slate-50 transition">
               <td class="px-4 py-3 font-bold text-slate-900">{{ quote.quote_number }}</td>
               <td class="px-4 py-3 font-medium text-slate-900">{{ quote.customer.company_name }}</td>
-              <td class="px-4 py-3 text-slate-600">R {{ quote.subtotal|floatformat:2 }}</td>
-              <td class="px-4 py-3 text-slate-600">R {{ quote.vat_amount|floatformat:2 }}</td>
-              <td class="px-4 py-3 font-extrabold text-slate-900">R {{ quote.total_amount|floatformat:2 }}</td>
+              <td class="px-4 py-3 text-slate-600">R {{ quote.subtotal|money }}</td>
+              <td class="px-4 py-3 text-slate-600">R {{ quote.vat_amount|money }}</td>
+              <td class="px-4 py-3 font-extrabold text-slate-900">R {{ quote.total_amount|money }}</td>
               <td class="px-4 py-3">
                 <span class="text-xs font-bold px-2.5 py-1 rounded-full {% if quote.status == 'APPROVED' %}bg-emerald-100 text-emerald-800{% elif quote.status == 'SENT' %}bg-blue-100 text-blue-800{% else %}bg-slate-100 text-slate-700{% endif %}">
                   {{ quote.get_status_display }}
@@ -405,8 +405,8 @@
               <p class="text-xs text-slate-500"><strong>Route:</strong> {{ job.pickup_address }} &rarr; {{ job.delivery_address }}</p>
             </div>
             <div class="text-right">
-              <span class="text-xs font-bold text-slate-900 block">Total Contract: R {{ job.quote_total|floatformat:2 }}</span>
-              <span class="text-xs text-slate-500">Invoiced: R {{ job.total_invoiced|floatformat:2 }} &bull; Unbilled: <strong class="text-amber-600">R {{ job.remaining_uninvoiced|floatformat:2 }}</strong></span>
+              <span class="text-xs font-bold text-slate-900 block">Total Contract: R {{ job.quote_total|money }}</span>
+              <span class="text-xs text-slate-500">Invoiced: R {{ job.total_invoiced|money }} &bull; Unbilled: <strong class="text-amber-600">R {{ job.remaining_uninvoiced|money }}</strong></span>
             </div>
           </div>
 
@@ -470,9 +470,9 @@
                 <div>
                   <label class="font-bold text-slate-700 block mb-1">Select Invoicing Milestone:</label>
                   <select name="invoice_type" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-semibold text-slate-900">
-                    <option value="FULL">100% Upfront Tax Invoice (R {{ job.quote_total|floatformat:2 }})</option>
-                    <option value="PARTIAL_DEPOSIT">50% Mobilization Deposit (R {{ job.quote.subtotal|floatformat:2 }} &times; 50%)</option>
-                    <option value="PARTIAL_BALANCE">Final Balance on POD (Unbilled: R {{ job.remaining_uninvoiced|floatformat:2 }})</option>
+                    <option value="FULL">100% Upfront Tax Invoice (R {{ job.quote_total|money }})</option>
+                    <option value="PARTIAL_DEPOSIT">50% Mobilization Deposit (R {{ job.quote.subtotal|money }} &times; 50%)</option>
+                    <option value="PARTIAL_BALANCE">Final Balance on POD (Unbilled: R {{ job.remaining_uninvoiced|money }})</option>
                     <option value="ADD_ON">Supplementary / Add-on (Demurrage, Waiting Time, Extra Tolls)</option>
                   </select>
                 </div>
@@ -541,9 +541,9 @@
               <td class="px-4 py-3 font-bold text-slate-900">{{ inv.invoice_number }}</td>
               <td class="px-4 py-3 font-medium text-slate-900">{{ inv.customer.company_name }}</td>
               <td class="px-4 py-3 text-xs text-slate-600">{{ inv.get_invoice_type_display }}</td>
-              <td class="px-4 py-3 font-bold text-slate-900">R {{ inv.total_amount|floatformat:2 }}</td>
-              <td class="px-4 py-3 text-emerald-600 font-medium">R {{ inv.amount_paid|floatformat:2 }}</td>
-              <td class="px-4 py-3 font-bold text-rose-600">R {{ inv.balance_due|floatformat:2 }}</td>
+              <td class="px-4 py-3 font-bold text-slate-900">R {{ inv.total_amount|money }}</td>
+              <td class="px-4 py-3 text-emerald-600 font-medium">R {{ inv.amount_paid|money }}</td>
+              <td class="px-4 py-3 font-bold text-rose-600">R {{ inv.balance_due|money }}</td>
               <td class="px-4 py-3">
                 <span class="text-xs font-bold px-2.5 py-1 rounded-full {% if inv.status == 'PAID' %}bg-emerald-100 text-emerald-800{% elif inv.status == 'PARTIALLY_PAID' %}bg-amber-100 text-amber-800{% else %}bg-slate-100 text-slate-700{% endif %}">
                   {{ inv.get_status_display }}
@@ -572,8 +572,8 @@
                 <form method="POST" action="{% url 'record_payment_action' inv.id %}" class="space-y-4 text-xs">
                   {% csrf_token %}
                   <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                    <p class="text-slate-600">Invoice Total: <strong>R {{ inv.total_amount|floatformat:2 }}</strong></p>
-                    <p class="text-rose-600 font-bold">Outstanding Balance: R {{ inv.balance_due|floatformat:2 }}</p>
+                    <p class="text-slate-600">Invoice Total: <strong>R {{ inv.total_amount|money }}</strong></p>
+                    <p class="text-rose-600 font-bold">Outstanding Balance: R {{ inv.balance_due|money }}</p>
                   </div>
 
                   <div>
@@ -652,7 +652,7 @@
               <td class="px-4 py-3 font-bold text-slate-900">{{ rcp.receipt_number }}</td>
               <td class="px-4 py-3 font-medium text-slate-900">{{ rcp.customer.company_name }}</td>
               <td class="px-4 py-3 text-slate-600">{{ rcp.invoice.invoice_number }}</td>
-              <td class="px-4 py-3 font-black text-emerald-600">R {{ rcp.amount_paid|floatformat:2 }}</td>
+              <td class="px-4 py-3 font-black text-emerald-600">R {{ rcp.amount_paid|money }}</td>
               <td class="px-4 py-3 text-xs text-slate-600">{{ rcp.get_payment_method_display }}</td>
               <td class="px-4 py-3 font-mono text-xs text-slate-700">{{ rcp.transaction_reference }}</td>
               <td class="px-4 py-3 text-xs text-slate-500">{{ rcp.payment_date|date:"d M Y" }}</td>

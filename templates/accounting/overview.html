@@ -33,9 +33,9 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
         </span>
       </div>
-      <p class="text-2xl font-bold text-slate-900 mt-2 font-mono">N$ {{ kpis.pnl_mtd.total_revenue|floatformat:2 }}</p>
+      <p class="text-2xl font-bold text-slate-900 mt-2 font-mono">N$ {{ kpis.pnl_mtd.total_revenue|money }}</p>
       <div class="flex items-center justify-between text-[11px] text-slate-400 mt-2 pt-2 border-t border-slate-100">
-        <span>YTD: N$ {{ kpis.pnl_ytd.total_revenue|floatformat:2 }}</span>
+        <span>YTD: N$ {{ kpis.pnl_ytd.total_revenue|money }}</span>
         <span class="text-emerald-600 font-medium">{{ kpis.pnl_mtd.invoices_count }} Invoices</span>
       </div>
     </div>
@@ -49,11 +49,11 @@
         </span>
       </div>
       <p class="text-2xl font-bold {% if kpis.pnl_mtd.net_profit >= 0 %}text-slate-900{% else %}text-rose-600{% endif %} mt-2 font-mono">
-        N$ {{ kpis.pnl_mtd.net_profit|floatformat:2 }}
+        N$ {{ kpis.pnl_mtd.net_profit|money }}
       </p>
       <div class="flex items-center justify-between text-[11px] text-slate-400 mt-2 pt-2 border-t border-slate-100">
         <span>Margin: {{ kpis.pnl_mtd.net_profit_margin_pct }}%</span>
-        <span>YTD: N$ {{ kpis.pnl_ytd.net_profit|floatformat:2 }}</span>
+        <span>YTD: N$ {{ kpis.pnl_ytd.net_profit|money }}</span>
       </div>
     </div>
 
@@ -65,9 +65,9 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
         </span>
       </div>
-      <p class="text-2xl font-bold text-slate-900 mt-2 font-mono">N$ {{ kpis.ar.total_receivables|floatformat:2 }}</p>
+      <p class="text-2xl font-bold text-slate-900 mt-2 font-mono">N$ {{ kpis.ar.total_receivables|money }}</p>
       <div class="flex items-center justify-between text-[11px] text-slate-400 mt-2 pt-2 border-t border-slate-100">
-        <span class="text-rose-600 font-medium">Overdue: N$ {{ kpis.ar.overdue_receivables|floatformat:2 }}</span>
+        <span class="text-rose-600 font-medium">Overdue: N$ {{ kpis.ar.overdue_receivables|money }}</span>
         <a href="{% url 'accounting:receivables' %}" class="text-sky-600 hover:underline">View AR &rarr;</a>
       </div>
     </div>
@@ -80,9 +80,9 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
         </span>
       </div>
-      <p class="text-2xl font-bold text-slate-900 mt-2 font-mono">N$ {{ kpis.ap.total_payables|floatformat:2 }}</p>
+      <p class="text-2xl font-bold text-slate-900 mt-2 font-mono">N$ {{ kpis.ap.total_payables|money }}</p>
       <div class="flex items-center justify-between text-[11px] text-slate-400 mt-2 pt-2 border-t border-slate-100">
-        <span class="text-rose-600 font-medium">Overdue: N$ {{ kpis.ap.overdue_payables|floatformat:2 }}</span>
+        <span class="text-rose-600 font-medium">Overdue: N$ {{ kpis.ap.overdue_payables|money }}</span>
         <a href="{% url 'accounting:payables' %}" class="text-purple-600 hover:underline">View AP &rarr;</a>
       </div>
     </div>
@@ -98,16 +98,16 @@
       <div class="space-y-2.5">
         <div class="flex justify-between items-center text-xs">
           <span class="text-slate-500">Total Cash Received:</span>
-          <span class="font-mono font-semibold text-emerald-600">+ N$ {{ kpis.cash_flow_mtd.total_cash_in|floatformat:2 }}</span>
+          <span class="font-mono font-semibold text-emerald-600">+ N$ {{ kpis.cash_flow_mtd.total_cash_in|money }}</span>
         </div>
         <div class="flex justify-between items-center text-xs">
           <span class="text-slate-500">Total Cash Paid Out:</span>
-          <span class="font-mono font-semibold text-rose-600">- N$ {{ kpis.cash_flow_mtd.total_cash_out|floatformat:2 }}</span>
+          <span class="font-mono font-semibold text-rose-600">- N$ {{ kpis.cash_flow_mtd.total_cash_out|money }}</span>
         </div>
         <div class="pt-2 border-t border-slate-100 flex justify-between items-center text-xs font-semibold">
           <span class="text-slate-700">Net Cash Movement:</span>
           <span class="font-mono {% if kpis.cash_flow_mtd.net_cash_flow >= 0 %}text-emerald-600{% else %}text-rose-600{% endif %}">
-            N$ {{ kpis.cash_flow_mtd.net_cash_flow|floatformat:2 }}
+            N$ {{ kpis.cash_flow_mtd.net_cash_flow|money }}
           </span>
         </div>
       </div>
@@ -119,19 +119,19 @@
       <div class="space-y-1.5 text-xs">
         <div class="flex justify-between items-center">
           <span class="text-slate-500">Current (Not Overdue):</span>
-          <span class="font-mono font-medium text-slate-800">N$ {{ kpis.ar.aging.current|floatformat:2 }}</span>
+          <span class="font-mono font-medium text-slate-800">N$ {{ kpis.ar.aging.current|money }}</span>
         </div>
         <div class="flex justify-between items-center">
           <span class="text-slate-500">1–30 Days Overdue:</span>
-          <span class="font-mono font-medium text-amber-600">N$ {{ kpis.ar.aging.days_1_30|floatformat:2 }}</span>
+          <span class="font-mono font-medium text-amber-600">N$ {{ kpis.ar.aging.days_1_30|money }}</span>
         </div>
         <div class="flex justify-between items-center">
           <span class="text-slate-500">31–60 Days Overdue:</span>
-          <span class="font-mono font-medium text-amber-700">N$ {{ kpis.ar.aging.days_31_60|floatformat:2 }}</span>
+          <span class="font-mono font-medium text-amber-700">N$ {{ kpis.ar.aging.days_31_60|money }}</span>
         </div>
         <div class="flex justify-between items-center">
           <span class="text-slate-500">61+ Days Overdue:</span>
-          <span class="font-mono font-medium text-rose-600">N$ {{ kpis.ar.aging.days_61_90|add:kpis.ar.aging.days_91_plus|floatformat:2 }}</span>
+          <span class="font-mono font-medium text-rose-600">N$ {{ kpis.ar.aging.days_61_90|add:kpis.ar.aging.days_91_plus|money }}</span>
         </div>
       </div>
     </div>
@@ -142,15 +142,15 @@
       <div class="space-y-2.5">
         <div class="flex justify-between items-center text-xs">
           <span class="text-slate-500">Output VAT (Sales):</span>
-          <span class="font-mono font-semibold text-slate-800">N$ {{ kpis.vat.output_vat|floatformat:2 }}</span>
+          <span class="font-mono font-semibold text-slate-800">N$ {{ kpis.vat.output_vat|money }}</span>
         </div>
         <div class="flex justify-between items-center text-xs">
           <span class="text-slate-500">Input VAT (Expenses):</span>
-          <span class="font-mono font-semibold text-slate-800">N$ {{ kpis.vat.total_input_vat|floatformat:2 }}</span>
+          <span class="font-mono font-semibold text-slate-800">N$ {{ kpis.vat.total_input_vat|money }}</span>
         </div>
         <div class="pt-2 border-t border-slate-100 flex justify-between items-center text-xs font-semibold">
           <span class="text-slate-700">Net VAT Liability:</span>
-          <span class="font-mono text-amber-700">N$ {{ kpis.vat.net_vat_payable|floatformat:2 }}</span>
+          <span class="font-mono text-amber-700">N$ {{ kpis.vat.net_vat_payable|money }}</span>
         </div>
       </div>
     </div>
@@ -182,7 +182,7 @@
               <td class="py-2.5 px-3 text-slate-500 font-mono">{{ exp.date|date:"Y-m-d" }}</td>
               <td class="py-2.5 px-3 font-medium text-slate-800">{{ exp.category.name }}</td>
               <td class="py-2.5 px-3 text-slate-600">{{ exp.payee|truncatechars:20 }}</td>
-              <td class="py-2.5 px-3 text-right font-mono font-semibold text-slate-900">N$ {{ exp.total_amount|floatformat:2 }}</td>
+              <td class="py-2.5 px-3 text-right font-mono font-semibold text-slate-900">N$ {{ exp.total_amount|money }}</td>
             </tr>
             {% empty %}
             <tr>
@@ -216,7 +216,7 @@
               <td class="py-2.5 px-3 text-slate-500 font-mono">{{ rcp.payment_date|date:"Y-m-d" }}</td>
               <td class="py-2.5 px-3 font-medium text-slate-800">{{ rcp.customer.company_name|truncatechars:20 }}</td>
               <td class="py-2.5 px-3 font-mono text-slate-500">{{ rcp.invoice.invoice_number }}</td>
-              <td class="py-2.5 px-3 text-right font-mono font-semibold text-emerald-600">+ N$ {{ rcp.amount_paid|floatformat:2 }}</td>
+              <td class="py-2.5 px-3 text-right font-mono font-semibold text-emerald-600">+ N$ {{ rcp.amount_paid|money }}</td>
             </tr>
             {% empty %}
             <tr>

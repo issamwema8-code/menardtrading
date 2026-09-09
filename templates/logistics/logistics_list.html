@@ -134,9 +134,9 @@
         </div>
 
         <div class="text-left sm:text-right bg-slate-50 sm:bg-transparent p-3 sm:p-0 rounded-xl sm:rounded-none border sm:border-0 border-slate-200 w-full sm:w-auto">
-          <span class="text-xs font-mono font-bold text-slate-900 block">Total: R {{ job.quote_total|floatformat:2 }}</span>
+          <span class="text-xs font-mono font-bold text-slate-900 block">Total: R {{ job.quote_total|money }}</span>
           <span class="text-xs text-slate-500 mt-0.5 block font-mono">
-            Invoiced: R {{ job.total_invoiced|floatformat:2 }} &bull; Unbilled: <strong class="text-[#b47828]">R {{ job.remaining_uninvoiced|floatformat:2 }}</strong>
+            Invoiced: R {{ job.total_invoiced|money }} &bull; Unbilled: <strong class="text-[#b47828]">R {{ job.remaining_uninvoiced|money }}</strong>
           </span>
         </div>
       </div>
@@ -208,9 +208,9 @@
             <div>
               <label class="form-label">Invoice Type <span class="text-rose-500">*</span></label>
               <select name="invoice_type" class="form-input font-bold">
-                <option value="FULL">100% Full Payment (R {{ job.quote_total|floatformat:2 }})</option>
-                <option value="PARTIAL_DEPOSIT">50% Deposit (R {{ job.quote.subtotal|floatformat:2 }} &times; 50%)</option>
-                <option value="PARTIAL_BALANCE">Final Balance on Delivery (Unbilled: R {{ job.remaining_uninvoiced|floatformat:2 }})</option>
+                <option value="FULL">100% Full Payment (R {{ job.quote_total|money }})</option>
+                <option value="PARTIAL_DEPOSIT">50% Deposit (R {{ job.quote.subtotal|money }} &times; 50%)</option>
+                <option value="PARTIAL_BALANCE">Final Balance on Delivery (Unbilled: R {{ job.remaining_uninvoiced|money }})</option>
                 <option value="ADD_ON">Add-on Charge (Waiting Time, Extra Tolls)</option>
               </select>
             </div>

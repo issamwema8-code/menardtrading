@@ -42,25 +42,25 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Opening Balance</p>
-            <p class="text-2xl font-bold text-slate-900 mt-2">N$ {{ cash_flow.opening_balance|floatformat:2 }}</p>
+            <p class="text-2xl font-bold text-slate-900 mt-2">N$ {{ cash_flow.opening_balance|money }}</p>
             <p class="text-xs text-slate-500 mt-1">Funds available at period start</p>
         </div>
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-wider text-emerald-600">Total Cash In</p>
-            <p class="text-2xl font-bold text-emerald-700 mt-2">+ N$ {{ cash_flow.total_cash_in|floatformat:2 }}</p>
+            <p class="text-2xl font-bold text-emerald-700 mt-2">+ N$ {{ cash_flow.total_cash_in|money }}</p>
             <p class="text-xs text-slate-500 mt-1">Customer EFT & cash settlements</p>
         </div>
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-wider text-rose-600">Total Cash Out</p>
-            <p class="text-2xl font-bold text-rose-700 mt-2">- N$ {{ cash_flow.total_cash_out|floatformat:2 }}</p>
+            <p class="text-2xl font-bold text-rose-700 mt-2">- N$ {{ cash_flow.total_cash_out|money }}</p>
             <p class="text-xs text-slate-500 mt-1">Expense disbursements & vendor payments</p>
         </div>
         <div class="p-5 rounded-2xl border shadow-sm {% if cash_flow.net_cash_flow >= 0 %}bg-emerald-50/70 border-emerald-200{% else %}bg-rose-50/70 border-rose-200{% endif %}">
             <p class="text-xs font-semibold uppercase tracking-wider {% if cash_flow.net_cash_flow >= 0 %}text-emerald-800{% else %}text-rose-800{% endif %}">Net Cash Movement</p>
             <p class="text-2xl font-bold {% if cash_flow.net_cash_flow >= 0 %}text-emerald-900{% else %}text-rose-900{% endif %} mt-2">
-                {% if cash_flow.net_cash_flow >= 0 %}+{% endif %}N$ {{ cash_flow.net_cash_flow|floatformat:2 }}
+                {% if cash_flow.net_cash_flow >= 0 %}+{% endif %}N$ {{ cash_flow.net_cash_flow|money }}
             </p>
-            <p class="text-xs {% if cash_flow.net_cash_flow >= 0 %}text-emerald-700{% else %}text-rose-700{% endif %} mt-1">Closing Balance: N$ {{ cash_flow.closing_balance|floatformat:2 }}</p>
+            <p class="text-xs {% if cash_flow.net_cash_flow >= 0 %}text-emerald-700{% else %}text-rose-700{% endif %} mt-1">Closing Balance: N$ {{ cash_flow.closing_balance|money }}</p>
         </div>
     </div>
 
@@ -75,7 +75,7 @@
             <!-- OPENING BALANCE ROW -->
             <div class="px-6 py-3 bg-slate-50/30 flex justify-between items-center font-medium text-slate-700">
                 <span>Opening Cash & Bank Balance</span>
-                <span class="font-bold text-slate-900">N$ {{ cash_flow.opening_balance|floatformat:2 }}</span>
+                <span class="font-bold text-slate-900">N$ {{ cash_flow.opening_balance|money }}</span>
             </div>
 
             <!-- CASH INFLOWS SECTION -->
@@ -86,11 +86,11 @@
                 </div>
                 <div class="flex justify-between items-center text-slate-700 pl-4 py-1">
                     <span>Customer Invoice Payments Received</span>
-                    <span class="font-semibold text-emerald-700">+ N$ {{ cash_flow.cash_in_customer_payments|floatformat:2 }}</span>
+                    <span class="font-semibold text-emerald-700">+ N$ {{ cash_flow.cash_in_customer_payments|money }}</span>
                 </div>
                 <div class="flex justify-between items-center font-bold text-slate-900 pt-2 border-t border-slate-100">
                     <span>Total Cash Inflows</span>
-                    <span class="text-base text-emerald-700">+ N$ {{ cash_flow.total_cash_in|floatformat:2 }}</span>
+                    <span class="text-base text-emerald-700">+ N$ {{ cash_flow.total_cash_in|money }}</span>
                 </div>
             </div>
 
@@ -102,15 +102,15 @@
                 </div>
                 <div class="flex justify-between items-center text-slate-700 pl-4 py-1">
                     <span>Operating & Transport Expenses Paid</span>
-                    <span class="font-semibold text-rose-700">- N$ {{ cash_flow.cash_out_expenses|floatformat:2 }}</span>
+                    <span class="font-semibold text-rose-700">- N$ {{ cash_flow.cash_out_expenses|money }}</span>
                 </div>
                 <div class="flex justify-between items-center text-slate-700 pl-4 py-1">
                     <span>Supplier / Vendor Bill Payments</span>
-                    <span class="font-semibold text-rose-700">- N$ {{ cash_flow.cash_out_supplier_bills|floatformat:2 }}</span>
+                    <span class="font-semibold text-rose-700">- N$ {{ cash_flow.cash_out_supplier_bills|money }}</span>
                 </div>
                 <div class="flex justify-between items-center font-bold text-slate-900 pt-2 border-t border-slate-200">
                     <span>Total Cash Outflows</span>
-                    <span class="text-base text-rose-700">- N$ {{ cash_flow.total_cash_out|floatformat:2 }}</span>
+                    <span class="text-base text-rose-700">- N$ {{ cash_flow.total_cash_out|money }}</span>
                 </div>
             </div>
 
@@ -118,7 +118,7 @@
             <div class="px-6 py-4 bg-slate-100 flex justify-between items-center">
                 <span class="text-base font-bold text-slate-900">Net Increase / (Decrease) in Cash</span>
                 <span class="text-lg font-black {% if cash_flow.net_cash_flow >= 0 %}text-emerald-700{% else %}text-rose-700{% endif %}">
-                    {% if cash_flow.net_cash_flow >= 0 %}+{% endif %}N$ {{ cash_flow.net_cash_flow|floatformat:2 }}
+                    {% if cash_flow.net_cash_flow >= 0 %}+{% endif %}N$ {{ cash_flow.net_cash_flow|money }}
                 </span>
             </div>
 
@@ -128,7 +128,7 @@
                     <span class="text-base font-bold">Closing Cash & Bank Balance</span>
                     <p class="text-xs text-slate-400 mt-0.5">As at {{ cash_flow.end_date|date:"d M Y" }}</p>
                 </div>
-                <span class="text-2xl font-black text-emerald-400">N$ {{ cash_flow.closing_balance|floatformat:2 }}</span>
+                <span class="text-2xl font-black text-emerald-400">N$ {{ cash_flow.closing_balance|money }}</span>
             </div>
         </div>
     </div>

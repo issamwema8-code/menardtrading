@@ -28,19 +28,19 @@
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
     <div class="card p-4 border-l-4 border-slate-800">
       <span class="text-xs text-slate-500 font-medium">Total Expenses in Period</span>
-      <p class="text-xl font-bold text-slate-900 mt-1 font-mono">N$ {{ total_spent|floatformat:2 }}</p>
+      <p class="text-xl font-bold text-slate-900 mt-1 font-mono">N$ {{ total_spent|money }}</p>
       <span class="text-[11px] text-slate-400 mt-1 block">Includes claimable input VAT</span>
     </div>
 
     <div class="card p-4 border-l-4 border-amber-500">
       <span class="text-xs text-slate-500 font-medium">Subtotal (Excl. VAT)</span>
-      <p class="text-xl font-bold text-slate-900 mt-1 font-mono">N$ {{ total_subtotal|floatformat:2 }}</p>
+      <p class="text-xl font-bold text-slate-900 mt-1 font-mono">N$ {{ total_subtotal|money }}</p>
       <span class="text-[11px] text-slate-400 mt-1 block">Net operating &amp; direct cost</span>
     </div>
 
     <div class="card p-4 border-l-4 border-emerald-500">
       <span class="text-xs text-slate-500 font-medium">Claimable Input VAT</span>
-      <p class="text-xl font-bold text-emerald-600 mt-1 font-mono">N$ {{ total_vat|floatformat:2 }}</p>
+      <p class="text-xl font-bold text-emerald-600 mt-1 font-mono">N$ {{ total_vat|money }}</p>
       <span class="text-[11px] text-slate-400 mt-1 block">15% VAT on valid receipts</span>
     </div>
   </div>
@@ -135,9 +135,9 @@
             <td class="py-3 px-3.5 text-slate-700 font-medium">{{ exp.payee|default:exp.vendor.name|default:"-" }}</td>
             <td class="py-3 px-3.5 text-slate-600 max-w-xs truncate">{{ exp.description }}</td>
             <td class="py-3 px-3.5 text-slate-500">{{ exp.get_payment_method_display }}</td>
-            <td class="py-3 px-3.5 text-right font-mono text-slate-700">N$ {{ exp.subtotal|floatformat:2 }}</td>
-            <td class="py-3 px-3.5 text-right font-mono text-slate-500">N$ {{ exp.vat_amount|floatformat:2 }}</td>
-            <td class="py-3 px-3.5 text-right font-mono font-semibold text-slate-900">N$ {{ exp.total_amount|floatformat:2 }}</td>
+            <td class="py-3 px-3.5 text-right font-mono text-slate-700">N$ {{ exp.subtotal|money }}</td>
+            <td class="py-3 px-3.5 text-right font-mono text-slate-500">N$ {{ exp.vat_amount|money }}</td>
+            <td class="py-3 px-3.5 text-right font-mono font-semibold text-slate-900">N$ {{ exp.total_amount|money }}</td>
             <td class="py-3 px-3.5 text-center">
               {% if exp.status == 'PAID' %}
               <span class="badge-success text-[10px]">Paid</span>

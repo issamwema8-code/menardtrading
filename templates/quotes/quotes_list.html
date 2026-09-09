@@ -139,9 +139,9 @@
               <span class="font-bold text-slate-900 block truncate max-w-[220px]" title="{{ quote.customer.company_name }}">{{ quote.customer.company_name }}</span>
               <span class="text-xs text-slate-400 font-mono block truncate max-w-[220px]" title="{{ quote.customer.email }}">{{ quote.customer.email }}</span>
             </td>
-            <td class="table-body-cell whitespace-nowrap font-mono text-slate-600 text-right">N$ {{ quote.subtotal|floatformat:2 }}</td>
-            <td class="table-body-cell whitespace-nowrap font-mono text-slate-600 text-right">N$ {{ quote.vat_amount|floatformat:2 }}</td>
-            <td class="table-body-cell whitespace-nowrap font-mono font-black text-slate-900 text-sm text-right">N$ {{ quote.total_amount|floatformat:2 }}</td>
+            <td class="table-body-cell whitespace-nowrap font-mono text-slate-600 text-right">N$ {{ quote.subtotal|money }}</td>
+            <td class="table-body-cell whitespace-nowrap font-mono text-slate-600 text-right">N$ {{ quote.vat_amount|money }}</td>
+            <td class="table-body-cell whitespace-nowrap font-mono font-black text-slate-900 text-sm text-right">N$ {{ quote.total_amount|money }}</td>
             <td class="table-body-cell whitespace-nowrap text-center">
               <span class="{% if quote.status == 'APPROVED' %}badge-emerald{% elif quote.status == 'SENT' %}badge-sky{% else %}badge-gold{% endif %} text-[10px]">
                 {{ quote.get_status_display }}

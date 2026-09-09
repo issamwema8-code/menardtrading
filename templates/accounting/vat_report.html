@@ -42,17 +42,17 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Output VAT (Invoices)</p>
-            <p class="text-2xl font-bold text-slate-900 mt-2">N$ {{ vat_report.output_vat_invoiced|floatformat:2 }}</p>
+            <p class="text-2xl font-bold text-slate-900 mt-2">N$ {{ vat_report.output_vat_invoiced|money }}</p>
             <p class="text-xs text-slate-500 mt-1">Tax billed on freight invoices</p>
         </div>
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-wider text-emerald-600">VAT Collected (Cash)</p>
-            <p class="text-2xl font-bold text-emerald-700 mt-2">N$ {{ vat_report.vat_collected_cash|floatformat:2 }}</p>
+            <p class="text-2xl font-bold text-emerald-700 mt-2">N$ {{ vat_report.vat_collected_cash|money }}</p>
             <p class="text-xs text-slate-500 mt-1">Tax collected on settled invoices</p>
         </div>
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-wider text-amber-600">Input VAT (Expenses)</p>
-            <p class="text-2xl font-bold text-amber-700 mt-2">N$ {{ vat_report.input_vat_expenses|floatformat:2 }}</p>
+            <p class="text-2xl font-bold text-amber-700 mt-2">N$ {{ vat_report.input_vat_expenses|money }}</p>
             <p class="text-xs text-slate-500 mt-1">Claimable tax on operational expenses</p>
         </div>
         <div class="p-5 rounded-2xl border shadow-sm {% if vat_report.net_vat_payable >= 0 %}bg-amber-50/70 border-amber-200{% else %}bg-emerald-50/70 border-emerald-200{% endif %}">
@@ -60,7 +60,7 @@
                 {% if vat_report.net_vat_payable >= 0 %}Net VAT Payable{% else %}Net VAT Refundable{% endif %}
             </p>
             <p class="text-2xl font-bold {% if vat_report.net_vat_payable >= 0 %}text-amber-900{% else %}text-emerald-900{% endif %} mt-2">
-                N$ {{ vat_report.net_vat_payable|floatformat:2 }}
+                N$ {{ vat_report.net_vat_payable|money }}
             </p>
             <p class="text-xs {% if vat_report.net_vat_payable >= 0 %}text-amber-700{% else %}text-emerald-700{% endif %} mt-1">Output VAT − Input VAT</p>
         </div>
@@ -80,15 +80,15 @@
             <div class="p-6 space-y-4 text-sm">
                 <div class="flex justify-between items-center py-2 border-b border-slate-100">
                     <span class="text-slate-600">Total Taxable Sales (Excl. VAT)</span>
-                    <span class="font-bold text-slate-900">N$ {{ vat_report.taxable_sales_subtotal|floatformat:2 }}</span>
+                    <span class="font-bold text-slate-900">N$ {{ vat_report.taxable_sales_subtotal|money }}</span>
                 </div>
                 <div class="flex justify-between items-center py-2 border-b border-slate-100">
                     <span class="text-slate-600">Total Output VAT Billed</span>
-                    <span class="font-bold text-blue-700">N$ {{ vat_report.output_vat_invoiced|floatformat:2 }}</span>
+                    <span class="font-bold text-blue-700">N$ {{ vat_report.output_vat_invoiced|money }}</span>
                 </div>
                 <div class="flex justify-between items-center py-2 border-b border-slate-100">
                     <span class="text-slate-600">Total Gross Billed Sales (Incl. VAT)</span>
-                    <span class="font-bold text-slate-900">N$ {{ vat_report.gross_sales_total|floatformat:2 }}</span>
+                    <span class="font-bold text-slate-900">N$ {{ vat_report.gross_sales_total|money }}</span>
                 </div>
             </div>
         </div>
@@ -105,15 +105,15 @@
             <div class="p-6 space-y-4 text-sm">
                 <div class="flex justify-between items-center py-2 border-b border-slate-100">
                     <span class="text-slate-600">Total Taxable Purchases / Expenses (Excl. VAT)</span>
-                    <span class="font-bold text-slate-900">N$ {{ vat_report.taxable_purchases_subtotal|floatformat:2 }}</span>
+                    <span class="font-bold text-slate-900">N$ {{ vat_report.taxable_purchases_subtotal|money }}</span>
                 </div>
                 <div class="flex justify-between items-center py-2 border-b border-slate-100">
                     <span class="text-slate-600">Total Input VAT Incurred</span>
-                    <span class="font-bold text-amber-700">N$ {{ vat_report.input_vat_expenses|floatformat:2 }}</span>
+                    <span class="font-bold text-amber-700">N$ {{ vat_report.input_vat_expenses|money }}</span>
                 </div>
                 <div class="flex justify-between items-center py-2 border-b border-slate-100">
                     <span class="text-slate-600">Total Gross Expenses (Incl. VAT)</span>
-                    <span class="font-bold text-slate-900">N$ {{ vat_report.gross_purchases_total|floatformat:2 }}</span>
+                    <span class="font-bold text-slate-900">N$ {{ vat_report.gross_purchases_total|money }}</span>
                 </div>
             </div>
         </div>

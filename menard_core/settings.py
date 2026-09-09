@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
 
     # Third-party apps
     'rest_framework',
@@ -114,6 +115,10 @@ TEMPLATES = [
                 'menard_core.context_processors.branding_context',
                 'apps.accounts.context_processors.rbac_context',
             ],
+            'builtins': [
+                'django.contrib.humanize.templatetags.humanize',
+                'apps.billing.templatetags.menard_tags',
+            ],
         },
     },
 ]
@@ -156,11 +161,14 @@ if 'test' in sys.argv:
         'django.contrib.auth.hashers.MD5PasswordHasher',
     ]
 
-# Internationalization
+# Internationalization & Number Formatting
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Africa/Johannesburg'
 USE_I18N = True
 USE_TZ = True
+USE_THOUSAND_SEPARATOR = True
+THOUSAND_SEPARATOR = ','
+NUMBER_GROUPING = 3
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'

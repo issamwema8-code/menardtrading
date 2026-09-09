@@ -184,7 +184,7 @@ class EmailTemplateRedesignTests(TestCase):
         self._assert_branding_present(html)
         self._assert_no_robotic_jargon(html)
         self.assertIn("Quotation #QT-2026-0901", html)
-        self.assertIn("N$ 51750.00", html)
+        self.assertIn("N$ 51,750.00", html)
         self.assertIn("Review &amp; Approve Quotation", html)
 
     def test_invoice_sent_template(self):
@@ -196,7 +196,7 @@ class EmailTemplateRedesignTests(TestCase):
         self._assert_branding_present(html)
         self._assert_no_robotic_jargon(html)
         self.assertIn("Tax Invoice #INV-2026-0901", html)
-        self.assertIn("N$ 51750.00", html)
+        self.assertIn("N$ 51,750.00", html)
         self.assertIn("Banking Details for EFT Settlement", html)
         self.assertIn("First National Bank", html)
 
@@ -209,7 +209,7 @@ class EmailTemplateRedesignTests(TestCase):
         self._assert_branding_present(html)
         self._assert_no_robotic_jargon(html)
         self.assertIn("Payment Receipt #", html)
-        self.assertIn("N$ 51750.00", html)
+        self.assertIn("N$ 51,750.00", html)
         self.assertIn("EFT-FNB-998822", html)
 
     def test_pod_received_template(self):

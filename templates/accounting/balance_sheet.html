@@ -38,7 +38,7 @@
                 <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Assets</p>
                 <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
             </div>
-            <p class="text-3xl font-black text-slate-900 mt-3">N$ {{ balance_sheet.total_assets|floatformat:2 }}</p>
+            <p class="text-3xl font-black text-slate-900 mt-3">N$ {{ balance_sheet.total_assets|money }}</p>
             <p class="text-xs text-slate-500 mt-1">Cash funds + Accounts Receivable</p>
         </div>
 
@@ -48,7 +48,7 @@
                 <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Liabilities</p>
                 <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
             </div>
-            <p class="text-3xl font-black text-slate-900 mt-3">N$ {{ balance_sheet.total_liabilities|floatformat:2 }}</p>
+            <p class="text-3xl font-black text-slate-900 mt-3">N$ {{ balance_sheet.total_liabilities|money }}</p>
             <p class="text-xs text-slate-500 mt-1">Accounts Payable + Net Tax Obligations</p>
         </div>
 
@@ -58,7 +58,7 @@
                 <p class="text-xs font-bold uppercase tracking-wider text-slate-500">Total Equity</p>
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
             </div>
-            <p class="text-3xl font-black text-slate-900 mt-3">N$ {{ balance_sheet.total_equity|floatformat:2 }}</p>
+            <p class="text-3xl font-black text-slate-900 mt-3">N$ {{ balance_sheet.total_equity|money }}</p>
             <p class="text-xs text-slate-500 mt-1">Cumulative Retained Earnings</p>
         </div>
     </div>
@@ -78,14 +78,14 @@
                             <p class="font-medium text-slate-900">Cash & Recorded Bank Funds</p>
                             <p class="text-xs text-slate-500">Inflows minus recorded expense disbursements</p>
                         </div>
-                        <span class="font-bold text-slate-900">N$ {{ balance_sheet.cash_on_hand|floatformat:2 }}</span>
+                        <span class="font-bold text-slate-900">N$ {{ balance_sheet.cash_on_hand|money }}</span>
                     </div>
                     <div class="flex justify-between items-center py-2 border-b border-slate-100">
                         <div>
                             <p class="font-medium text-slate-900">Accounts Receivable (Trade Debtors)</p>
                             <p class="text-xs text-slate-500">Outstanding client invoices due to Menard Trading CC</p>
                         </div>
-                        <span class="font-bold text-slate-900">N$ {{ balance_sheet.accounts_receivable|floatformat:2 }}</span>
+                        <span class="font-bold text-slate-900">N$ {{ balance_sheet.accounts_receivable|money }}</span>
                     </div>
                     <div class="flex justify-between items-center py-2 border-b border-slate-100 text-slate-400">
                         <div>
@@ -98,7 +98,7 @@
             </div>
             <div class="px-6 py-4 bg-slate-100 border-t border-slate-200 flex justify-between items-center">
                 <span class="font-bold text-slate-900">Total Assets</span>
-                <span class="text-lg font-black text-blue-700">N$ {{ balance_sheet.total_assets|floatformat:2 }}</span>
+                <span class="text-lg font-black text-blue-700">N$ {{ balance_sheet.total_assets|money }}</span>
             </div>
         </div>
 
@@ -116,19 +116,19 @@
                             <p class="font-medium text-slate-900">Accounts Payable (Trade Creditors)</p>
                             <p class="text-xs text-slate-500">Outstanding supplier and vendor obligations</p>
                         </div>
-                        <span class="font-bold text-slate-900">N$ {{ balance_sheet.accounts_payable|floatformat:2 }}</span>
+                        <span class="font-bold text-slate-900">N$ {{ balance_sheet.accounts_payable|money }}</span>
                     </div>
                     <div class="flex justify-between items-center py-2 border-b border-slate-100">
                         <div>
                             <p class="font-medium text-slate-900">Net Tax / VAT Obligation</p>
                             <p class="text-xs text-slate-500">Output VAT on invoices minus Input VAT on expenses</p>
                         </div>
-                        <span class="font-bold text-slate-900">N$ {{ balance_sheet.tax_liabilities|floatformat:2 }}</span>
+                        <span class="font-bold text-slate-900">N$ {{ balance_sheet.tax_liabilities|money }}</span>
                     </div>
                 </div>
                 <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
                     <span class="font-semibold text-slate-700">Total Liabilities</span>
-                    <span class="font-bold text-slate-900">N$ {{ balance_sheet.total_liabilities|floatformat:2 }}</span>
+                    <span class="font-bold text-slate-900">N$ {{ balance_sheet.total_liabilities|money }}</span>
                 </div>
             </div>
 
@@ -144,16 +144,16 @@
                             <p class="font-medium text-slate-900">Cumulative Retained Earnings</p>
                             <p class="text-xs text-slate-500">All-time Net Profit (Revenue − Expenses)</p>
                         </div>
-                        <span class="font-bold text-slate-900">N$ {{ balance_sheet.retained_earnings|floatformat:2 }}</span>
+                        <span class="font-bold text-slate-900">N$ {{ balance_sheet.retained_earnings|money }}</span>
                     </div>
                 </div>
                 <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center">
                     <span class="font-semibold text-slate-700">Total Equity</span>
-                    <span class="font-bold text-slate-900">N$ {{ balance_sheet.total_equity|floatformat:2 }}</span>
+                    <span class="font-bold text-slate-900">N$ {{ balance_sheet.total_equity|money }}</span>
                 </div>
                 <div class="px-6 py-4 bg-slate-100 border-t border-slate-200 flex justify-between items-center">
                     <span class="font-bold text-slate-900">Total Liabilities & Equity</span>
-                    <span class="text-lg font-black text-emerald-700">N$ {{ balance_sheet.total_liabilities_and_equity|floatformat:2 }}</span>
+                    <span class="text-lg font-black text-emerald-700">N$ {{ balance_sheet.total_liabilities_and_equity|money }}</span>
                 </div>
             </div>
         </div>

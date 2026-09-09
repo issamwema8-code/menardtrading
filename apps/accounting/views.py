@@ -171,7 +171,8 @@ class CreateExpenseView(PermissionRequiredMixin, View):
             }
         )
 
-        messages.success(request, f"Expense '{expense.expense_number}' (R{expense.total_amount}) recorded successfully.")
+        from menard_core.formatters import format_money
+        messages.success(request, f"Expense '{expense.expense_number}' ({format_money(expense.total_amount, 'R')}) recorded successfully.")
         return redirect('accounting-expenses')
 
 
@@ -328,7 +329,8 @@ class CreateSupplierBillView(PermissionRequiredMixin, View):
             created_by=request.user
         )
 
-        messages.success(request, f"Supplier Bill '{bill.bill_number}' for {vendor.name} (R{bill.total_amount}) created.")
+        from menard_core.formatters import format_money
+        messages.success(request, f"Supplier Bill '{bill.bill_number}' for {vendor.name} ({format_money(bill.total_amount, 'R')}) created.")
         return redirect('accounting-payables')
 
 
@@ -336,6 +338,7 @@ class RecordBillPaymentView(PermissionRequiredMixin, View):
     required_permissions = ('accounts.payables.create',)
 
     def post(self, request, pk):
+        from menard_core.formatters import format_money
         bill = get_object_or_404(SupplierBill, pk=pk)
         amount_str = request.POST.get('amount_paid', '').strip()
         payment_date_str = request.POST.get('payment_date')
@@ -346,7 +349,7 @@ class RecordBillPaymentView(PermissionRequiredMixin, View):
         try:
             amount = Decimal(amount_str)
             if amount <= 0 or amount > bill.balance_due:
-                messages.error(request, f"Payment must be between R0.01 and the remaining balance of R{bill.balance_due}.")
+                messages.error(request, f"Payment must be between R0.01 and the remaining balance of {format_money(bill.balance_due, 'R')}.")
                 return redirect('accounting-payables')
             payment_date = date.fromisoformat(payment_date_str) if payment_date_str else timezone.now().date()
         except Exception:
@@ -363,7 +366,7 @@ class RecordBillPaymentView(PermissionRequiredMixin, View):
             created_by=request.user
         )
 
-        messages.success(request, f"Payment of R{payment.amount_paid} recorded for Bill '{bill.bill_number}'.")
+        messages.success(request, f"Payment of {format_money(payment.amount_paid, 'R')} recorded for Bill '{bill.bill_number}'.")
         return redirect('accounting-payables')
 
 

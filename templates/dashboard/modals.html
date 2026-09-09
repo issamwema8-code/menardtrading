@@ -639,7 +639,7 @@
                     <input type="number" step="0.01" min="0" name="unit_prices[]" x-model="item.unit_price" required
                            placeholder="0.00" class="form-input text-xs py-1.5 text-right font-mono font-bold">
                   </td>
-                  <td class="p-2 text-right font-mono font-bold text-slate-800" x-text="'N$ ' + getItemTotal(item)">
+                  <td class="p-2 text-right font-mono font-bold text-slate-800" x-text="formatMoney(getItemTotal(item))">
                   </td>
                   <td class="p-2 text-center">
                     <button type="button" @click="removeItem(idx)" :disabled="items.length === 1" 
@@ -661,10 +661,10 @@
             </button>
 
             <div class="flex flex-wrap items-center gap-3 text-xs font-mono">
-              <div class="text-slate-500">Subtotal: <strong class="text-slate-900" x-text="'N$ ' + subtotal"></strong></div>
-              <div class="text-slate-500">VAT (<span x-text="vatRate + '%'"></span>): <strong class="text-slate-900" x-text="'N$ ' + vatAmount"></strong></div>
+              <div class="text-slate-500">Subtotal: <strong class="text-slate-900" x-text="formatMoney(subtotal)"></strong></div>
+              <div class="text-slate-500">VAT (<span x-text="vatRate + '%'"></span>): <strong class="text-slate-900" x-text="formatMoney(vatAmount)"></strong></div>
               <div class="px-2.5 py-1 rounded-lg bg-amber-100/90 text-[#8a5818] font-bold border border-amber-200">
-                Total: <span x-text="'N$ ' + totalAmount"></span>
+                Total: <span x-text="formatMoney(totalAmount)"></span>
               </div>
             </div>
           </div>
@@ -1139,7 +1139,7 @@
                     <input type="number" step="0.01" min="0" name="unit_prices[]" x-model="item.unit_price" required
                            placeholder="0.00" class="form-input text-xs py-1.5 text-right font-mono font-bold">
                   </td>
-                  <td class="p-2 text-right font-mono font-bold text-slate-800" x-text="'N$ ' + getItemTotal(item)">
+                  <td class="p-2 text-right font-mono font-bold text-slate-800" x-text="formatMoney(getItemTotal(item))">
                   </td>
                   <td class="p-2 text-center">
                     <button type="button" @click="removeItem(idx)" :disabled="items.length === 1" 
@@ -1161,10 +1161,10 @@
             </button>
 
             <div class="flex flex-wrap items-center gap-3 text-xs font-mono">
-              <div class="text-slate-500">Subtotal: <strong class="text-slate-900" x-text="'N$ ' + subtotal"></strong></div>
-              <div class="text-slate-500">VAT (<span x-text="vatRate + '%'"></span>): <strong class="text-slate-900" x-text="'N$ ' + vatAmount"></strong></div>
+              <div class="text-slate-500">Subtotal: <strong class="text-slate-900" x-text="formatMoney(subtotal)"></strong></div>
+              <div class="text-slate-500">VAT (<span x-text="vatRate + '%'"></span>): <strong class="text-slate-900" x-text="formatMoney(vatAmount)"></strong></div>
               <div class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">
-                Invoice Total: <span x-text="'N$ ' + totalAmount"></span>
+                Invoice Total: <span x-text="formatMoney(totalAmount)"></span>
               </div>
             </div>
           </div>
@@ -1436,7 +1436,7 @@
                     <input type="number" step="0.01" min="0" name="unit_prices[]" x-model="item.unit_price" required
                            placeholder="0.00" class="form-input text-xs py-1.5 text-right font-mono font-bold">
                   </td>
-                  <td class="p-2 text-right font-mono font-bold text-slate-800" x-text="'N$ ' + getItemTotal(item)">
+                  <td class="p-2 text-right font-mono font-bold text-slate-800" x-text="formatMoney(getItemTotal(item))">
                   </td>
                   <td class="p-2 text-center">
                     <button type="button" @click="removeItem(idx)" :disabled="items.length === 1" 
@@ -1458,10 +1458,10 @@
             </button>
 
             <div class="flex flex-wrap items-center gap-3 text-xs font-mono">
-              <div class="text-slate-500">Subtotal: <strong class="text-slate-900" x-text="'N$ ' + subtotal"></strong></div>
-              <div class="text-slate-500">VAT (<span x-text="vatRate + '%'"></span>): <strong class="text-slate-900" x-text="'N$ ' + vatAmount"></strong></div>
+              <div class="text-slate-500">Subtotal: <strong class="text-slate-900" x-text="formatMoney(subtotal)"></strong></div>
+              <div class="text-slate-500">VAT (<span x-text="vatRate + '%'"></span>): <strong class="text-slate-900" x-text="formatMoney(vatAmount)"></strong></div>
               <div class="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 font-bold border border-amber-200">
-                Total Estimate: <span x-text="'N$ ' + totalAmount"></span>
+                Total Estimate: <span x-text="formatMoney(totalAmount)"></span>
               </div>
             </div>
           </div>

@@ -61,10 +61,11 @@ class UploadPurchaseOrderView(PermissionRequiredMixin, View):
         )
 
         try:
+            from menard_core.formatters import format_money
             quote = process_inbound_purchase_order(po)
             messages.success(
                 request,
-                f"Successfully parsed PO #{po.po_number}! Generated Draft Quotation #{quote.quote_number} (Total: R{quote.total_amount})."
+                f"Successfully parsed PO #{po.po_number}! Generated Draft Quotation #{quote.quote_number} (Total: {format_money(quote.total_amount, 'R')})."
             )
         except Exception as e:
             logger.error(f"Error parsing uploaded PO: {e}", exc_info=True)

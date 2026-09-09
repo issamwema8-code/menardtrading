@@ -211,19 +211,19 @@
     <div class="summary-banner">
         <div class="summary-item">
             <div class="summary-label">Opening Balance</div>
-            <div class="summary-value">N$ {{ statement.opening_balance|floatformat:2 }}</div>
+            <div class="summary-value">N$ {{ statement.opening_balance|money }}</div>
         </div>
         <div class="summary-item">
             <div class="summary-label">Invoices Billed</div>
-            <div class="summary-value">N$ {{ statement.total_invoiced|floatformat:2 }}</div>
+            <div class="summary-value">N$ {{ statement.total_invoiced|money }}</div>
         </div>
         <div class="summary-item">
             <div class="summary-label">Payments Received</div>
-            <div class="summary-value" style="color: #047857;">N$ {{ statement.total_paid|floatformat:2 }}</div>
+            <div class="summary-value" style="color: #047857;">N$ {{ statement.total_paid|money }}</div>
         </div>
         <div class="summary-item">
             <div class="summary-label">Closing Balance Due</div>
-            <div class="summary-value" style="color: #b45309;">N$ {{ statement.closing_balance|floatformat:2 }}</div>
+            <div class="summary-value" style="color: #b45309;">N$ {{ statement.closing_balance|money }}</div>
         </div>
     </div>
 
@@ -248,7 +248,7 @@
                 <td>Opening Balance Brought Forward</td>
                 <td class="text-right">—</td>
                 <td class="text-right">—</td>
-                <td class="text-right font-bold">N$ {{ statement.opening_balance|floatformat:2 }}</td>
+                <td class="text-right font-bold">N$ {{ statement.opening_balance|money }}</td>
             </tr>
             {% for item in statement.transactions %}
             <tr>
@@ -256,9 +256,9 @@
                 <td>{{ item.type }}</td>
                 <td class="font-mono">{{ item.reference }}</td>
                 <td>{{ item.description }}</td>
-                <td class="text-right">{% if item.debit > 0 %}N$ {{ item.debit|floatformat:2 }}{% else %}—{% endif %}</td>
-                <td class="text-right" style="color: #047857;">{% if item.credit > 0 %}N$ {{ item.credit|floatformat:2 }}{% else %}—{% endif %}</td>
-                <td class="text-right font-bold">N$ {{ item.running_balance|floatformat:2 }}</td>
+                <td class="text-right">{% if item.debit > 0 %}N$ {{ item.debit|money }}{% else %}—{% endif %}</td>
+                <td class="text-right" style="color: #047857;">{% if item.credit > 0 %}N$ {{ item.credit|money }}{% else %}—{% endif %}</td>
+                <td class="text-right font-bold">N$ {{ item.running_balance|money }}</td>
             </tr>
             {% empty %}
             <tr>
@@ -268,9 +268,9 @@
             <tr class="total-row">
                 <td>{{ statement.end_date|date:"d M Y" }}</td>
                 <td colspan="3"><strong>CLOSING BALANCE AS AT {{ statement.end_date|date:"d M Y" }}</strong></td>
-                <td class="text-right">N$ {{ statement.total_invoiced|floatformat:2 }}</td>
-                <td class="text-right" style="color: #047857;">N$ {{ statement.total_paid|floatformat:2 }}</td>
-                <td class="text-right" style="font-size: 14px; color: #0f172a;">N$ {{ statement.closing_balance|floatformat:2 }}</td>
+                <td class="text-right">N$ {{ statement.total_invoiced|money }}</td>
+                <td class="text-right" style="color: #047857;">N$ {{ statement.total_paid|money }}</td>
+                <td class="text-right" style="font-size: 14px; color: #0f172a;">N$ {{ statement.closing_balance|money }}</td>
             </tr>
         </tbody>
     </table>

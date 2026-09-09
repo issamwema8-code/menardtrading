@@ -26,37 +26,37 @@
     
     <div class="card p-3.5 border-l-4 border-slate-900">
       <span class="text-[11px] text-slate-500 font-medium">Total Receivables</span>
-      <p class="text-lg font-bold text-slate-900 mt-1 font-mono">N$ {{ ar.total_receivables|floatformat:2 }}</p>
+      <p class="text-lg font-bold text-slate-900 mt-1 font-mono">N$ {{ ar.total_receivables|money }}</p>
       <span class="text-[10px] text-slate-400">{{ ar.unpaid_count }} unpaid invoice(s)</span>
     </div>
 
     <div class="card p-3.5 border-l-4 border-emerald-500">
       <span class="text-[11px] text-slate-500 font-medium">Current (Not Due)</span>
-      <p class="text-lg font-bold text-emerald-600 mt-1 font-mono">N$ {{ ar.aging.current|floatformat:2 }}</p>
+      <p class="text-lg font-bold text-emerald-600 mt-1 font-mono">N$ {{ ar.aging.current|money }}</p>
       <span class="text-[10px] text-slate-400">Within payment terms</span>
     </div>
 
     <div class="card p-3.5 border-l-4 border-amber-400">
       <span class="text-[11px] text-slate-500 font-medium">1–30 Days Overdue</span>
-      <p class="text-lg font-bold text-amber-600 mt-1 font-mono">N$ {{ ar.aging.days_1_30|floatformat:2 }}</p>
+      <p class="text-lg font-bold text-amber-600 mt-1 font-mono">N$ {{ ar.aging.days_1_30|money }}</p>
       <span class="text-[10px] text-slate-400">Follow-up reminder</span>
     </div>
 
     <div class="card p-3.5 border-l-4 border-amber-600">
       <span class="text-[11px] text-slate-500 font-medium">31–60 Days Overdue</span>
-      <p class="text-lg font-bold text-amber-700 mt-1 font-mono">N$ {{ ar.aging.days_31_60|floatformat:2 }}</p>
+      <p class="text-lg font-bold text-amber-700 mt-1 font-mono">N$ {{ ar.aging.days_31_60|money }}</p>
       <span class="text-[10px] text-slate-400">Accounts escalation</span>
     </div>
 
     <div class="card p-3.5 border-l-4 border-rose-500">
       <span class="text-[11px] text-slate-500 font-medium">61–90 Days Overdue</span>
-      <p class="text-lg font-bold text-rose-600 mt-1 font-mono">N$ {{ ar.aging.days_61_90|floatformat:2 }}</p>
+      <p class="text-lg font-bold text-rose-600 mt-1 font-mono">N$ {{ ar.aging.days_61_90|money }}</p>
       <span class="text-[10px] text-slate-400">Credit hold notice</span>
     </div>
 
     <div class="card p-3.5 border-l-4 border-rose-700 bg-rose-50/20">
       <span class="text-[11px] text-rose-700 font-medium">91+ Days Overdue</span>
-      <p class="text-lg font-bold text-rose-700 mt-1 font-mono">N$ {{ ar.aging.days_91_plus|floatformat:2 }}</p>
+      <p class="text-lg font-bold text-rose-700 mt-1 font-mono">N$ {{ ar.aging.days_91_plus|money }}</p>
       <span class="text-[10px] text-rose-500">Severe credit risk</span>
     </div>
 
@@ -66,7 +66,7 @@
   <div class="card overflow-hidden">
     <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
       <h3 class="text-xs font-semibold text-slate-900 uppercase tracking-wider">Customer Balances &amp; Aging Breakdown</h3>
-      <span class="text-xs text-slate-500 font-mono">Total Outstanding: N$ {{ ar.total_receivables|floatformat:2 }}</span>
+      <span class="text-xs text-slate-500 font-mono">Total Outstanding: N$ {{ ar.total_receivables|money }}</span>
     </div>
     <div class="overflow-x-auto">
       <table class="w-full text-xs text-left">
@@ -98,12 +98,12 @@
               <span class="text-slate-400">0</span>
               {% endif %}
             </td>
-            <td class="py-3 px-3.5 text-right font-mono text-slate-700">N$ {{ item.current_due|floatformat:2 }}</td>
+            <td class="py-3 px-3.5 text-right font-mono text-slate-700">N$ {{ item.current_due|money }}</td>
             <td class="py-3 px-3.5 text-right font-mono {% if item.overdue_due > 0 %}text-rose-600 font-semibold{% else %}text-slate-400{% endif %}">
-              N$ {{ item.overdue_due|floatformat:2 }}
+              N$ {{ item.overdue_due|money }}
             </td>
             <td class="py-3 px-3.5 text-right font-mono font-bold text-slate-900">
-              N$ {{ item.total_due|floatformat:2 }}
+              N$ {{ item.total_due|money }}
             </td>
             <td class="py-3 px-3.5 text-right space-x-1">
               <a href="{% url 'accounting:customer_statement_detail' customer_id=item.customer.pk %}" class="btn-secondary text-[11px] py-1 px-2.5 inline-flex">
@@ -155,9 +155,9 @@
             </td>
             <td class="py-3 px-3.5 font-medium text-slate-800">{{ inv.customer.company_name }}</td>
             <td class="py-3 px-3.5 text-slate-500">{{ inv.get_invoice_type_display }}</td>
-            <td class="py-3 px-3.5 text-right font-mono text-slate-700">N$ {{ inv.total_amount|floatformat:2 }}</td>
-            <td class="py-3 px-3.5 text-right font-mono text-emerald-600">N$ {{ inv.amount_paid|floatformat:2 }}</td>
-            <td class="py-3 px-3.5 text-right font-mono font-bold text-slate-900">N$ {{ inv.balance_due|floatformat:2 }}</td>
+            <td class="py-3 px-3.5 text-right font-mono text-slate-700">N$ {{ inv.total_amount|money }}</td>
+            <td class="py-3 px-3.5 text-right font-mono text-emerald-600">N$ {{ inv.amount_paid|money }}</td>
+            <td class="py-3 px-3.5 text-right font-mono font-bold text-slate-900">N$ {{ inv.balance_due|money }}</td>
             <td class="py-3 px-3.5 text-center">
               {% if inv.status == 'OVERDUE' %}
               <span class="badge-danger text-[10px]">Overdue</span>
@@ -169,7 +169,7 @@
             </td>
             <td class="py-3 px-3.5 text-right space-x-1">
               <button 
-                @click="activeModal = 'record_payment_modal'; document.getElementById('payment_invoice_id').value = '{{ inv.id }}'; document.getElementById('payment_invoice_ref').innerText = '{{ inv.invoice_number }} (N$ {{ inv.balance_due|floatformat:2 }})';"
+                @click="activeModal = 'record_payment_modal'; document.getElementById('payment_invoice_id').value = '{{ inv.id }}'; document.getElementById('payment_invoice_ref').innerText = '{{ inv.invoice_number }} (N$ {{ inv.balance_due|money }})';"
                 class="btn-primary text-[11px] py-1 px-2.5"
               >
                 Pay &rarr;

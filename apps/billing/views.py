@@ -185,7 +185,8 @@ class RecordPaymentActionView(PermissionRequiredMixin, View):
                 attachments=[(f"{receipt.receipt_number}.pdf", pdf_bytes, 'application/pdf')] if pdf_bytes else None
             )
 
-        messages.success(request, f"Payment of R{amount_paid} recorded. Receipt #{receipt.receipt_number} sent to client.")
+        from menard_core.formatters import format_money
+        messages.success(request, f"Payment of {format_money(amount_paid, 'R')} recorded. Receipt #{receipt.receipt_number} sent to client.")
         return redirect(request.META.get('HTTP_REFERER', 'receipts_list'))
 
 
@@ -340,6 +341,7 @@ class CreateDirectInvoiceView(PermissionRequiredMixin, View):
                 attachments=[(f"{inv.invoice_number}.pdf", pdf_bytes or inv.invoice_pdf.read(), 'application/pdf')] if (pdf_bytes or inv.invoice_pdf) else None
             )
 
-        messages.success(request, f"Created Tax Invoice #{inv.invoice_number} for {customer.company_name} (Total: N$ {inv.total_amount}).")
+        from menard_core.formatters import format_money
+        messages.success(request, f"Created Tax Invoice #{inv.invoice_number} for {customer.company_name} (Total: {format_money(inv.total_amount, 'N$')}).")
         return redirect('billing_list')
 

@@ -6,7 +6,7 @@
 <p class="lead-p">Dear {{ receipt.customer.contact_name|default:receipt.customer.company_name }},</p>
 
 <p class="lead-p">
-  Thank you for your payment of <strong>N$ {{ receipt.amount_paid|floatformat:2 }}</strong> to Menard Trading CC. 
+  Thank you for your payment of <strong>N$ {{ receipt.amount_paid|money }}</strong> to Menard Trading CC. 
   We have recorded your payment against Invoice <strong>#{{ receipt.invoice.invoice_number }}</strong>. Your official payment receipt is attached for your records.
 </p>
 
@@ -34,12 +34,12 @@
     </tr>
     <tr>
       <td class="info-label">Amount Received:</td>
-      <td class="info-value" style="color: #16a34a; font-size: 15px;"><strong>N$ {{ receipt.amount_paid|floatformat:2 }}</strong></td>
+      <td class="info-value" style="color: #16a34a; font-size: 15px;"><strong>N$ {{ receipt.amount_paid|money }}</strong></td>
     </tr>
     <tr style="background-color: #f1f5f9;">
       <td class="info-label" style="padding-top: 10px; padding-bottom: 10px;"><strong>Remaining Invoice Balance:</strong></td>
       <td class="info-value" style="padding-top: 10px; padding-bottom: 10px; font-weight: bold; color: {% if receipt.invoice.balance_due > 0 %}#dc2626{% else %}#16a34a{% endif %};">
-        N$ {{ receipt.invoice.balance_due|floatformat:2 }}
+        N$ {{ receipt.invoice.balance_due|money }}
         {% if receipt.invoice.balance_due == 0 %}<span style="color: #166534; font-size: 12px; font-weight: 600; margin-left: 6px;">(Settled in Full)</span>{% endif %}
       </td>
     </tr>

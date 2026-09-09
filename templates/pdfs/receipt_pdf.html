@@ -277,7 +277,7 @@
   <!-- Prominent Amount Banner -->
   <div class="amount-banner">
     <div class="amount-banner-label">Total Amount Paid &amp; Credited</div>
-    <div class="amount-banner-value">N$ {{ receipt.amount_paid|floatformat:2 }}</div>
+    <div class="amount-banner-value">N$ {{ receipt.amount_paid|money }}</div>
   </div>
 
   <!-- Invoice Settlement & Allocation Table -->
@@ -295,10 +295,10 @@
       <tr>
         <td class="font-mono" style="font-weight: bold; color: #0f172a;">{{ receipt.invoice.invoice_number }}</td>
         <td>{{ receipt.invoice.issue_date|date:"d M Y" }}</td>
-        <td class="text-right font-mono">N$ {{ receipt.invoice.total_amount|floatformat:2 }}</td>
-        <td class="text-right font-mono" style="font-weight: bold; color: #16a34a;">N$ {{ receipt.amount_paid|floatformat:2 }}</td>
+        <td class="text-right font-mono">N$ {{ receipt.invoice.total_amount|money }}</td>
+        <td class="text-right font-mono" style="font-weight: bold; color: #16a34a;">N$ {{ receipt.amount_paid|money }}</td>
         <td class="text-right font-mono" style="font-weight: bold; {% if receipt.invoice.balance_due > 0 %}color: #dc2626;{% else %}color: #16a34a;{% endif %}">
-          N$ {{ receipt.invoice.balance_due|floatformat:2 }}
+          N$ {{ receipt.invoice.balance_due|money }}
         </td>
       </tr>
     </tbody>
@@ -309,11 +309,11 @@
   <div id="doc_bottom_section" class="doc-bottom-section">
     <div class="notes-box">
       <strong style="color: #0f172a; text-transform: uppercase; font-size: 8pt; display: block; margin-bottom: 4px;">Official Payment Confirmation:</strong>
-      Thank you for your payment. This document confirms that the amount of <strong>N$ {{ receipt.amount_paid|floatformat:2 }}</strong> was successfully received and credited against Tax Invoice <strong>#{{ receipt.invoice.invoice_number }}</strong>.
+      Thank you for your payment. This document confirms that the amount of <strong>N$ {{ receipt.amount_paid|money }}</strong> was successfully received and credited against Tax Invoice <strong>#{{ receipt.invoice.invoice_number }}</strong>.
       {% if receipt.invoice.balance_due == 0 %}
       <br><span style="color: #16a34a; font-weight: bold;">This invoice has been fully settled in our accounts ledger.</span>
       {% else %}
-      <br><span style="color: #b45309; font-weight: bold;">The remaining balance due on this invoice is N$ {{ receipt.invoice.balance_due|floatformat:2 }}.</span>
+      <br><span style="color: #b45309; font-weight: bold;">The remaining balance due on this invoice is N$ {{ receipt.invoice.balance_due|money }}.</span>
       {% endif %}
     </div>
 

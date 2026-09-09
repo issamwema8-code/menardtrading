@@ -42,7 +42,7 @@
               <td class="py-3 px-3.5 font-mono text-slate-500">{{ cat.code|default:"-" }}</td>
               <td class="py-3 px-3.5 text-slate-600 text-[11px] max-w-xs">{{ cat.description|default:"-" }}</td>
               <td class="py-3 px-3.5 text-right font-mono font-semibold text-slate-900">
-                N$ {{ cat.total_spend|default:"0.00"|floatformat:2 }}
+                N$ {{ cat.total_spend|default:"0.00"|money }}
               </td>
               <td class="py-3 px-3.5 text-center">
                 {% if cat.is_system %}

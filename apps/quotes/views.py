@@ -220,7 +220,8 @@ class CreateQuotationView(PermissionRequiredMixin, View):
         quote.recalculate_totals()
         generate_quotation_pdf(quote)
 
-        messages.success(request, f"Created Quotation #{quote.quote_number} for {customer.company_name} (Total: N$ {quote.total_amount}).")
+        from menard_core.formatters import format_money
+        messages.success(request, f"Created Quotation #{quote.quote_number} for {customer.company_name} (Total: {format_money(quote.total_amount, 'N$')}).")
         return redirect('quotes_list')
 
 
@@ -358,7 +359,8 @@ class UpdateQuotationView(PermissionRequiredMixin, View):
             result='SUCCESS'
         )
 
-        messages.success(request, f"Quotation #{quote.quote_number} updated successfully (Total: N$ {quote.total_amount}).")
+        from menard_core.formatters import format_money
+        messages.success(request, f"Quotation #{quote.quote_number} updated successfully (Total: {format_money(quote.total_amount, 'N$')}).")
         
         redirect_to = request.POST.get('next') or request.META.get('HTTP_REFERER') or 'quotes_list'
         if 'preview' in str(redirect_to):

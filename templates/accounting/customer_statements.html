@@ -54,7 +54,7 @@
                         <td class="px-6 py-4">{{ item.customer.contact_name|default:"—" }}</td>
                         <td class="px-6 py-4 text-slate-500">{{ item.customer.email|default:"—" }}</td>
                         <td class="px-6 py-4 text-right font-bold {% if item.ar_balance > 0 %}text-amber-700{% else %}text-emerald-700{% endif %}">
-                            N$ {{ item.ar_balance|floatformat:2 }}
+                            N$ {{ item.ar_balance|money }}
                         </td>
                         <td class="px-6 py-4 text-center">
                             {% if item.ar_balance > 0 %}

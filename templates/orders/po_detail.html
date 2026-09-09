@@ -150,7 +150,7 @@
         </div>
         <div class="space-y-1">
           <p class="text-xs text-slate-400">Quote Number: <span class="text-white font-mono font-bold">#{{ quote.quote_number }}</span></p>
-          <p class="text-2xl font-black text-[#dca048] font-mono">R {{ quote.total_amount|floatformat:2 }}</p>
+          <p class="text-2xl font-black text-[#dca048] font-mono">R {{ quote.total_amount|money }}</p>
           <p class="text-[11px] text-slate-400">Valid until: {{ quote.valid_until|date:"d M Y" }}</p>
         </div>
         <div class="flex flex-col gap-2 pt-2">

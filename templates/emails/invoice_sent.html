@@ -31,16 +31,16 @@
     </tr>
     <tr>
       <td class="info-label">Total Amount:</td>
-      <td class="info-value">N$ {{ invoice.total_amount|floatformat:2 }}</td>
+      <td class="info-value">N$ {{ invoice.total_amount|money }}</td>
     </tr>
     <tr>
       <td class="info-label">Amount Paid:</td>
-      <td class="info-value" style="color: #16a34a;">N$ {{ invoice.amount_paid|floatformat:2 }}</td>
+      <td class="info-value" style="color: #16a34a;">N$ {{ invoice.amount_paid|money }}</td>
     </tr>
     <tr style="background-color: #f1f5f9;">
       <td class="info-label" style="font-size: 14px; color: #0f172a; padding-top: 10px; padding-bottom: 10px;"><strong>Balance Due:</strong></td>
       <td class="info-value" style="font-size: 16px; color: {% if invoice.balance_due > 0 %}#dc2626{% else %}#16a34a{% endif %}; padding-top: 10px; padding-bottom: 10px;">
-        <strong>N$ {{ invoice.balance_due|floatformat:2 }}</strong>
+        <strong>N$ {{ invoice.balance_due|money }}</strong>
       </td>
     </tr>
   </table>

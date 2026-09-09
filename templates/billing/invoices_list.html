@@ -55,7 +55,7 @@
 
         <div class="bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-right min-w-[170px]">
           <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Total Outstanding</span>
-          <span class="text-xl font-black text-rose-600 font-mono">N$ {{ metrics.unpaid_balance|floatformat:2 }}</span>
+          <span class="text-xl font-black text-rose-600 font-mono">N$ {{ metrics.unpaid_balance|money }}</span>
         </div>
       </div>
     </div>
@@ -160,14 +160,14 @@
               <span class="badge badge-slate text-[11px]">{{ inv.get_invoice_type_display }}</span>
             </td>
             <td class="table-body-cell whitespace-nowrap text-right">
-              <span class="font-bold text-slate-900 font-mono">N$ {{ inv.total_amount|floatformat:2 }}</span>
+              <span class="font-bold text-slate-900 font-mono">N$ {{ inv.total_amount|money }}</span>
             </td>
             <td class="table-body-cell whitespace-nowrap text-right">
-              <span class="font-semibold text-emerald-600 font-mono">N$ {{ inv.amount_paid|floatformat:2 }}</span>
+              <span class="font-semibold text-emerald-600 font-mono">N$ {{ inv.amount_paid|money }}</span>
             </td>
             <td class="table-body-cell whitespace-nowrap text-right">
               {% if inv.balance_due > 0 %}
-              <span class="font-bold text-rose-600 font-mono">N$ {{ inv.balance_due|floatformat:2 }}</span>
+              <span class="font-bold text-rose-600 font-mono">N$ {{ inv.balance_due|money }}</span>
               {% else %}
               <span class="font-semibold text-slate-400 font-mono">N$ 0.00</span>
               {% endif %}
@@ -221,15 +221,15 @@
                 <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 space-y-1">
                   <div class="flex justify-between text-xs text-slate-600">
                     <span>Invoice Total:</span>
-                    <span class="font-bold text-slate-900 font-mono">N$ {{ inv.total_amount|floatformat:2 }}</span>
+                    <span class="font-bold text-slate-900 font-mono">N$ {{ inv.total_amount|money }}</span>
                   </div>
                   <div class="flex justify-between text-xs text-slate-600">
                     <span>Already Paid:</span>
-                    <span class="font-semibold text-emerald-600 font-mono">N$ {{ inv.amount_paid|floatformat:2 }}</span>
+                    <span class="font-semibold text-emerald-600 font-mono">N$ {{ inv.amount_paid|money }}</span>
                   </div>
                   <div class="border-t border-slate-200 pt-1.5 mt-1.5 flex justify-between text-xs">
                     <span class="font-bold text-rose-700">Remaining Balance:</span>
-                    <span class="font-black text-rose-700 font-mono">N$ {{ inv.balance_due|floatformat:2 }}</span>
+                    <span class="font-black text-rose-700 font-mono">N$ {{ inv.balance_due|money }}</span>
                   </div>
                 </div>
 

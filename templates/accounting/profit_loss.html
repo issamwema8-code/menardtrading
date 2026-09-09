@@ -42,27 +42,27 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Gross Revenue (Excl. VAT)</p>
-            <p class="text-2xl font-bold text-slate-900 mt-2">N$ {{ pnl.sales_revenue|floatformat:2 }}</p>
+            <p class="text-2xl font-bold text-slate-900 mt-2">N$ {{ pnl.sales_revenue|money }}</p>
             <p class="text-xs text-slate-500 mt-1">Total invoiced sales value</p>
         </div>
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Cost of Sales</p>
-            <p class="text-2xl font-bold text-slate-700 mt-2">N$ {{ pnl.cost_of_sales|floatformat:2 }}</p>
+            <p class="text-2xl font-bold text-slate-700 mt-2">N$ {{ pnl.cost_of_sales|money }}</p>
             <p class="text-xs text-slate-500 mt-1">Direct freight & logistics costs</p>
         </div>
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Operating Expenses</p>
-            <p class="text-2xl font-bold text-amber-700 mt-2">N$ {{ pnl.operating_expenses|floatformat:2 }}</p>
+            <p class="text-2xl font-bold text-amber-700 mt-2">N$ {{ pnl.operating_expenses|money }}</p>
             <p class="text-xs text-slate-500 mt-1">Overheads & administrative costs</p>
         </div>
         <div class="p-5 rounded-2xl border shadow-sm {% if pnl.net_profit >= 0 %}bg-emerald-50/70 border-emerald-200{% else %}bg-rose-50/70 border-rose-200{% endif %}">
             <div class="flex items-center justify-between">
                 <p class="text-xs font-semibold uppercase tracking-wider {% if pnl.net_profit >= 0 %}text-emerald-800{% else %}text-rose-800{% endif %}">Net Profit / (Loss)</p>
                 <span class="text-xs font-bold px-2 py-0.5 rounded-full {% if pnl.net_profit >= 0 %}bg-emerald-200 text-emerald-900{% else %}bg-rose-200 text-rose-900{% endif %}">
-                    {{ pnl.net_profit_margin|floatformat:1 }}% Margin
+                    {{ pnl.net_profit_margin|money:1 }}% Margin
                 </span>
             </div>
-            <p class="text-2xl font-bold {% if pnl.net_profit >= 0 %}text-emerald-900{% else %}text-rose-900{% endif %} mt-2">N$ {{ pnl.net_profit|floatformat:2 }}</p>
+            <p class="text-2xl font-bold {% if pnl.net_profit >= 0 %}text-emerald-900{% else %}text-rose-900{% endif %} mt-2">N$ {{ pnl.net_profit|money }}</p>
             <p class="text-xs {% if pnl.net_profit >= 0 %}text-emerald-700{% else %}text-rose-700{% endif %} mt-1">Gross Profit − Operating Expenses</p>
         </div>
     </div>
@@ -83,17 +83,17 @@
                 </div>
                 <div class="flex justify-between items-center text-slate-700 pl-4 py-1">
                     <span>Freight & Transport Invoicing</span>
-                    <span class="font-medium text-slate-900">N$ {{ pnl.sales_revenue|floatformat:2 }}</span>
+                    <span class="font-medium text-slate-900">N$ {{ pnl.sales_revenue|money }}</span>
                 </div>
                 {% if pnl.other_income > 0 %}
                 <div class="flex justify-between items-center text-slate-700 pl-4 py-1">
                     <span>Other Operating Income</span>
-                    <span class="font-medium text-slate-900">N$ {{ pnl.other_income|floatformat:2 }}</span>
+                    <span class="font-medium text-slate-900">N$ {{ pnl.other_income|money }}</span>
                 </div>
                 {% endif %}
                 <div class="flex justify-between items-center font-bold text-slate-900 pt-2 border-t border-slate-100">
                     <span>Total Revenue</span>
-                    <span class="text-base">N$ {{ pnl.total_revenue|floatformat:2 }}</span>
+                    <span class="text-base">N$ {{ pnl.total_revenue|money }}</span>
                 </div>
             </div>
 
@@ -107,7 +107,7 @@
                     {% for item in pnl.cost_of_sales_breakdown %}
                     <div class="flex justify-between items-center text-slate-700 pl-4 py-1">
                         <span>{{ item.category__name|default:"Direct Costs" }}</span>
-                        <span class="font-medium text-slate-900">N$ {{ item.total|floatformat:2 }}</span>
+                        <span class="font-medium text-slate-900">N$ {{ item.total|money }}</span>
                     </div>
                     {% endfor %}
                 {% else %}
@@ -118,7 +118,7 @@
                 {% endif %}
                 <div class="flex justify-between items-center font-bold text-slate-900 pt-2 border-t border-slate-200">
                     <span>Total Cost of Sales</span>
-                    <span class="text-base">N$ {{ pnl.cost_of_sales|floatformat:2 }}</span>
+                    <span class="text-base">N$ {{ pnl.cost_of_sales|money }}</span>
                 </div>
             </div>
 
@@ -126,9 +126,9 @@
             <div class="px-6 py-4 bg-slate-100/70 flex justify-between items-center">
                 <div>
                     <span class="text-base font-bold text-slate-900">Gross Profit</span>
-                    <span class="text-xs text-slate-500 ml-2">(Gross Margin: {{ pnl.gross_profit_margin|floatformat:1 }}%)</span>
+                    <span class="text-xs text-slate-500 ml-2">(Gross Margin: {{ pnl.gross_profit_margin|money:1 }}%)</span>
                 </div>
-                <span class="text-lg font-bold text-slate-900">N$ {{ pnl.gross_profit|floatformat:2 }}</span>
+                <span class="text-lg font-bold text-slate-900">N$ {{ pnl.gross_profit|money }}</span>
             </div>
 
             <!-- OPERATING EXPENSES SECTION -->
@@ -144,7 +144,7 @@
                             <span class="w-2 h-2 rounded-full bg-slate-400"></span>
                             <span>{{ exp.category__name|default:"General Operating" }}</span>
                         </div>
-                        <span class="font-medium text-slate-900">N$ {{ exp.total|floatformat:2 }}</span>
+                        <span class="font-medium text-slate-900">N$ {{ exp.total|money }}</span>
                     </div>
                     {% endfor %}
                 {% else %}
@@ -154,7 +154,7 @@
                 {% endif %}
                 <div class="flex justify-between items-center font-bold text-slate-900 pt-2 border-t border-slate-100">
                     <span>Total Operating Expenses</span>
-                    <span class="text-base">N$ {{ pnl.operating_expenses|floatformat:2 }}</span>
+                    <span class="text-base">N$ {{ pnl.operating_expenses|money }}</span>
                 </div>
             </div>
 
@@ -165,8 +165,8 @@
                     <p class="text-xs text-slate-500 mt-0.5">Calculated as Total Revenue − Total Expenses (Excl. VAT)</p>
                 </div>
                 <div class="text-right">
-                    <span class="text-2xl font-black">N$ {{ pnl.net_profit|floatformat:2 }}</span>
-                    <p class="text-xs font-semibold mt-0.5">{{ pnl.net_profit_margin|floatformat:1 }}% Net Margin</p>
+                    <span class="text-2xl font-black">N$ {{ pnl.net_profit|money }}</span>
+                    <p class="text-xs font-semibold mt-0.5">{{ pnl.net_profit_margin|money:1 }}% Net Margin</p>
                 </div>
             </div>
         </div>

@@ -355,8 +355,8 @@
           <strong style="color: #0f172a;">{{ item.description }}</strong>
         </td>
         <td class="text-center font-mono">{{ item.quantity }}</td>
-        <td class="text-right font-mono">N$ {{ item.unit_price|floatformat:2 }}</td>
-        <td class="text-right font-mono" style="font-weight: bold; color: #0f172a;">N$ {{ item.total_price|floatformat:2 }}</td>
+        <td class="text-right font-mono">N$ {{ item.unit_price|money }}</td>
+        <td class="text-right font-mono" style="font-weight: bold; color: #0f172a;">N$ {{ item.total_price|money }}</td>
       </tr>
       {% empty %}
       <tr>
@@ -365,8 +365,8 @@
           <div style="font-size: 8pt; color: #64748b; margin-top: 2px;">Cross-border/national transport with dedicated tautliner/flatbed fleet.</div>
         </td>
         <td class="text-center font-mono">1</td>
-        <td class="text-right font-mono">N$ {{ quote.subtotal|floatformat:2 }}</td>
-        <td class="text-right font-mono" style="font-weight: bold; color: #0f172a;">N$ {{ quote.subtotal|floatformat:2 }}</td>
+        <td class="text-right font-mono">N$ {{ quote.subtotal|money }}</td>
+        <td class="text-right font-mono" style="font-weight: bold; color: #0f172a;">N$ {{ quote.subtotal|money }}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -393,19 +393,19 @@
           <table class="totals-table">
             <tr>
               <td class="totals-label">SUBTOTAL</td>
-              <td class="totals-value font-mono">N$ {{ quote.subtotal|floatformat:2 }}</td>
+              <td class="totals-value font-mono">N$ {{ quote.subtotal|money }}</td>
             </tr>
             <tr>
               <td class="totals-label">VAT RATE</td>
-              <td class="totals-value font-mono">{{ quote.vat_rate|floatformat:2 }}%</td>
+              <td class="totals-value font-mono">{{ quote.vat_rate|money }}%</td>
             </tr>
             <tr>
               <td class="totals-label">VAT / TAX AMOUNT</td>
-              <td class="totals-value font-mono">N$ {{ quote.vat_amount|floatformat:2 }}</td>
+              <td class="totals-value font-mono">N$ {{ quote.vat_amount|money }}</td>
             </tr>
             <tr class="total-row">
               <td class="totals-label">TOTAL ESTIMATE</td>
-              <td class="totals-value font-mono">N$ {{ quote.total_amount|floatformat:2 }}</td>
+              <td class="totals-value font-mono">N$ {{ quote.total_amount|money }}</td>
             </tr>
           </table>
         </td>

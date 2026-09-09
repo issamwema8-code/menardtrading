@@ -38,23 +38,23 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Opening Balance</p>
-            <p class="text-2xl font-bold text-slate-900 mt-2">N$ {{ statement.opening_balance|floatformat:2 }}</p>
+            <p class="text-2xl font-bold text-slate-900 mt-2">N$ {{ statement.opening_balance|money }}</p>
             <p class="text-xs text-slate-500 mt-1">Balance as of {{ statement.start_date|date:"d M Y" }}</p>
         </div>
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Invoices Billed (Period)</p>
-            <p class="text-2xl font-bold text-slate-900 mt-2">N$ {{ statement.total_invoiced|floatformat:2 }}</p>
+            <p class="text-2xl font-bold text-slate-900 mt-2">N$ {{ statement.total_invoiced|money }}</p>
             <p class="text-xs text-slate-500 mt-1">Total debits charged</p>
         </div>
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-wider text-emerald-600">Payments Received (Period)</p>
-            <p class="text-2xl font-bold text-emerald-700 mt-2">N$ {{ statement.total_paid|floatformat:2 }}</p>
+            <p class="text-2xl font-bold text-emerald-700 mt-2">N$ {{ statement.total_paid|money }}</p>
             <p class="text-xs text-slate-500 mt-1">Total credits applied</p>
         </div>
         <div class="p-5 rounded-2xl border shadow-sm {% if statement.closing_balance > 0 %}bg-amber-50/70 border-amber-200{% else %}bg-emerald-50/70 border-emerald-200{% endif %}">
             <p class="text-xs font-semibold uppercase tracking-wider {% if statement.closing_balance > 0 %}text-amber-800{% else %}text-emerald-800{% endif %}">Closing Balance Due</p>
             <p class="text-2xl font-bold {% if statement.closing_balance > 0 %}text-amber-900{% else %}text-emerald-900{% endif %} mt-2">
-                N$ {{ statement.closing_balance|floatformat:2 }}
+                N$ {{ statement.closing_balance|money }}
             </p>
             <p class="text-xs {% if statement.closing_balance > 0 %}text-amber-700{% else %}text-emerald-700{% endif %} mt-1">Total outstanding amount</p>
         </div>
@@ -89,7 +89,7 @@
                         <td class="px-6 py-3.5 text-slate-600">Opening Balance Brought Forward</td>
                         <td class="px-6 py-3.5 text-right">—</td>
                         <td class="px-6 py-3.5 text-right">—</td>
-                        <td class="px-6 py-3.5 text-right font-bold text-slate-900">N$ {{ statement.opening_balance|floatformat:2 }}</td>
+                        <td class="px-6 py-3.5 text-right font-bold text-slate-900">N$ {{ statement.opening_balance|money }}</td>
                     </tr>
 
                     {% for item in statement.transactions %}
@@ -105,13 +105,13 @@
                         <td class="px-6 py-4 font-mono font-medium text-slate-900">{{ item.reference }}</td>
                         <td class="px-6 py-4 text-slate-700">{{ item.description }}</td>
                         <td class="px-6 py-4 text-right font-medium text-slate-900">
-                            {% if item.debit > 0 %}N$ {{ item.debit|floatformat:2 }}{% else %}—{% endif %}
+                            {% if item.debit > 0 %}N$ {{ item.debit|money }}{% else %}—{% endif %}
                         </td>
                         <td class="px-6 py-4 text-right font-medium text-emerald-700">
-                            {% if item.credit > 0 %}N$ {{ item.credit|floatformat:2 }}{% else %}—{% endif %}
+                            {% if item.credit > 0 %}N$ {{ item.credit|money }}{% else %}—{% endif %}
                         </td>
                         <td class="px-6 py-4 text-right font-bold text-slate-900">
-                            N$ {{ item.running_balance|floatformat:2 }}
+                            N$ {{ item.running_balance|money }}
                         </td>
                     </tr>
                     {% empty %}
@@ -128,9 +128,9 @@
                         <td class="px-6 py-4"><span class="px-2 py-0.5 rounded text-xs bg-slate-800 text-white font-bold">TOTAL</span></td>
                         <td class="px-6 py-4">—</td>
                         <td class="px-6 py-4">Closing Balance Carried Forward</td>
-                        <td class="px-6 py-4 text-right">N$ {{ statement.total_invoiced|floatformat:2 }}</td>
-                        <td class="px-6 py-4 text-right text-emerald-700">N$ {{ statement.total_paid|floatformat:2 }}</td>
-                        <td class="px-6 py-4 text-right text-base text-amber-700">N$ {{ statement.closing_balance|floatformat:2 }}</td>
+                        <td class="px-6 py-4 text-right">N$ {{ statement.total_invoiced|money }}</td>
+                        <td class="px-6 py-4 text-right text-emerald-700">N$ {{ statement.total_paid|money }}</td>
+                        <td class="px-6 py-4 text-right text-base text-amber-700">N$ {{ statement.closing_balance|money }}</td>
                     </tr>
                 </tbody>
             </table>
