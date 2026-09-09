@@ -177,22 +177,30 @@
 }
 
 /* Line Items Table (Matches Simple service invoice1.xlsx) */
-.doc-items-table {
+.doc-items-table,
+.items-table {
   width: 100%;
   border-collapse: collapse;
+  margin-top: 10px;
   margin-bottom: 20px;
 }
 
-.doc-items-table th {
-  background-color: #0f172a;
-  color: #ffffff;
+.doc-items-table th,
+.items-table th {
+  background-color: #B47828 !important;
+  color: #ffffff !important;
   font-size: 8pt;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.6px;
   padding: 8px 10px;
-  border: 1px solid #0f172a;
+  border: 1px solid #B47828 !important;
   text-align: left;
+}
+
+.doc-items-table thead tr,
+.items-table thead tr {
+  background-color: #B47828 !important;
 }
 
 .doc-items-table th.text-center { text-align: center; }
