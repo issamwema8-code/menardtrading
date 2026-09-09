@@ -268,8 +268,15 @@ class CreateDirectInvoiceView(PermissionRequiredMixin, View):
         due_date = timezone.now().date() + timezone.timedelta(days=due_days)
         notes = request.POST.get('notes', 'Payment strictly according to agreed terms. Direct EFT into Menard Trading CC bank account.')
 
-        # Get active company VAT rate
-        settings_vat = CompanySettings.get_settings().vat_rate
+        # Get active company VAT rate or form input
+        vat_rate_post = request.POST.get('vat_rate')
+        if vat_rate_post is not None and str(vat_rate_post).strip() != '':
+            try:
+                settings_vat = Decimal(str(vat_rate_post).strip())
+            except Exception:
+                settings_vat = CompanySettings.get_settings().vat_rate
+        else:
+            settings_vat = CompanySettings.get_settings().vat_rate
 
         inv = Invoice.objects.create(
             customer=customer,

@@ -499,6 +499,7 @@
           @submit="if (!selectedId) { $event.preventDefault(); dropdownOpen = true; if (window.Swal) { Swal.fire({ icon: 'warning', title: 'Customer Required', text: 'Please select or add a client to create this quotation.', timer: 2500, showConfirmButton: false, toast: true, position: 'top-end' }); } return false; }"
           class="space-y-4">
       {% csrf_token %}
+      <input type="hidden" name="vat_rate" :value="vatRate">
       
       <!-- SEARCHABLE CUSTOMER SELECT & SHORTCUT -->
       <div>
@@ -988,6 +989,7 @@
           @submit="if (!selectedId) { $event.preventDefault(); dropdownOpen = true; if (window.Swal) { Swal.fire({ icon: 'warning', title: 'Customer Required', text: 'Please select or add a client to issue this invoice.', timer: 2500, showConfirmButton: false, toast: true, position: 'top-end' }); } return false; }"
           class="space-y-4">
       {% csrf_token %}
+      <input type="hidden" name="vat_rate" :value="vatRate">
       
       <!-- SEARCHABLE CUSTOMER SELECT & SHORTCUT -->
       <div>
@@ -1340,6 +1342,7 @@
     <form x-show="!isLoading" method="POST" :action="`/quotes/${quoteId}/edit/`" class="space-y-4">
       {% csrf_token %}
       <input type="hidden" name="customer_id" :value="selectedId">
+      <input type="hidden" name="vat_rate" :value="vatRate">
       <input type="hidden" name="next" :value="window.location.href">
 
       <!-- Customer Selection (Searchable) -->

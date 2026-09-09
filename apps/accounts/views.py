@@ -1019,7 +1019,27 @@ class CompanySettingsView(LoginRequiredMixin, View):
         vat_rate_raw = request.POST.get('vat_rate', '').strip()
         if vat_rate_raw != '':
             try:
-                settings_obj.vat_rate = Decimal(vat_rate_raw)
+                new_vat_rate = Decimal(vat_rate_raw)
+                old_vat_rate = settings_obj.vat_rate
+                settings_obj.vat_rate = new_vat_rate
+                if old_vat_rate != new_vat_rate:
+                    from apps.quotes.models import Quotation
+                    from apps.billing.models import Invoice
+                    from apps.billing.pdf_services import generate_quotation_pdf, generate_invoice_pdf
+                    for q in Quotation.objects.filter(status=Quotation.Status.DRAFT):
+                        q.vat_rate = new_vat_rate
+                        q.recalculate_totals()
+                        try:
+                            generate_quotation_pdf(q)
+                        except Exception:
+                            pass
+                    for inv in Invoice.objects.filter(status=Invoice.Status.DRAFT):
+                        inv.vat_rate = new_vat_rate
+                        inv.recalculate_totals()
+                        try:
+                            generate_invoice_pdf(inv)
+                        except Exception:
+                            pass
             except Exception:
                 pass
 

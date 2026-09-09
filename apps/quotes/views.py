@@ -167,12 +167,23 @@ class CreateQuotationView(PermissionRequiredMixin, View):
         customer = get_object_or_404(Customer, pk=customer_id)
         
         notes = request.POST.get('notes', 'Standard freight transport terms apply.')
+        from apps.accounts.models import CompanySettings
+        vat_rate_post = request.POST.get('vat_rate')
+        if vat_rate_post is not None and str(vat_rate_post).strip() != '':
+            try:
+                vat_rate = Decimal(str(vat_rate_post).strip())
+            except Exception:
+                vat_rate = CompanySettings.get_settings().vat_rate
+        else:
+            vat_rate = CompanySettings.get_settings().vat_rate
+
         valid_days = int(request.POST.get('validity_days') or request.POST.get('valid_days') or 14)
 
         quote = Quotation.objects.create(
             customer=customer,
             valid_until=timezone.now().date() + timezone.timedelta(days=valid_days),
             notes=notes,
+            vat_rate=vat_rate,
             status=Quotation.Status.DRAFT
         )
 
@@ -309,6 +320,13 @@ class UpdateQuotationView(PermissionRequiredMixin, View):
         new_status = request.POST.get('status')
         if new_status and new_status in Quotation.Status.values:
             quote.status = new_status
+
+        vat_rate_post = request.POST.get('vat_rate')
+        if vat_rate_post is not None and str(vat_rate_post).strip() != '':
+            try:
+                quote.vat_rate = Decimal(str(vat_rate_post).strip())
+            except Exception:
+                pass
 
         quote.save()
 
