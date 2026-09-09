@@ -32,7 +32,7 @@
         {% if is_superuser or 'roles.create' in user_perms %}
         <button type="button" @click="activeModal = 'create_role_modal'" class="btn-primary">
           <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-          <span>Create Role</span>
+          <span>Role</span>
         </button>
         {% endif %}
       </div>
@@ -251,7 +251,10 @@
 
         <div class="flex justify-end gap-2.5 pt-3 border-t border-slate-100 shrink-0">
           <button type="button" @click="activeModal = null" class="btn-outline">Cancel</button>
-          <button type="submit" class="btn-primary">Create Role</button>
+          <button type="submit" class="btn-primary flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <span>Role</span>
+          </button>
         </div>
       </form>
     </div>
