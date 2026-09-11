@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 from decouple import config
 
@@ -128,10 +129,25 @@ WSGI_APPLICATION = 'menard_core.wsgi.application'
 # Database
 DATABASES = {
     'default': {
+        'ENGINE': config('DB_ENGINE', default='django.db.backends.mysql'),
+        'NAME': config('DB_NAME', default='app_menardtrading'),
+        'USER': config('DB_USER', default='app_menardtradinguser'),
+        'PASSWORD': config('DB_PASSWORD', default='Menard@2026'),
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': config('DB_PORT', default='3306'),
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'charset': 'utf8mb4',
+        },
+    }
+}
+
+# Use lightweight in-memory SQLite when running automated tests
+if 'test' in sys.argv:
+    DATABASES['default'] = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     }
-}
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
