@@ -31,11 +31,13 @@ def get_unique_po_number(base_ref: str) -> str:
     return f"{candidate}-{counter}"
 
 
-def sync_orders_mailbox():
+def sync_orders_mailbox(since_date=None, only_unseen=None):
     """
     Autonomous IMAP Ingestion Service:
     - Connects to the orders@menardtrading.com mailbox via IMAP (SSL).
     - Ingests incoming emails into InboundEmailMessage with deduplication.
+    - Supports date cutoff (since_date / IMAP_SYNC_SINCE_DATE) to avoid ingesting historical emails.
+    - Supports only_unseen / IMAP_ONLY_UNSEEN to only process new unread emails.
     - Queues optimistic auto-acknowledgments and creates PurchaseOrders.
     - Can be executed independently in the background via cron or management command.
     """
@@ -48,6 +50,30 @@ def sync_orders_mailbox():
         logger.warning("IMAP sync skipped: EMAIL_PASSWORD is not configured in settings/environment.")
         return {'status': 'skipped', 'message': 'EMAIL_PASSWORD not set', 'synced_count': 0, 'orders': []}
 
+    # Determine search criteria
+    since_val = since_date or getattr(settings, 'IMAP_SYNC_SINCE_DATE', None)
+    unseen_val = only_unseen if only_unseen is not None else getattr(settings, 'IMAP_ONLY_UNSEEN', False)
+
+    search_criteria = []
+    if unseen_val:
+        search_criteria.append('UNSEEN')
+    if since_val:
+        from datetime import date, datetime
+        if isinstance(since_val, str):
+            try:
+                dt = datetime.strptime(since_val.strip(), '%Y-%m-%d').date()
+                since_str = dt.strftime('%d-%b-%Y')
+            except Exception:
+                since_str = since_val.strip()
+        elif isinstance(since_val, (date, datetime)):
+            since_str = since_val.strftime('%d-%b-%Y')
+        else:
+            since_str = None
+        if since_str:
+            search_criteria.append(f'SINCE "{since_str}"')
+
+    search_query = f"({' '.join(search_criteria)})" if search_criteria else 'ALL'
+
     created_orders = []
 
     try:
@@ -55,7 +81,7 @@ def sync_orders_mailbox():
         mail.login(user, password)
         mail.select('INBOX')
 
-        status, messages = mail.search(None, 'ALL')
+        status, messages = mail.search(None, search_query)
         if status != 'OK' or not messages or not messages[0]:
             mail.logout()
             return {'status': 'success', 'synced_count': 0, 'orders': []}
