@@ -385,3 +385,29 @@ class CreateDirectInvoiceView(PermissionRequiredMixin, View):
         messages.success(request, f"Created Tax Invoice #{inv.invoice_number} for {customer.company_name} (Total: {format_money(inv.total_amount, 'N$')}).")
         return redirect('invoice_preview', pk=inv.id)
 
+
+class RecalculateInvoiceBalancesActionView(PermissionRequiredMixin, View):
+    """
+    Staff action to audit and recalculate all invoice balances, line items, and payment receipts.
+    """
+    permission_required = 'invoices.view'
+
+    def post(self, request):
+        invoices = Invoice.objects.all()
+        fixed_count = 0
+        for inv in invoices:
+            old_bal = inv.balance_due
+            old_paid = inv.amount_paid
+            old_status = inv.status
+            inv.recalculate_totals()
+            inv.refresh_from_db()
+            if inv.balance_due != old_bal or inv.amount_paid != old_paid or inv.status != old_status:
+                fixed_count += 1
+
+        messages.success(
+            request,
+            f"Successfully audited {invoices.count()} invoice(s). {fixed_count} discrepancy/discrepancies synchronized."
+        )
+        return redirect(request.META.get('HTTP_REFERER', 'billing_list'))
+
+

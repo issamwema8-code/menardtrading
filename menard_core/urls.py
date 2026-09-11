@@ -54,6 +54,7 @@ from apps.billing.views import (
     InvoicePreviewView,
     ReceiptPreviewView,
     CreateDirectInvoiceView,
+    RecalculateInvoiceBalancesActionView,
 )
 from apps.webhooks.views import BrevoInboundWebhookView
 
@@ -151,6 +152,7 @@ urlpatterns = [
     path('billing/', BillingInvoicesListView.as_view(), name='billing_list'),
     path('invoices/', BillingInvoicesListView.as_view(), name='invoices_list'),
     path('invoices/create/', CreateDirectInvoiceView.as_view(), name='create_invoice'),
+    path('invoices/recalculate-balances/', RecalculateInvoiceBalancesActionView.as_view(), name='recalculate_invoices_action'),
     path('invoices/<int:pk>/preview/', InvoicePreviewView.as_view(), name='invoice_preview'),
     path('jobs/<int:job_id>/issue-invoice/', IssueInvoiceActionView.as_view(), name='issue_invoice_action'),
     path('invoices/<int:invoice_id>/record-payment/', RecordPaymentActionView.as_view(), name='record_payment_action'),

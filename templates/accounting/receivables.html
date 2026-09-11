@@ -2,7 +2,18 @@
 {% load static %}
 
 {% block content %}
-<div class="space-y-6">
+<div class="space-y-6" x-data="{
+  activeModal: null,
+  paymentInvoiceId: '',
+  paymentInvoiceRef: '',
+  paymentBal: '',
+  openPaymentModal(id, invNum, customer, bal) {
+    this.paymentInvoiceId = id;
+    this.paymentInvoiceRef = invNum + ' • ' + customer;
+    this.paymentBal = bal;
+    this.activeModal = 'record_payment_modal';
+  }
+}">
 
   <!-- Page Header -->
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
@@ -173,7 +184,8 @@
             </td>
             <td class="py-3 px-3.5 text-right space-x-1">
               <button 
-                @click="activeModal = 'record_payment_modal'; document.getElementById('payment_invoice_id').value = '{{ inv.id }}'; document.getElementById('payment_invoice_ref').innerText = '{{ inv.invoice_number }} (N$ {{ inv.balance_due|money }})';"
+                type="button"
+                @click="openPaymentModal('{{ inv.id }}', '{{ inv.invoice_number }}', '{{ inv.customer.company_name }}', '{{ inv.balance_due }}')"
                 class="btn-primary text-[11px] py-1 px-2.5"
               >
                 Pay &rarr;
@@ -189,6 +201,66 @@
           {% endfor %}
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- MODAL: Record Payment -->
+  <div x-show="activeModal === 'record_payment_modal'" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto" x-cloak>
+    <div @click.away="activeModal = null" class="bg-white rounded-2xl p-5 sm:p-6 max-w-md w-full shadow-2xl border border-slate-200 space-y-4 my-auto">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <div>
+          <h3 class="font-bold text-base text-slate-900">Record Payment</h3>
+          <p class="text-xs text-slate-500 font-mono" id="payment_invoice_ref" x-text="paymentInvoiceRef"></p>
+        </div>
+        <button type="button" @click="activeModal = null" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <form method="POST" :action="'/invoices/' + paymentInvoiceId + '/record-payment/'" class="space-y-4">
+        {% csrf_token %}
+        <input type="hidden" id="payment_invoice_id" x-model="paymentInvoiceId">
+
+        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 space-y-1">
+          <div class="flex justify-between text-xs text-slate-600">
+            <span>Outstanding Balance:</span>
+            <span class="font-black text-rose-700 font-mono" x-text="'N$ ' + paymentBal"></span>
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label">Payment Amount (NAD) <span class="text-rose-500">*</span></label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 font-bold text-xs">N$</div>
+            <input type="number" step="0.01" name="amount_paid" x-model="paymentBal" required class="form-input pl-9 font-mono font-bold text-slate-900">
+          </div>
+        </div>
+
+        <div>
+          <label class="form-label">Payment Method <span class="text-rose-500">*</span></label>
+          <select name="payment_method" class="form-select">
+            <option value="EFT_BANK_TRANSFER">Bank Transfer / EFT</option>
+            <option value="DIRECT_DEPOSIT">Direct Bank Deposit</option>
+            <option value="CREDIT_CARD">Credit / Debit Card</option>
+            <option value="CASH">Cash</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="form-label">POP / Bank Statement Reference <span class="text-rose-500">*</span></label>
+          <input type="text" name="transaction_reference" required placeholder="e.g. FNB-EFT-994821" class="form-input font-mono">
+        </div>
+
+        <div>
+          <label class="form-label">Notes (Optional)</label>
+          <input type="text" name="notes" placeholder="e.g. Cleared into RMB/FNB account" class="form-input">
+        </div>
+
+        <div class="flex justify-end gap-2.5 pt-3 border-t border-slate-100">
+          <button type="button" @click="activeModal = null" class="btn-secondary text-xs">Cancel</button>
+          <button type="submit" class="btn-primary text-xs">Confirm &amp; Issue Receipt</button>
+        </div>
+      </form>
     </div>
   </div>
 

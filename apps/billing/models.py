@@ -153,19 +153,37 @@ class Invoice(models.Model):
         elif self.total_amount == Decimal('0.00') and self.subtotal > Decimal('0.00'):
             self.vat_amount = (self.subtotal * (self.vat_rate / Decimal('100.00'))).quantize(Decimal('0.01'))
             self.total_amount = self.subtotal + self.vat_amount
+        elif self.subtotal == Decimal('0.00') and self.total_amount > Decimal('0.00'):
+            if self.vat_rate > Decimal('0.00'):
+                self.subtotal = (self.total_amount / (Decimal('1.00') + self.vat_rate / Decimal('100.00'))).quantize(Decimal('0.01'))
+                self.vat_amount = self.total_amount - self.subtotal
+            else:
+                self.subtotal = self.total_amount
+                self.vat_amount = Decimal('0.00')
 
         total_paid = sum((rcp.amount_paid for rcp in self.receipts.all()), Decimal('0.00'))
         self.amount_paid = total_paid
         self.balance_due = max(Decimal('0.00'), self.total_amount - self.amount_paid)
-        if self.amount_paid >= self.total_amount and self.total_amount > 0:
+        if self.amount_paid >= self.total_amount and self.total_amount > Decimal('0.00'):
             self.status = self.Status.PAID
-        elif self.amount_paid > 0:
+        elif self.amount_paid > Decimal('0.00'):
             self.status = self.Status.PARTIALLY_PAID
-        elif self.due_date and self.due_date < timezone.localdate() and self.status != self.Status.DRAFT and self.status != self.Status.CANCELLED:
+        elif self.due_date and self.due_date < timezone.localdate() and self.status not in [self.Status.DRAFT, self.Status.CANCELLED]:
             self.status = self.Status.OVERDUE
-        elif self.status != self.Status.DRAFT and self.status != self.Status.CANCELLED:
+        elif self.status not in [self.Status.DRAFT, self.Status.CANCELLED]:
             self.status = self.Status.ISSUED
         self.save(update_fields=['vat_rate', 'subtotal', 'vat_amount', 'total_amount', 'amount_paid', 'balance_due', 'status'])
+
+        # Sync linked LogisticsJob status if applicable
+        if self.job:
+            job = self.job
+            if job.remaining_uninvoiced == Decimal('0.00') and all(i.status == Invoice.Status.PAID for i in job.invoices.all()):
+                if job.status != LogisticsJob.Status.CLOSED:
+                    job.status = LogisticsJob.Status.CLOSED
+                    job.save(update_fields=['status'])
+            elif job.status == LogisticsJob.Status.CLOSED and any(i.status != Invoice.Status.PAID for i in job.invoices.all()):
+                job.status = LogisticsJob.Status.DELIVERED if job.pod_document else LogisticsJob.Status.DISPATCHED
+                job.save(update_fields=['status'])
 
 
 class InvoiceLineItem(models.Model):

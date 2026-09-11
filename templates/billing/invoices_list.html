@@ -46,13 +46,21 @@
         </p>
       </div>
 
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2.5">
+        <form method="POST" action="{% url 'recalculate_invoices_action' %}" class="inline">
+          {% csrf_token %}
+          <button type="submit" class="btn-outline text-xs px-3 py-2 text-slate-700 hover:text-slate-900 border-slate-300 hover:bg-slate-100 transition inline-flex items-center gap-1.5" title="Audit & Recalculate all invoice payments and balances">
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            <span>Sync Balances</span>
+          </button>
+        </form>
+
         <a href="{% url 'create_invoice' %}" class="btn-primary">
           <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
           <span>Invoice</span>
         </a>
 
-        <div class="bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 text-right min-w-[170px]">
+        <div class="bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2 text-right min-w-[170px]">
           <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider block">Total Outstanding</span>
           <span class="text-xl font-black text-rose-600 font-mono">N$ {{ metrics.unpaid_balance|money }}</span>
         </div>

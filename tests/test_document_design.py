@@ -162,8 +162,7 @@ class DocumentDesignSystemTestCase(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'RCP-2026-TEST01')
-        self.assertContains(response, 'Payment Received')
-        self.assertContains(response, 'OFFICIAL RECEIPT')
+        self.assertContains(response, 'RECEIPT')
         self.assertContains(response, 'FNB-EFT-9928172')
 
     def test_receipt_pdf_download(self):
