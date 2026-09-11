@@ -296,9 +296,10 @@
         <div class="party-box">
           <strong style="font-size: 10pt; color: #0f172a;">{{ invoice.customer.company_name }}</strong><br>
           {% if invoice.customer.contact_name %}Attn: {{ invoice.customer.contact_name }}<br>{% endif %}
-          {% if invoice.customer.billing_address %}{{ invoice.customer.billing_address|linebreaksbr }}<br>{% endif %}
+          {% if invoice.customer.billing_address and invoice.customer.billing_address != 'N/A' %}{{ invoice.customer.billing_address|linebreaksbr }}<br>{% endif %}
+          {% if invoice.customer.physical_address and invoice.customer.physical_address != 'N/A' and invoice.customer.physical_address != invoice.customer.billing_address %}{{ invoice.customer.physical_address|linebreaksbr }}<br>{% endif %}
           {% if invoice.customer.phone %}Tel: {{ invoice.customer.phone }} &bull; {% endif %}Email: {{ invoice.customer.email|default:"N/A" }}<br>
-          {% if invoice.customer.vat_number %}Customer VAT No: <strong>{{ invoice.customer.vat_number }}</strong>{% endif %}
+          {% if invoice.customer.vat_number %}Client VAT No: <strong>{{ invoice.customer.vat_number }}</strong>{% endif %}
         </div>
       </td>
 
@@ -314,7 +315,7 @@
             <td class="meta-card-value">{{ invoice.issue_date|date:"d M Y" }}</td>
           </tr>
           <tr>
-            <td class="meta-card-label">CUSTOMER ID</td>
+            <td class="meta-card-label">CLIENT ID</td>
             <td class="meta-card-value font-mono">CUST-{{ invoice.customer.id|stringformat:"04d" }}</td>
           </tr>
           <tr>
@@ -322,8 +323,8 @@
             <td class="meta-card-value">{{ invoice.due_date|date:"d M Y" }}</td>
           </tr>
           <tr>
-            <td class="meta-card-label">TERMS</td>
-            <td class="meta-card-value">{{ invoice.customer.get_payment_terms_display|default:"30 Days Net" }}</td>
+            <td class="meta-card-label">REF #</td>
+            <td class="meta-card-value font-mono">{{ invoice.po_number|default:"—" }}</td>
           </tr>
           {% if invoice.job %}
           <tr>
@@ -383,21 +384,20 @@
       <tr>
         <!-- Banking Details & Notes -->
         <td style="width: 52%; vertical-align: top; padding-right: 15px;">
-          <div style="font-size: 8.5pt; font-weight: bold; color: #0f172a; margin-bottom: 6px;">
-            Thank you for your business!
-          </div>
-          
           {% if branding.bank_details.bank_name or branding.bank_details.account_number %}
-          <div class="bank-box">
+          <div class="bank-box" style="margin-bottom: 8px;">
             <div class="bank-box-title">Bank Settlement Details &amp; Remittance:</div>
             {% if branding.bank_details.bank_name %}Bank: <strong>{{ branding.bank_details.bank_name }}</strong><br>{% endif %}
             {% if branding.bank_details.account_name %}Account Name: <strong>{{ branding.bank_details.account_name }}</strong><br>{% endif %}
-            {% if branding.bank_details.account_number %}Account Number: <strong>{{ branding.bank_details.account_number }}</strong>{% endif %}{% if branding.bank_details.account_number and branding.bank_details.branch_code %} &bull; {% endif %}{% if branding.bank_details.branch_code %}Branch Code: <strong>{{ branding.bank_details.branch_code }}</strong>{% endif %}<br>
-            {% if branding.bank_details.swift_code %}Swift Code: <strong>{{ branding.bank_details.swift_code }}</strong> &bull; {% endif %}Reference: <strong style="color: #b47828;">{{ invoice.invoice_number }}</strong>
+            {% if branding.bank_details.account_number %}Account Number: <strong>{{ branding.bank_details.account_number }}</strong>{% endif %}{% if branding.bank_details.branch_name %} &bull; Branch: <strong>{{ branding.bank_details.branch_name }}</strong>{% endif %}{% if branding.bank_details.branch_code %} &bull; Branch Code: <strong>{{ branding.bank_details.branch_code }}</strong>{% endif %}{% if branding.bank_details.swift_code %}<br>Swift Code: <strong>{{ branding.bank_details.swift_code }}</strong>{% endif %}
           </div>
           {% endif %}
 
-          <div style="font-size: 7.5pt; color: #64748b; margin-top: 8px;">
+          <div style="font-size: 8.5pt; font-weight: bold; color: #0f172a; margin-bottom: 4px;">
+            Thank you for your business!
+          </div>
+
+          <div style="font-size: 7.5pt; color: #64748b; margin-top: 4px;">
             If you have any questions about this invoice, please contact Accounts at {{ branding.accounts_email|default:branding.support_email|default:"accounts@menardtrading.com" }}.
           </div>
         </td>

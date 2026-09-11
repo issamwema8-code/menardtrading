@@ -246,9 +246,10 @@
         <div class="party-box">
           <strong style="font-size: 10pt; color: #0f172a;">{{ receipt.customer.company_name }}</strong><br>
           {% if receipt.customer.contact_name %}Attn: {{ receipt.customer.contact_name }}<br>{% endif %}
-          {% if receipt.customer.billing_address %}{{ receipt.customer.billing_address|linebreaksbr }}<br>{% endif %}
+          {% if receipt.customer.billing_address and receipt.customer.billing_address != 'N/A' %}{{ receipt.customer.billing_address|linebreaksbr }}<br>{% endif %}
+          {% if receipt.customer.physical_address and receipt.customer.physical_address != 'N/A' and receipt.customer.physical_address != receipt.customer.billing_address %}{{ receipt.customer.physical_address|linebreaksbr }}<br>{% endif %}
           {% if receipt.customer.phone %}Tel: {{ receipt.customer.phone }} &bull; {% endif %}Email: {{ receipt.customer.email|default:"N/A" }}<br>
-          {% if receipt.customer.vat_number %}Customer VAT No: <strong>{{ receipt.customer.vat_number }}</strong>{% endif %}
+          {% if receipt.customer.vat_number %}Client VAT No: <strong>{{ receipt.customer.vat_number }}</strong>{% endif %}
         </div>
       </td>
 

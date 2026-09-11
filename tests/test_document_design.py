@@ -186,7 +186,7 @@ class DocumentDesignSystemTestCase(TestCase):
         self.assertContains(response, 'Approve Quotation')
         self.assertContains(response, 'MENARD TRADING CC')
         self.assertContains(response, 'ALWAYS ON TIME')
-        self.assertContains(response, 'Customer Quotation Portal')
+        self.assertContains(response, 'Client Quotation Portal')
         self.assertContains(response, 'Print')
         self.assertContains(response, 'Download PDF')
 

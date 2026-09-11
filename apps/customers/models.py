@@ -116,3 +116,22 @@ class Customer(models.Model):
         # 3. Fallback to readable format
         return self.payment_terms.replace('_', ' ').title() if self.payment_terms else 'Standard'
 
+    def get_address_lines(self):
+        """
+        Returns an ordered list of address lines (PO Box, postal address, physical address)
+        avoiding duplicates or placeholder N/A values.
+        """
+        lines = []
+        if self.billing_address and self.billing_address.strip() and self.billing_address.strip() != 'N/A':
+            lines.append(self.billing_address.strip())
+        if self.physical_address and self.physical_address.strip() and self.physical_address.strip() != 'N/A':
+            cleaned_phys = self.physical_address.strip()
+            if not any(cleaned_phys.lower() == l.lower() for l in lines) and cleaned_phys not in (self.billing_address or ''):
+                lines.append(cleaned_phys)
+        return lines
+
+    @property
+    def display_address(self):
+        lines = self.get_address_lines()
+        return ", ".join(lines) if lines else ""
+

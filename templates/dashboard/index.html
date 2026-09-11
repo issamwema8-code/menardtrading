@@ -27,10 +27,10 @@
         <span>Upload Real PO (PDF)</span>
       </button>
 
-      <!-- Quick Action: Add Customer -->
+      <!-- Quick Action: Add Client -->
       <button @click="activeModal = 'create_customer_modal'" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition">
         <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
-        <span>New Customer</span>
+        <span>New Client</span>
       </button>
     </div>
   </div>
@@ -124,7 +124,7 @@
             <span class="text-xs font-bold text-amber-400">1. Inbound PO</span>
             <span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded">Brevo Webhook</span>
           </div>
-          <p class="text-xs text-slate-300">Customer emails PO to <code class="text-amber-300">orders@menardtrading.com</code> or upload real PDF.</p>
+          <p class="text-xs text-slate-300">Client emails PO to <code class="text-amber-300">orders@menardtrading.com</code> or upload real PDF.</p>
         </div>
 
         <!-- Step 2: Auto Quotation -->
@@ -133,7 +133,7 @@
             <span class="text-xs font-bold text-blue-400">2. Smart Quotation</span>
             <span class="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded">1-Click Approve</span>
           </div>
-          <p class="text-xs text-slate-300">System drafts quote and emails customer with interactive 1-click acceptance portal.</p>
+          <p class="text-xs text-slate-300">System drafts quote and emails client with interactive 1-click acceptance portal.</p>
         </div>
 
         <!-- Step 3: Multi-Stage Invoicing -->
@@ -244,7 +244,7 @@
           </form>
           <button @click="activeModal = 'upload_po_modal'" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm flex items-center gap-1.5 transition">
             <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-            <span>+ Upload Customer PO File</span>
+            <span>+ Upload Client PO File</span>
           </button>
         </div>
       </div>
@@ -255,7 +255,7 @@
             <tr>
               <th class="px-4 py-3 text-center w-12 text-xs font-bold uppercase tracking-wider text-slate-500">S/No.</th>
               <th class="px-4 py-3">PO Number</th>
-              <th class="px-4 py-3">Customer / Sender</th>
+              <th class="px-4 py-3">Client / Sender</th>
               <th class="px-4 py-3">Route &amp; Cargo</th>
               <th class="px-4 py-3 text-center">Weight (Tons)</th>
               <th class="px-4 py-3">Status</th>
@@ -303,7 +303,7 @@
             </tr>
             {% empty %}
             <tr>
-              <td colspan="8" class="px-4 py-8 text-center text-slate-400">No purchase orders uploaded yet. Click "+ Upload Customer PO File" above or send to Brevo inbound.</td>
+              <td colspan="8" class="px-4 py-8 text-center text-slate-400">No purchase orders uploaded yet. Click "+ Upload Client PO File" above or send to Brevo inbound.</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -321,7 +321,7 @@
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h2 class="text-xl font-bold text-slate-900">Quotations Desk</h2>
-          <p class="text-xs text-slate-500">Auto-drafted from customer POs or manually created, with 1-click Brevo email dispatch &amp; approval tokens</p>
+          <p class="text-xs text-slate-500">Auto-drafted from client POs or manually created, with 1-click Brevo email dispatch &amp; approval tokens</p>
         </div>
         <button @click="activeModal = 'create_quote_modal'" class="btn-primary flex items-center gap-1.5">
           <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -335,7 +335,7 @@
             <tr>
               <th class="px-4 py-3 text-center w-12 text-xs font-bold uppercase tracking-wider text-slate-500">S/No.</th>
               <th class="px-4 py-3">Quote #</th>
-              <th class="px-4 py-3">Customer</th>
+              <th class="px-4 py-3">Client</th>
               <th class="px-4 py-3">Subtotal</th>
               <th class="px-4 py-3">VAT</th>
               <th class="px-4 py-3">Total Amount</th>
@@ -531,7 +531,7 @@
             <tr>
               <th class="px-4 py-3 text-center w-12 text-xs font-bold uppercase tracking-wider text-slate-500">S/No.</th>
               <th class="px-4 py-3">Invoice #</th>
-              <th class="px-4 py-3">Customer</th>
+              <th class="px-4 py-3">Client</th>
               <th class="px-4 py-3">Type</th>
               <th class="px-4 py-3">Total Amount</th>
               <th class="px-4 py-3">Paid</th>
@@ -644,7 +644,7 @@
             <tr>
               <th class="px-4 py-3 text-center w-12 text-xs font-bold uppercase tracking-wider text-slate-500">S/No.</th>
               <th class="px-4 py-3">Receipt #</th>
-              <th class="px-4 py-3">Customer</th>
+              <th class="px-4 py-3">Client</th>
               <th class="px-4 py-3">Invoice Ref</th>
               <th class="px-4 py-3">Amount Paid</th>
               <th class="px-4 py-3">Method</th>
@@ -689,11 +689,11 @@
     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h2 class="text-xl font-bold text-slate-900">Customer Directory</h2>
+          <h2 class="text-xl font-bold text-slate-900">Client Directory</h2>
           <p class="text-xs text-slate-500">Corporate clients, billing contacts, and payment terms</p>
         </div>
         <button @click="activeModal = 'create_customer_modal'" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition">
-          <span>+ Register New Customer</span>
+          <span>+ Register New Client</span>
         </button>
       </div>
 
@@ -727,7 +727,7 @@
             </tr>
             {% empty %}
             <tr>
-              <td colspan="7" class="px-4 py-8 text-center text-slate-400">No customers registered yet. Click "+ Register New Customer" above to add your real clients.</td>
+              <td colspan="7" class="px-4 py-8 text-center text-slate-400">No clients registered yet. Click "+ Register New Client" above to add your real clients.</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -744,7 +744,7 @@
     <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-3">
         <div>
-          <h3 class="font-bold text-lg text-slate-900">Upload Customer Purchase Order</h3>
+          <h3 class="font-bold text-lg text-slate-900">Upload Client Purchase Order</h3>
           <p class="text-xs text-slate-500">System will extract cargo, route, weight, and draft a quotation</p>
         </div>
         <button @click="activeModal = null" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
@@ -754,7 +754,7 @@
         {% csrf_token %}
         
         <div>
-          <label class="font-bold text-slate-700 block mb-1">Select Customer PO PDF File *</label>
+          <label class="font-bold text-slate-700 block mb-1">Select Client PO PDF File *</label>
           <input type="file" name="po_file" accept=".pdf" required class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100">
         </div>
 
@@ -764,13 +764,13 @@
         </div>
 
         <div>
-          <label class="font-bold text-slate-700 block mb-1">Sender / Customer Email (Optional):</label>
+          <label class="font-bold text-slate-700 block mb-1">Sender / Client Email (Optional):</label>
           <input type="email" name="sender_email" placeholder="e.g. logistics@clientcompany.co.za" class="w-full border border-slate-300 rounded-lg p-2.5 bg-slate-50">
         </div>
 
         <div>
           <div class="flex justify-between items-center mb-1">
-            <label class="font-bold text-slate-700 block mb-0">Customer (Optional):</label>
+            <label class="font-bold text-slate-700 block mb-0">Client (Optional):</label>
             <button type="button" @click="activeModal = 'create_customer_modal'" class="text-xs font-bold text-[#b47828] hover:text-[#8a5818] flex items-center gap-1 hover:underline transition cursor-pointer">
               <svg class="w-3.5 h-3.5 text-[#b47828]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
               <span>+ Client</span>
@@ -801,7 +801,7 @@
   <div x-show="activeModal === 'create_customer_modal'" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4" x-cloak>
     <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b pb-3">
-        <h3 class="font-bold text-lg text-slate-900">Register New Customer</h3>
+        <h3 class="font-bold text-lg text-slate-900">Register New Client</h3>
         <button @click="activeModal = null" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
       </div>
 
@@ -852,7 +852,7 @@
 
         <div class="flex justify-end gap-2 pt-3 border-t">
           <button type="button" @click="activeModal = null" class="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold">Cancel</button>
-          <button type="submit" class="px-5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold">Save Customer</button>
+          <button type="submit" class="px-5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-bold">Save Client</button>
         </div>
       </form>
     </div>
@@ -872,7 +872,7 @@
       <form method="POST" action="{% url 'create_quotation' %}" class="space-y-3 text-xs">
         {% csrf_token %}
         <div>
-          <label class="font-bold text-slate-700 block mb-1">Select Customer *</label>
+          <label class="font-bold text-slate-700 block mb-1">Select Client *</label>
           <select name="customer_id" required class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50 font-bold">
             {% for c in customers %}
             <option value="{{ c.id }}">{{ c.company_name }} ({{ c.email }})</option>
@@ -894,6 +894,11 @@
             <label class="font-bold text-slate-700 block mb-1">Rate (ZAR Excl VAT) *</label>
             <input type="number" step="0.01" name="unit_price" required placeholder="25000.00" class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50 font-bold">
           </div>
+        </div>
+
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">Tax / VAT Rate (%)</label>
+          <input type="number" step="0.01" min="0" max="100" name="vat_rate" value="0.00" class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50 font-bold">
         </div>
 
         <div>

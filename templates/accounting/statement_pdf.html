@@ -176,7 +176,7 @@
             </div>
         </div>
         <div>
-            <div class="doc-title">CUSTOMER STATEMENT</div>
+            <div class="doc-title">CLIENT STATEMENT</div>
             <div class="doc-meta">
                 Statement Date: {{ statement.end_date|date:"d M Y" }}<br>
                 Period: {{ statement.start_date|date:"d M Y" }} to {{ statement.end_date|date:"d M Y" }}
@@ -188,12 +188,13 @@
     <!-- Info Grid -->
     <div class="info-grid">
         <div class="info-box">
-            <div class="info-heading">Customer Account</div>
+            <div class="info-heading">Client Account</div>
             <div class="info-content">
                 <strong style="font-size: 14px; color: #0f172a;">{{ customer.company_name }}</strong><br>
                 {% if customer.contact_name %}Attn: {{ customer.contact_name }}<br>{% endif %}
-                {% if customer.billing_address %}{{ customer.billing_address|linebreaksbr }}<br>{% endif %}
-                {% if customer.vat_number %}Customer VAT No: {{ customer.vat_number }}<br>{% endif %}
+                {% if customer.billing_address and customer.billing_address != 'N/A' %}{{ customer.billing_address|linebreaksbr }}<br>{% endif %}
+                {% if customer.physical_address and customer.physical_address != 'N/A' and customer.physical_address != customer.billing_address %}{{ customer.physical_address|linebreaksbr }}<br>{% endif %}
+                {% if customer.vat_number %}Client VAT No: {{ customer.vat_number }}<br>{% endif %}
                 Email: {{ customer.email|default:"N/A" }}
             </div>
         </div>
@@ -279,7 +280,7 @@
     {% if branding.bank_details.bank_name or branding.bank_details.account_number %}
     <div class="bank-details">
         <strong style="font-size: 12px; color: #0f172a;">Bank Settlement Details &amp; Remittance:</strong><br>
-        {% if branding.bank_details.bank_name %}Bank: {{ branding.bank_details.bank_name }} &bull; {% endif %}Account Name: {{ branding.bank_details.account_name|default:branding.company_name }} &bull; Account No: {{ branding.bank_details.account_number }}{% if branding.bank_details.branch_code %} &bull; Branch Code: {{ branding.bank_details.branch_code }}{% endif %}{% if branding.bank_details.swift_code %} &bull; Swift: {{ branding.bank_details.swift_code }}{% endif %}<br>
+        {% if branding.bank_details.bank_name %}Bank: {{ branding.bank_details.bank_name }} &bull; {% endif %}Account Name: {{ branding.bank_details.account_name|default:branding.company_name }} &bull; Account No: {{ branding.bank_details.account_number }}{% if branding.bank_details.branch_name %} &bull; Branch: {{ branding.bank_details.branch_name }}{% endif %}{% if branding.bank_details.branch_code %} &bull; Branch Code: {{ branding.bank_details.branch_code }}{% endif %}{% if branding.bank_details.swift_code %} &bull; Swift: {{ branding.bank_details.swift_code }}{% endif %}<br>
         <em>Please quote your Company Name or Statement Reference when making electronic bank transfers (EFT) and email proof of payment to {{ branding.accounts_email|default:branding.support_email|default:"accounts@menardtrading.com" }}.</em>
     </div>
     {% endif %}

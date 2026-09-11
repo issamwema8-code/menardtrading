@@ -28,8 +28,8 @@
 </script>
 
 <!-- MODAL 1: UPLOAD PURCHASE ORDER (PDF) -->
-<div x-show="activeModal === 'upload_po_modal'" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4" x-cloak>
-  <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 sm:p-7 max-w-lg w-full shadow-2xl space-y-5 border border-slate-200">
+<div x-show="activeModal === 'upload_po_modal'" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-3 sm:p-4 md:p-6 overflow-y-auto" x-cloak>
+  <div @click.away="activeModal = null" class="bg-white rounded-2xl p-4 sm:p-7 max-w-lg w-full shadow-2xl space-y-4 sm:space-y-5 border border-slate-200 my-auto max-h-[94vh] overflow-y-auto">
     <div class="flex justify-between items-start border-b border-slate-100 pb-4">
       <div>
         <h3 class="font-extrabold text-lg text-slate-900">Upload Purchase Order</h3>
@@ -52,13 +52,13 @@
       </div>
 
       <div>
-        <label class="form-label">Customer Email <span class="text-slate-400 font-normal">(Optional)</span></label>
+        <label class="form-label">Client Email <span class="text-slate-400 font-normal">(Optional)</span></label>
         <input type="email" name="sender_email" placeholder="e.g. logistics@clientcompany.co.za" class="form-input">
       </div>
 
       <div>
         <div class="flex justify-between items-center mb-1">
-          <label class="form-label mb-0">Customer <span class="text-slate-400 font-normal">(Optional)</span></label>
+          <label class="form-label mb-0">Client <span class="text-slate-400 font-normal">(Optional)</span></label>
           <button type="button" @click="activeModal = 'create_customer_modal'" class="text-xs font-bold text-[#b47828] hover:text-[#8a5818] flex items-center gap-1 hover:underline transition cursor-pointer">
             <svg class="w-3.5 h-3.5 text-[#b47828]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             <span>+ Client</span>
@@ -72,7 +72,7 @@
         </select>
       </div>
 
-      <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-100">
+      <div class="flex flex-col-reverse sm:flex-row sm:justify-end items-stretch sm:items-center gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-slate-100">
         <button type="button" @click="activeModal = null" class="btn-outline">Cancel</button>
         <button type="submit" class="btn-primary">
           <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
@@ -136,12 +136,12 @@
          }
        }
      }"
-     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4" x-cloak>
-  <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 sm:p-7 max-w-lg w-full shadow-2xl space-y-5 border border-slate-200">
+     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-3 sm:p-4 md:p-6 overflow-y-auto" x-cloak>
+  <div @click.away="activeModal = null" class="bg-white rounded-2xl p-4 sm:p-7 max-w-lg w-full shadow-2xl space-y-4 sm:space-y-5 border border-slate-200 my-auto max-h-[94vh] overflow-y-auto">
     <div class="flex justify-between items-start border-b border-slate-100 pb-4">
       <div>
-        <h3 class="font-extrabold text-lg text-slate-900">Add Customer</h3>
-        <p class="text-xs text-slate-500 mt-0.5">Enter customer details and default payment terms.</p>
+        <h3 class="font-extrabold text-lg text-slate-900">Add Client</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Enter client details and default payment terms.</p>
       </div>
       <button @click="activeModal = null" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition text-lg font-bold leading-none">&times;</button>
     </div>
@@ -214,11 +214,11 @@
         <textarea name="physical_address" rows="2" placeholder="e.g. Depot 4, Elandsfontein Logistics Park, Germiston" class="form-input"></textarea>
       </div>
 
-      <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-100">
+      <div class="flex flex-col-reverse sm:flex-row sm:justify-end items-stretch sm:items-center gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-slate-100">
         <button type="button" @click="activeModal = null" class="btn-outline">Cancel</button>
         <button type="submit" class="btn-secondary">
           <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-          <span>Save Customer</span>
+          <span>Save Client</span>
         </button>
       </div>
     </form>
@@ -251,7 +251,7 @@
        items: [
          { description: '', quantity: '1.00', unit_price: '' }
        ],
-        vatRate: parseFloat('{{ branding.vat_rate|default:0.00 }}') || 0.0,
+        vatRate: 0.0,
        addItem() {
          this.items.push({ description: '', quantity: '1.00', unit_price: '' });
        },
@@ -393,7 +393,7 @@
              if (window.Swal) {
                Swal.fire({
                  icon: 'success',
-                 title: 'Customer Created!',
+                 title: 'Client Created!',
                  text: `${newCust.company_name} selected for quotation.`,
                  timer: 2000,
                  showConfirmButton: false,
@@ -402,20 +402,19 @@
                });
              }
            } else {
-             this.quickAddError = data.error || 'Failed to save customer.';
+             this.quickAddError = data.error || 'Failed to save client.';
            }
          } catch (err) {
-           this.quickAddError = 'Network error while saving customer.';
+           this.quickAddError = 'Network error while saving client.';
          } finally {
            this.isSavingClient = false;
          }
        }
      }"
-     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 overflow-y-auto" x-cloak>
-  <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 sm:p-7 max-w-2xl w-full shadow-2xl space-y-5 border border-slate-200 my-8">
+     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-2 sm:p-4 md:p-6 overflow-y-auto" x-cloak>
+  <div @click.away="activeModal = null" class="bg-white rounded-2xl p-4 sm:p-7 max-w-3xl w-full shadow-2xl space-y-4 sm:space-y-5 border border-slate-200 my-auto sm:my-8 max-h-[95vh] overflow-y-auto">
     <div class="flex justify-between items-start border-b border-slate-100 pb-4">
       <div>
-        <span class="badge-gold text-[10px] mb-1">New Quotation</span>
         <h3 class="font-extrabold text-lg text-slate-900">Create Quotation</h3>
         <p class="text-xs text-slate-500 mt-0.5">Create a multi-item price quotation for doors, windows, freight, or general supply.</p>
       </div>
@@ -502,15 +501,14 @@
 
     <!-- CREATE QUOTATION FORM -->
     <form method="POST" action="{% url 'create_quotation' %}" 
-          @submit="if (!selectedId) { $event.preventDefault(); dropdownOpen = true; if (window.Swal) { Swal.fire({ icon: 'warning', title: 'Customer Required', text: 'Please select or add a client to create this quotation.', timer: 2500, showConfirmButton: false, toast: true, position: 'top-end' }); } return false; }"
+          @submit="if (!selectedId) { $event.preventDefault(); dropdownOpen = true; if (window.Swal) { Swal.fire({ icon: 'warning', title: 'Client Required', text: 'Please select or add a client to create this quotation.', timer: 2500, showConfirmButton: false, toast: true, position: 'top-end' }); } return false; }"
           class="space-y-4">
       {% csrf_token %}
-      <input type="hidden" name="vat_rate" :value="vatRate">
       
       <!-- SEARCHABLE CUSTOMER SELECT & SHORTCUT -->
       <div>
         <div class="flex justify-between items-center mb-1.5">
-          <label class="form-label mb-0">Customer <span class="text-rose-500">*</span></label>
+          <label class="form-label mb-0">Client <span class="text-rose-500">*</span></label>
           <button type="button" @click="openQuickAdd()" class="text-xs font-bold text-[#b47828] hover:text-[#8a5818] flex items-center gap-1 hover:underline transition cursor-pointer">
             <svg class="w-3.5 h-3.5 text-[#b47828]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             <span>+ Client</span>
@@ -592,7 +590,7 @@
 
               <!-- Empty Results -->
               <div x-show="filteredCustomers.length === 0" class="p-4 text-center space-y-2">
-                <p class="text-xs text-slate-500">No customers found matching "<span class="font-semibold text-slate-800" x-text="searchQuery"></span>"</p>
+                <p class="text-xs text-slate-500">No clients found matching "<span class="font-semibold text-slate-800" x-text="searchQuery"></span>"</p>
                 <button type="button" @click="openQuickAdd(searchQuery)" class="btn-secondary text-xs py-1.5 px-3">
                   <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                   <span>+ "<span x-text="searchQuery"></span>"</span>
@@ -623,7 +621,8 @@
         </div>
 
         <div class="border border-amber-200 rounded-2xl overflow-hidden bg-[#fef9ee] shadow-sm">
-          <table class="w-full text-left text-xs border-collapse">
+          <div class="overflow-x-auto w-full">
+          <table class="w-full min-w-[520px] text-left text-xs border-collapse">
             <thead>
               <tr class="bg-[#fef9ee] border-b border-amber-200 text-slate-800 font-bold">
                 <th class="py-2.5 px-3">Item / Service Description</th>
@@ -662,6 +661,7 @@
               </template>
             </tbody>
           </table>
+          </div>
 
           <!-- Totals Bar -->
           <div class="p-3 bg-amber-50/80 border-t border-amber-200 flex flex-col sm:flex-row justify-between items-center gap-2">
@@ -672,11 +672,42 @@
 
             <div class="flex flex-wrap items-center gap-3 text-xs font-mono">
               <div class="text-slate-500">Subtotal: <strong class="text-slate-900" x-text="formatMoney(subtotal)"></strong></div>
-              <div class="text-slate-500">VAT (<span x-text="vatRate + '%'"></span>): <strong class="text-slate-900" x-text="formatMoney(vatAmount)"></strong></div>
+              <div class="text-slate-500">VAT (<span x-text="(parseFloat(vatRate) || 0).toFixed(2) + '%'"></span>): <strong class="text-slate-900" x-text="formatMoney(vatAmount)"></strong></div>
               <div class="px-2.5 py-1 rounded-lg bg-amber-100/90 text-[#8a5818] font-bold border border-amber-200">
                 Total: <span x-text="formatMoney(totalAmount)"></span>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAX / VAT INCLUSION FIELD -->
+      <div class="bg-amber-50/50 p-3.5 rounded-2xl border border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <label class="form-label text-xs mb-0.5 font-bold text-slate-800 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-[#b47828]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+            <span>Tax / VAT Inclusion</span>
+          </label>
+          <p class="text-[11px] text-slate-500">Select whether to include tax and specify the rate percentage</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="inline-flex rounded-xl border border-amber-200 bg-white p-0.5 shadow-2xs">
+            <button type="button" @click="vatRate = 0.0" 
+                    :class="parseFloat(vatRate) === 0 ? 'bg-slate-900 text-white font-bold' : 'text-slate-600 hover:text-slate-900 font-medium'"
+                    class="px-2.5 py-1 text-xs rounded-lg transition cursor-pointer">
+              No Tax (0%)
+            </button>
+            <button type="button" @click="vatRate = parseFloat('{{ branding.vat_rate|default:15.00 }}') || 15.0" 
+                    :class="parseFloat(vatRate) > 0 && parseFloat(vatRate) === (parseFloat('{{ branding.vat_rate|default:15.00 }}') || 15.0) ? 'bg-[#b47828] text-white font-bold' : 'text-slate-600 hover:text-slate-900 font-medium'"
+                    class="px-2.5 py-1 text-xs rounded-lg transition cursor-pointer">
+              Standard ({{ branding.vat_rate|default:"15" }}%)
+            </button>
+          </div>
+          <div class="relative w-24">
+            <input type="number" step="0.01" min="0" max="100" name="vat_rate" x-model="vatRate" 
+                   class="form-input text-xs py-1.5 pr-6 text-right font-mono font-bold text-slate-900" 
+                   placeholder="0.00">
+            <span class="absolute inset-y-0 right-0 pr-2 flex items-center text-xs font-bold text-slate-400 pointer-events-none">%</span>
           </div>
         </div>
       </div>
@@ -692,7 +723,7 @@
         </div>
       </div>
 
-      <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-100">
+      <div class="flex flex-col-reverse sm:flex-row sm:justify-end items-stretch sm:items-center gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-slate-100">
         <button type="button" @click="activeModal = null" class="btn-outline">Cancel</button>
         <button type="submit" class="btn-primary">
           <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -729,7 +760,7 @@
         items: [
           { description: '', quantity: '1.00', unit_price: '' }
         ],
-        vatRate: parseFloat('{{ branding.vat_rate|default:0.00 }}') || 0.0,
+        vatRate: 0.0,
         addItem() {
           this.items.push({ description: '', quantity: '1.00', unit_price: '' });
         },
@@ -870,7 +901,7 @@
               if (window.Swal) {
                 Swal.fire({
                   icon: 'success',
-                  title: 'Customer Created!',
+                  title: 'Client Created!',
                   text: `${newCust.company_name} selected for invoice.`,
                   timer: 2000,
                   showConfirmButton: false,
@@ -879,17 +910,17 @@
                 });
               }
             } else {
-              this.quickAddError = data.error || 'Failed to save customer.';
+              this.quickAddError = data.error || 'Failed to save client.';
             }
           } catch (err) {
-            this.quickAddError = 'Network error while saving customer.';
+            this.quickAddError = 'Network error while saving client.';
           } finally {
             this.isSavingClient = false;
           }
         }
       }"
-     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 overflow-y-auto" x-cloak>
-  <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 sm:p-7 max-w-2xl w-full shadow-2xl space-y-5 border border-slate-200 my-8">
+     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-2 sm:p-4 md:p-6 overflow-y-auto" x-cloak>
+  <div @click.away="activeModal = null" class="bg-white rounded-2xl p-4 sm:p-7 max-w-3xl w-full shadow-2xl space-y-4 sm:space-y-5 border border-slate-200 my-auto sm:my-8 max-h-[95vh] overflow-y-auto">
     <div class="flex justify-between items-start border-b border-slate-100 pb-4">
       <div>
         <h3 class="font-extrabold text-lg text-slate-900">Create Tax Invoice</h3>
@@ -978,15 +1009,14 @@
 
     <!-- CREATE DIRECT INVOICE FORM -->
     <form method="POST" action="{% url 'create_invoice' %}" 
-          @submit="if (!selectedId) { $event.preventDefault(); dropdownOpen = true; if (window.Swal) { Swal.fire({ icon: 'warning', title: 'Customer Required', text: 'Please select or add a client to issue this invoice.', timer: 2500, showConfirmButton: false, toast: true, position: 'top-end' }); } return false; }"
+          @submit="if (!selectedId) { $event.preventDefault(); dropdownOpen = true; if (window.Swal) { Swal.fire({ icon: 'warning', title: 'Client Required', text: 'Please select or add a client to issue this invoice.', timer: 2500, showConfirmButton: false, toast: true, position: 'top-end' }); } return false; }"
           class="space-y-4">
       {% csrf_token %}
-      <input type="hidden" name="vat_rate" :value="vatRate">
       
       <!-- SEARCHABLE CUSTOMER SELECT & SHORTCUT -->
       <div>
         <div class="flex justify-between items-center mb-1.5">
-          <label class="form-label mb-0">Customer <span class="text-rose-500">*</span></label>
+          <label class="form-label mb-0">Client <span class="text-rose-500">*</span></label>
           <button type="button" @click="openQuickAdd()" class="text-xs font-bold text-[#b47828] hover:text-[#8a5818] flex items-center gap-1 hover:underline transition cursor-pointer">
             <svg class="w-3.5 h-3.5 text-[#b47828]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             <span>+ Client</span>
@@ -1064,7 +1094,7 @@
               </template>
 
               <div x-show="filteredCustomers.length === 0" class="p-4 text-center space-y-2">
-                <p class="text-xs text-slate-500">No customers found matching "<span class="font-semibold text-slate-800" x-text="searchQuery"></span>"</p>
+                <p class="text-xs text-slate-500">No clients found matching "<span class="font-semibold text-slate-800" x-text="searchQuery"></span>"</p>
                 <button type="button" @click="openQuickAdd(searchQuery)" class="btn-secondary text-xs py-1.5 px-3">
                   <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                   <span>+ "<span x-text="searchQuery"></span>"</span>
@@ -1110,7 +1140,8 @@
         </div>
 
         <div class="border border-amber-200 rounded-2xl overflow-hidden bg-[#fef9ee] shadow-sm">
-          <table class="w-full text-left text-xs border-collapse">
+          <div class="overflow-x-auto w-full">
+          <table class="w-full min-w-[520px] text-left text-xs border-collapse">
             <thead>
               <tr class="bg-[#fef9ee] border-b border-amber-200 text-slate-800 font-bold">
                 <th class="py-2.5 px-3">Item / Service Description</th>
@@ -1149,6 +1180,7 @@
               </template>
             </tbody>
           </table>
+          </div>
 
           <!-- Totals Bar -->
           <div class="p-3 bg-amber-50/80 border-t border-amber-200 flex flex-col sm:flex-row justify-between items-center gap-2">
@@ -1159,11 +1191,42 @@
 
             <div class="flex flex-wrap items-center gap-3 text-xs font-mono">
               <div class="text-slate-500">Subtotal: <strong class="text-slate-900" x-text="formatMoney(subtotal)"></strong></div>
-              <div class="text-slate-500">VAT (<span x-text="vatRate + '%'"></span>): <strong class="text-slate-900" x-text="formatMoney(vatAmount)"></strong></div>
+              <div class="text-slate-500">VAT (<span x-text="(parseFloat(vatRate) || 0).toFixed(2) + '%'"></span>): <strong class="text-slate-900" x-text="formatMoney(vatAmount)"></strong></div>
               <div class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-bold border border-emerald-200">
                 Invoice Total: <span x-text="formatMoney(totalAmount)"></span>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAX / VAT INCLUSION FIELD -->
+      <div class="bg-amber-50/50 p-3.5 rounded-2xl border border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <label class="form-label text-xs mb-0.5 font-bold text-slate-800 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-[#b47828]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+            <span>Tax / VAT Inclusion</span>
+          </label>
+          <p class="text-[11px] text-slate-500">Select whether to include tax and specify the rate percentage</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="inline-flex rounded-xl border border-amber-200 bg-white p-0.5 shadow-2xs">
+            <button type="button" @click="vatRate = 0.0" 
+                    :class="parseFloat(vatRate) === 0 ? 'bg-slate-900 text-white font-bold' : 'text-slate-600 hover:text-slate-900 font-medium'"
+                    class="px-2.5 py-1 text-xs rounded-lg transition cursor-pointer">
+              No Tax (0%)
+            </button>
+            <button type="button" @click="vatRate = parseFloat('{{ branding.vat_rate|default:15.00 }}') || 15.0" 
+                    :class="parseFloat(vatRate) > 0 && parseFloat(vatRate) === (parseFloat('{{ branding.vat_rate|default:15.00 }}') || 15.0) ? 'bg-emerald-600 text-white font-bold' : 'text-slate-600 hover:text-slate-900 font-medium'"
+                    class="px-2.5 py-1 text-xs rounded-lg transition cursor-pointer">
+              Standard ({{ branding.vat_rate|default:"15" }}%)
+            </button>
+          </div>
+          <div class="relative w-24">
+            <input type="number" step="0.01" min="0" max="100" name="vat_rate" x-model="vatRate" 
+                   class="form-input text-xs py-1.5 pr-6 text-right font-mono font-bold text-slate-900" 
+                   placeholder="0.00">
+            <span class="absolute inset-y-0 right-0 pr-2 flex items-center text-xs font-bold text-slate-400 pointer-events-none">%</span>
           </div>
         </div>
       </div>
@@ -1180,7 +1243,7 @@
         </label>
       </div>
 
-      <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-100">
+      <div class="flex flex-col-reverse sm:flex-row sm:justify-end items-stretch sm:items-center gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-slate-100">
         <button type="button" @click="activeModal = null" class="btn-outline">Cancel</button>
         <button type="submit" class="btn-primary">
           <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -1208,7 +1271,7 @@
        validUntil: '',
        status: 'DRAFT',
        notes: '',
-        vatRate: parseFloat('{{ branding.vat_rate|default:0.00 }}') || 0.0,
+        vatRate: 0.0,
        items: [],
        async loadQuote(id) {
          this.quoteId = id;
@@ -1297,8 +1360,8 @@
        }
      }"
      @open-edit-quote.window="activeModal = 'edit_quote_modal'; loadQuote($event.detail.id)"
-     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 overflow-y-auto" x-cloak>
-  <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 sm:p-7 max-w-2xl w-full shadow-2xl space-y-5 border border-slate-200 my-8">
+     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-2 sm:p-4 md:p-6 overflow-y-auto" x-cloak>
+  <div @click.away="activeModal = null" class="bg-white rounded-2xl p-4 sm:p-7 max-w-3xl w-full shadow-2xl space-y-4 sm:space-y-5 border border-slate-200 my-auto sm:my-8 max-h-[95vh] overflow-y-auto">
     <div class="flex justify-between items-start border-b border-slate-100 pb-4">
       <div>
         <div class="flex items-center gap-2 mb-1">
@@ -1306,7 +1369,7 @@
           <span class="font-mono text-xs font-bold text-slate-500" x-text="quoteNumber"></span>
         </div>
         <h3 class="font-extrabold text-lg text-slate-900">Update Quotation</h3>
-        <p class="text-xs text-slate-500 mt-0.5">Edit customer details, validity, status, and custom line items.</p>
+        <p class="text-xs text-slate-500 mt-0.5">Edit client details, validity, status, and custom line items.</p>
       </div>
       <button @click="activeModal = null" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition text-lg font-bold leading-none">&times;</button>
     </div>
@@ -1323,13 +1386,12 @@
     <form x-show="!isLoading" method="POST" :action="`/quotes/${quoteId}/edit/`" class="space-y-4">
       {% csrf_token %}
       <input type="hidden" name="customer_id" :value="selectedId">
-      <input type="hidden" name="vat_rate" :value="vatRate">
       <input type="hidden" name="next" :value="window.location.href">
 
       <!-- Customer Selection (Searchable) -->
       <div>
         <label class="form-label flex justify-between items-center">
-          <span>Customer <span class="text-rose-500">*</span></span>
+          <span>Client <span class="text-rose-500">*</span></span>
           <span class="text-[11px] text-slate-400 font-normal font-mono" x-show="selectedCustomer" x-text="selectedCustomer ? selectedCustomer.email : ''"></span>
         </label>
         
@@ -1342,7 +1404,7 @@
                 <span class="font-bold text-slate-900" x-text="selectedCustomer.company_name"></span>
               </template>
               <template x-if="!selectedCustomer">
-                <span class="text-slate-400 font-normal">-- Select Customer --</span>
+                <span class="text-slate-400 font-normal">-- Select Client --</span>
               </template>
             </div>
             <svg class="w-4 h-4 text-slate-400 shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -1397,7 +1459,8 @@
         </div>
 
         <div class="border border-amber-200 rounded-xl overflow-hidden bg-[#fef9ee]">
-          <table class="w-full text-left text-xs border-collapse">
+          <div class="overflow-x-auto w-full">
+          <table class="w-full min-w-[520px] text-left text-xs border-collapse">
             <thead>
               <tr class="bg-[#fef9ee] border-b border-amber-200 text-slate-800 font-semibold">
                 <th class="p-2.5">Item / Service Description</th>
@@ -1436,6 +1499,7 @@
               </template>
             </tbody>
           </table>
+          </div>
 
           <!-- Totals Bar -->
           <div class="p-3 bg-amber-50/80 border-t border-amber-200 flex flex-col sm:flex-row justify-between items-center gap-2">
@@ -1446,11 +1510,42 @@
 
             <div class="flex flex-wrap items-center gap-3 text-xs font-mono">
               <div class="text-slate-500">Subtotal: <strong class="text-slate-900" x-text="formatMoney(subtotal)"></strong></div>
-              <div class="text-slate-500">VAT (<span x-text="vatRate + '%'"></span>): <strong class="text-slate-900" x-text="formatMoney(vatAmount)"></strong></div>
+              <div class="text-slate-500">VAT (<span x-text="(parseFloat(vatRate) || 0).toFixed(2) + '%'"></span>): <strong class="text-slate-900" x-text="formatMoney(vatAmount)"></strong></div>
               <div class="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 font-bold border border-amber-200">
                 Total Estimate: <span x-text="formatMoney(totalAmount)"></span>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAX / VAT INCLUSION FIELD -->
+      <div class="bg-amber-50/50 p-3.5 rounded-2xl border border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <label class="form-label text-xs mb-0.5 font-bold text-slate-800 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-[#b47828]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+            <span>Tax / VAT Inclusion</span>
+          </label>
+          <p class="text-[11px] text-slate-500">Select whether to include tax and specify the rate percentage</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="inline-flex rounded-xl border border-amber-200 bg-white p-0.5 shadow-2xs">
+            <button type="button" @click="vatRate = 0.0" 
+                    :class="parseFloat(vatRate) === 0 ? 'bg-slate-900 text-white font-bold' : 'text-slate-600 hover:text-slate-900 font-medium'"
+                    class="px-2.5 py-1 text-xs rounded-lg transition cursor-pointer">
+              No Tax (0%)
+            </button>
+            <button type="button" @click="vatRate = parseFloat('{{ branding.vat_rate|default:15.00 }}') || 15.0" 
+                    :class="parseFloat(vatRate) > 0 && parseFloat(vatRate) === (parseFloat('{{ branding.vat_rate|default:15.00 }}') || 15.0) ? 'bg-[#b47828] text-white font-bold' : 'text-slate-600 hover:text-slate-900 font-medium'"
+                    class="px-2.5 py-1 text-xs rounded-lg transition cursor-pointer">
+              Standard ({{ branding.vat_rate|default:"15" }}%)
+            </button>
+          </div>
+          <div class="relative w-24">
+            <input type="number" step="0.01" min="0" max="100" name="vat_rate" x-model="vatRate" 
+                   class="form-input text-xs py-1.5 pr-6 text-right font-mono font-bold text-slate-900" 
+                   placeholder="0.00">
+            <span class="absolute inset-y-0 right-0 pr-2 flex items-center text-xs font-bold text-slate-400 pointer-events-none">%</span>
           </div>
         </div>
       </div>
@@ -1462,7 +1557,7 @@
       </div>
 
       <!-- Action Buttons -->
-      <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-100">
+      <div class="flex flex-col-reverse sm:flex-row sm:justify-end items-stretch sm:items-center gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-slate-100">
         <button type="button" @click="activeModal = null" class="btn-outline">Cancel</button>
         <button type="submit" class="btn-primary">
           <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
@@ -1571,15 +1666,15 @@
        }
      }"
      @open-merge-pos.window="openWithPrimary($event.detail.primaryId)"
-     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4 overflow-y-auto" x-cloak>
-  <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 sm:p-7 max-w-2xl w-full shadow-2xl space-y-5 border border-slate-200 my-8">
+     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-2 sm:p-4 md:p-6 overflow-y-auto" x-cloak>
+  <div @click.away="activeModal = null" class="bg-white rounded-2xl p-4 sm:p-7 max-w-3xl w-full shadow-2xl space-y-4 sm:space-y-5 border border-slate-200 my-auto sm:my-8 max-h-[95vh] overflow-y-auto">
     <div class="flex justify-between items-start border-b border-slate-100 pb-4">
       <div>
         <div class="flex items-center gap-2 mb-1">
           <span class="badge-gold text-[10px]">Consolidate Orders</span>
         </div>
         <h3 class="font-extrabold text-lg text-slate-900">Merge Purchase Orders</h3>
-        <p class="text-xs text-slate-500 mt-0.5">Combine two separate customer POs into a single master order with unified cargo, weights, and quotes.</p>
+        <p class="text-xs text-slate-500 mt-0.5">Combine two separate client POs into a single master order with unified cargo, weights, and quotes.</p>
       </div>
       <button @click="activeModal = null" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition text-lg font-bold leading-none">&times;</button>
     </div>
@@ -1638,7 +1733,7 @@
         </div>
 
         <!-- Logistics Totals Grid -->
-        <div class="grid grid-cols-3 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
           <div>
             <label class="form-label text-[10px]">Combined Weight (T)</label>
             <input type="number" step="0.01" min="0" name="weight_tons" x-model="combinedWeight" placeholder="0.00" class="form-input text-xs py-1.5 text-center font-mono font-bold">
@@ -1671,7 +1766,7 @@
       </div>
 
       <!-- Action Buttons -->
-      <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-100">
+      <div class="flex flex-col-reverse sm:flex-row sm:justify-end items-stretch sm:items-center gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-slate-100">
         <button type="button" @click="activeModal = null" class="btn-outline">Cancel</button>
         <button type="submit" :disabled="!primaryId || !secondaryId || primaryId === secondaryId" 
                 :class="(!primaryId || !secondaryId || primaryId === secondaryId) ? 'opacity-50 cursor-not-allowed' : ''"

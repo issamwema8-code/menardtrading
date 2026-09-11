@@ -320,8 +320,8 @@
                 <a href="{% url 'customers_list' %}" class="w-full flex items-center gap-3 px-5 py-3 text-slate-200 hover:bg-slate-800 hover:text-amber-400 transition text-left">
                   <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                   <div>
-                    <p class="font-medium">Customer Directory</p>
-                    <p class="text-[10px] text-slate-400">Manage customer accounts &amp; terms</p>
+                    <p class="font-medium">Client Directory</p>
+                    <p class="text-[10px] text-slate-400">Manage client accounts &amp; terms</p>
                   </div>
                 </a>
                 {% endif %}
@@ -347,7 +347,7 @@
           {% else %}
           <div class="flex items-center gap-3">
             <div class="hidden sm:flex flex-col text-right">
-              <span class="text-slate-400 text-[11px]">Customer Quotation Portal</span>
+              <span class="text-slate-400 text-[11px]">Client Quotation Portal</span>
               <a href="mailto:{{ branding.quotes_email|default:'quotes@menardtrading.com' }}" class="text-[#dca048] font-mono hover:underline font-semibold text-xs">
                 {{ branding.quotes_email|default:"quotes@menardtrading.com" }}
               </a>
@@ -569,7 +569,7 @@
             {% endif %}
             {% if can_view_statements %}
             <a href="{% url 'accounting:customer_statements' %}" class="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left">
-              <span>Customer Statements</span>
+              <span>Client Statements</span>
             </a>
             {% endif %}
             {% if can_view_profit_loss or can_view_balance_sheet or can_view_cash_flow or can_view_vat %}
@@ -622,13 +622,13 @@
         {% endif %}
 
         {% if can_view_customers %}
-        <!-- 10. Customers -->
+        <!-- 10. Clients -->
         <a 
           href="{% url 'customers_list' %}" 
           class="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs transition flex-shrink-0 {% if active_tab == 'customers' %}bg-slate-800 text-amber-400 font-semibold border border-amber-500/50 shadow-sm{% else %}font-medium text-slate-300 hover:text-white hover:bg-slate-800{% endif %}"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-          <span>Customers</span>
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+          <span>Clients</span>
         </a>
         {% endif %}
 
@@ -682,7 +682,7 @@
           <div class="flex items-center gap-2">
             <span class="px-3 py-1.5 rounded-xl bg-slate-800 text-amber-400 font-semibold border border-amber-500/50 text-xs shadow-sm flex items-center gap-2">
               <svg class="w-4 h-4 text-[#dca048]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-              <span>Customer Portal &bull; Quotation Review</span>
+              <span>Client Portal &bull; Quotation Review</span>
             </span>
           </div>
           <div class="hidden sm:flex items-center gap-3 text-xs text-slate-400">

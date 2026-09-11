@@ -290,9 +290,10 @@
         <div class="party-box">
           <strong style="font-size: 10pt; color: #0f172a;">{{ quote.customer.company_name }}</strong><br>
           {% if quote.customer.contact_name %}Attn: {{ quote.customer.contact_name }}<br>{% endif %}
-          {% if quote.customer.physical_address %}{{ quote.customer.physical_address|linebreaksbr }}<br>{% endif %}
+          {% if quote.customer.billing_address and quote.customer.billing_address != 'N/A' %}{{ quote.customer.billing_address|linebreaksbr }}<br>{% endif %}
+          {% if quote.customer.physical_address and quote.customer.physical_address != 'N/A' and quote.customer.physical_address != quote.customer.billing_address %}{{ quote.customer.physical_address|linebreaksbr }}<br>{% endif %}
           {% if quote.customer.phone %}Tel: {{ quote.customer.phone }} &bull; {% endif %}Email: {{ quote.customer.email|default:"N/A" }}<br>
-          {% if quote.customer.vat_number %}Customer VAT No: <strong>{{ quote.customer.vat_number }}</strong>{% endif %}
+          {% if quote.customer.vat_number %}Client VAT No: <strong>{{ quote.customer.vat_number }}</strong>{% endif %}
         </div>
       </td>
 
@@ -396,7 +397,7 @@
             &bull; Quotation covers point-to-point freight transit, standard border/toll processing, and professional driver allowances.<br>
             &bull; Free loading/offloading time: 48 hours at each bay. Demurrage charged thereafter at standard tariff.<br>
             &bull; Rates are subject to standard Menard Trading CC Conditions of Carriage.<br>
-            &bull; <strong>To approve this quote</strong>, click "Approve" in your customer email portal or reply with formal Purchase Order.
+            &bull; <strong>To approve this quote</strong>, click "Approve" in your client email portal or reply with formal Purchase Order.
           </div>
         </td>
 

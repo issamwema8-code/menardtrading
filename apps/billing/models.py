@@ -103,6 +103,15 @@ class Invoice(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    @property
+    def po_number(self):
+        """Returns the associated Purchase Order reference number if available."""
+        if self.job and self.job.quote and self.job.quote.purchase_order and self.job.quote.purchase_order.po_number:
+            return self.job.quote.purchase_order.po_number
+        if self.quote and self.quote.purchase_order and self.quote.purchase_order.po_number:
+            return self.quote.purchase_order.po_number
+        return ""
+
     class Meta:
         ordering = ['-created_at']
         verbose_name = 'Invoice'

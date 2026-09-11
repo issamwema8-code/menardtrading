@@ -191,8 +191,8 @@
       </div>
 
       <!-- MODAL: Create Invoice for this Job -->
-      <div x-show="activeModal === 'invoice_modal_{{ job.id }}'" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4" x-cloak>
-        <div @click.away="activeModal = null" class="bg-white rounded-2xl p-6 sm:p-7 max-w-lg w-full shadow-2xl space-y-5 border border-slate-200">
+      <div x-show="activeModal === 'invoice_modal_{{ job.id }}'" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-3 sm:p-4 md:p-6 overflow-y-auto" x-cloak>
+        <div @click.away="activeModal = null" class="bg-white rounded-2xl p-4 sm:p-7 max-w-lg w-full shadow-2xl space-y-4 sm:space-y-5 border border-slate-200 my-auto max-h-[94vh] overflow-y-auto">
           <div class="flex justify-between items-start border-b border-slate-100 pb-4">
             <div>
               <span class="badge-gold text-[10px] mb-1">Invoices</span>
@@ -229,9 +229,9 @@
               <label for="send_email_{{ job.id }}" class="text-xs text-slate-700 font-medium">Email invoice PDF to <strong class="text-slate-900 font-mono">{{ job.customer.email }}</strong></label>
             </div>
 
-            <div class="flex justify-end items-center gap-3 pt-4 border-t border-slate-100">
-              <button type="button" @click="activeModal = null" class="btn-outline">Cancel</button>
-              <button type="submit" class="btn-primary flex items-center gap-1.5">
+            <div class="flex flex-col-reverse sm:flex-row sm:justify-end items-stretch sm:items-center gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-slate-100">
+              <button type="button" @click="activeModal = null" class="btn-outline w-full sm:w-auto text-center justify-center">Cancel</button>
+              <button type="submit" class="btn-primary w-full sm:w-auto text-center justify-center flex items-center gap-1.5">
                 <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                 <span>Invoice</span>
               </button>
@@ -248,7 +248,7 @@
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0zM13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"></path></svg>
         </div>
         <p class="font-bold text-slate-700">No active deliveries</p>
-        <p class="text-xs text-slate-400">Deliveries appear here once a customer approves a quotation.</p>
+        <p class="text-xs text-slate-400">Deliveries appear here once a client approves a quotation.</p>
       </div>
     </div>
     {% endfor %}

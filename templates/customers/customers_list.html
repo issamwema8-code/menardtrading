@@ -1,6 +1,6 @@
 {% extends "dashboard/base_dashboard.html" %}
 
-{% block title %}Customers{% endblock %}
+{% block title %}Clients{% endblock %}
 
 {% block content %}
 <div class="space-y-6" x-data="{
@@ -36,33 +36,33 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <div class="space-y-1.5">
         <div class="flex items-center gap-2.5">
-          <h1 class="page-title">Customers</h1>
+          <h1 class="page-title">Clients</h1>
           <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200/80 font-mono">{{ customers|length }} Account{{ customers|length|pluralize }}</span>
         </div>
         <p class="page-description max-w-2xl">
-          Manage your customer accounts, contact details, and payment terms.
+          Manage your client accounts, contact details, and payment terms.
         </p>
       </div>
 
       <div class="flex items-center gap-3">
         <button type="button" @click="activeModal = 'create_customer_modal'" class="btn-primary">
           <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-          <span>Customer</span>
+          <span>Client</span>
         </button>
       </div>
     </div>
   </div>
 
   <!-- ============================================================ -->
-  <!-- 2. CUSTOMERS TABLE CONTAINER                                 -->
+  <!-- 2. CLIENTS TABLE CONTAINER                                   -->
   <!-- ============================================================ -->
   <div class="table-container">
     
     <!-- Table Toolbar: Search, Payment Terms Filter & Clear -->
     <div class="p-4 border-b border-slate-200/80 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
       <div>
-        <h3 class="text-sm font-bold text-slate-900">Customer Accounts</h3>
-        <p class="text-xs text-slate-500">Default terms applied to quotations and invoices for each customer</p>
+        <h3 class="text-sm font-bold text-slate-900">Client Accounts</h3>
+        <p class="text-xs text-slate-500">Default terms applied to quotations and invoices for each client</p>
       </div>
 
       <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
@@ -74,7 +74,7 @@
           <input 
             type="text" 
             x-model="searchQuery" 
-            placeholder="Search customers, email, phone..." 
+            placeholder="Search clients, email, phone..." 
             class="form-input pl-9 pr-8 text-xs py-1.5"
           >
           <button 
@@ -153,7 +153,7 @@
               <span class="font-mono text-xs text-slate-600">{{ cust.vat_number|default:"-" }}</span>
             </td>
             <td class="table-body-cell whitespace-nowrap">
-              <span class="text-xs text-slate-500 truncate block max-w-[260px]" title="{{ cust.physical_address|default:'-' }}">{{ cust.physical_address|default:"-" }}</span>
+              <span class="text-xs text-slate-500 truncate block max-w-[260px]" title="{{ cust.display_address|default:cust.physical_address|default:'-' }}">{{ cust.display_address|default:cust.physical_address|default:"-" }}</span>
             </td>
           </tr>
           {% empty %}
@@ -163,8 +163,8 @@
                 <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                 </div>
-                <h4 class="text-sm font-bold text-slate-800">No customers yet</h4>
-                <p class="text-xs text-slate-500">Click "Add Customer" above to add your first customer account.</p>
+                <h4 class="text-sm font-bold text-slate-800">No clients yet</h4>
+                <p class="text-xs text-slate-500">Click "Client" above to add your first client account.</p>
               </div>
             </td>
           </tr>

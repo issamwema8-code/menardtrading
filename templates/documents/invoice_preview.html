@@ -29,7 +29,7 @@
         Download PDF
       </a>
       {% if invoice.customer.email %}
-      <a href="mailto:{{ invoice.customer.email }}?subject=Menard%20Trading%20Tax%20Invoice%20{{ invoice.invoice_number }}&body=Dear%20Customer,%0A%0APlease%20find%20attached%20Tax%20Invoice%20{{ invoice.invoice_number }}%20from%20Menard%20Trading%20CC." class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition">
+      <a href="mailto:{{ invoice.customer.email }}?subject=Menard%20Trading%20Tax%20Invoice%20{{ invoice.invoice_number }}&body=Dear%20Client,%0A%0APlease%20find%20attached%20Tax%20Invoice%20{{ invoice.invoice_number }}%20from%20Menard%20Trading%20CC." class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition">
         <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
         Email to {{ invoice.customer.email }}
       </a>

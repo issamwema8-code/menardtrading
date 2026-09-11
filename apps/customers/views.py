@@ -21,6 +21,7 @@ class CreateCustomerView(PermissionRequiredMixin, View):
         phone = request.POST.get('phone', '').strip()
         vat_number = request.POST.get('vat_number', '').strip()
         physical_address = request.POST.get('physical_address', '').strip()
+        billing_address = request.POST.get('billing_address', '').strip()
         payment_terms = request.POST.get('payment_terms', Customer.PaymentTerms.DEPOSIT_50_POD_50)
         credit_limit = Decimal(request.POST.get('credit_limit', '0.00'))
 
@@ -37,6 +38,7 @@ class CreateCustomerView(PermissionRequiredMixin, View):
                 'phone': phone,
                 'vat_number': vat_number,
                 'physical_address': physical_address or 'N/A',
+                'billing_address': billing_address,
                 'payment_terms': payment_terms,
                 'credit_limit': credit_limit,
             }
@@ -48,12 +50,14 @@ class CreateCustomerView(PermissionRequiredMixin, View):
             customer.phone = phone
             customer.vat_number = vat_number
             customer.physical_address = physical_address or customer.physical_address
+            if billing_address:
+                customer.billing_address = billing_address
             customer.payment_terms = payment_terms
             customer.credit_limit = credit_limit
             customer.save()
-            messages.success(request, f"Updated customer profile for {company_name}.")
+            messages.success(request, f"Updated client profile for {company_name}.")
         else:
-            messages.success(request, f"Registered new customer {company_name} ({email}).")
+            messages.success(request, f"Registered new client {company_name} ({email}).")
 
         return redirect('customers_list')
 
@@ -114,6 +118,7 @@ class QuickCreateCustomerView(PermissionRequiredMixin, View):
         phone = data.get('phone', '').strip()
         vat_number = data.get('vat_number', '').strip()
         physical_address = data.get('physical_address', '').strip() or 'N/A'
+        billing_address = data.get('billing_address', '').strip()
         payment_terms = data.get('payment_terms', Customer.PaymentTerms.DEPOSIT_50_POD_50)
 
         if not company_name:
@@ -130,6 +135,7 @@ class QuickCreateCustomerView(PermissionRequiredMixin, View):
                 'phone': phone,
                 'vat_number': vat_number,
                 'physical_address': physical_address,
+                'billing_address': billing_address,
                 'payment_terms': payment_terms,
             }
         )
@@ -143,6 +149,8 @@ class QuickCreateCustomerView(PermissionRequiredMixin, View):
                 customer.vat_number = vat_number
             if physical_address and physical_address != 'N/A':
                 customer.physical_address = physical_address
+            if billing_address:
+                customer.billing_address = billing_address
             if payment_terms:
                 customer.payment_terms = payment_terms
             customer.save()

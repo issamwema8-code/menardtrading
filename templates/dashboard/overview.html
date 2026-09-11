@@ -13,7 +13,7 @@
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
       <div>
         <h1 class="page-title">Operations Overview</h1>
-        <p class="page-description">Track purchase orders, quotations, deliveries, and customer billing.</p>
+        <p class="page-description">Track purchase orders, quotations, deliveries, and client billing.</p>
       </div>
 
       <div class="flex flex-wrap items-center gap-2">
@@ -48,10 +48,10 @@
           <span>Invoice</span>
         </button>
 
-        <!-- Quick Action: Add Customer -->
+        <!-- Quick Action: Add Client -->
         <button type="button" @click="activeModal = 'create_customer_modal'" class="btn-secondary text-xs py-2 px-3 flex items-center gap-1.5 cursor-pointer">
           <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-          <span>Customer</span>
+          <span>Client</span>
         </button>
       </div>
     </div>
@@ -112,7 +112,7 @@
       <div>
         <p class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Pending Quotes</p>
         <p class="text-lg sm:text-xl font-bold text-slate-900 mt-0.5 font-mono tracking-tight">{{ metrics.pending_quotes }} Quotes</p>
-        <p class="text-[10px] text-slate-400 mt-0.5">Awaiting customer approval</p>
+        <p class="text-[10px] text-slate-400 mt-0.5">Awaiting client approval</p>
       </div>
       <div class="p-2.5 bg-blue-50 border border-blue-100 rounded-xl text-blue-600 flex-shrink-0">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -169,7 +169,7 @@
             <span class="text-[11px] font-bold text-sky-300 uppercase tracking-wider">2. Quotation</span>
             <span class="badge-sky text-[9px] px-2 py-0.5 shadow-sm">Approval Link</span>
           </div>
-          <p class="text-[11px] text-slate-100 leading-relaxed font-medium drop-shadow-sm">Send a clear quotation with a link for the customer to approve online.</p>
+          <p class="text-[11px] text-slate-100 leading-relaxed font-medium drop-shadow-sm">Send a clear quotation with a link for the client to approve online.</p>
         </div>
 
         <!-- Step 3: Invoicing -->

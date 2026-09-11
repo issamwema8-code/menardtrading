@@ -1,6 +1,6 @@
 {% extends 'dashboard/base_dashboard.html' %}
 
-{% block title %}Customer Statements — Menard Trading CC{% endblock %}
+{% block title %}Client Statements — Menard Trading CC{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
@@ -12,8 +12,8 @@
                     Accounts Receivable Ledger
                 </span>
             </div>
-            <h1 class="text-2xl font-bold text-slate-900 mt-1">Customer Account Statements</h1>
-            <p class="text-sm text-slate-500">Generate, view, and export official statement ledgers by customer</p>
+            <h1 class="text-2xl font-bold text-slate-900 mt-1">Client Account Statements</h1>
+            <p class="text-sm text-slate-500">Generate, view, and export official statement ledgers by client</p>
         </div>
         
         <div class="flex items-center gap-3">
@@ -28,7 +28,7 @@
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
             <h2 class="text-base font-bold text-slate-900">All Client Accounts</h2>
-            <span class="text-xs text-slate-500">{{ customers|length }} Customers Registered</span>
+            <span class="text-xs text-slate-500">{{ customers|length }} Clients Registered</span>
         </div>
 
         <div class="overflow-x-auto">
@@ -36,7 +36,7 @@
                 <thead class="bg-slate-50 text-xs uppercase font-bold text-slate-500 border-b border-slate-200">
                     <tr>
                         <th class="px-6 py-3.5 text-center w-14">S/No.</th>
-                        <th class="px-6 py-3.5">Customer / Company</th>
+                        <th class="px-6 py-3.5">Client / Company</th>
                         <th class="px-6 py-3.5">Contact Person</th>
                         <th class="px-6 py-3.5">Email</th>
                         <th class="px-6 py-3.5 text-right">Outstanding AR</th>
@@ -74,7 +74,7 @@
                     {% empty %}
                     <tr>
                         <td colspan="7" class="px-6 py-12 text-center text-slate-400">
-                            No customers found in database.
+                            No clients found in database.
                         </td>
                     </tr>
                     {% endfor %}

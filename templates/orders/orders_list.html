@@ -1,6 +1,6 @@
 {% extends "dashboard/base_dashboard.html" %}
 
-{% block title %}Customer Purchase Orders{% endblock %}
+{% block title %}Client Purchase Orders{% endblock %}
 
 {% block content %}
 <div class="space-y-6" x-data="{
@@ -13,7 +13,7 @@
       order.po_number.toLowerCase().includes(q) || 
       order.customer.toLowerCase().includes(q) || 
       order.sender.toLowerCase().includes(q) || 
-      order.route.toLowerCase().includes(q) ||
+      order.route.toLowerCase().includes(q) || 
       order.cargo.toLowerCase().includes(q);
     const matchesSource = this.sourceFilter === 'ALL' || order.source === this.sourceFilter;
     const matchesStatus = this.statusFilter === 'ALL' || order.status === this.statusFilter;
@@ -40,10 +40,10 @@
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
       <div>
         <div class="flex items-center gap-2.5">
-          <h1 class="page-title">Customer Purchase Orders</h1>
+          <h1 class="page-title">Client Purchase Orders</h1>
           <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200/80 font-mono">{{ orders|length }}Doc{{ orders|length|pluralize:"s" }}</span>
         </div>
-        <p class="page-description">View and manage customer purchase orders received by email or manual upload.</p>
+        <p class="page-description">View and manage client purchase orders received by email or manual upload.</p>
       </div>
 
       <div class="flex flex-wrap items-center gap-2.5">
@@ -161,7 +161,7 @@
           <tr class="border-b border-slate-200 bg-slate-50/75">
             <th class="table-header-cell w-14 text-center">S/No.</th>
             <th class="table-header-cell w-[150px]">PO Number</th>
-            <th class="table-header-cell w-[220px]">Customer / Sender</th>
+            <th class="table-header-cell w-[220px]">Client / Sender</th>
             <th class="table-header-cell min-w-[300px]">Route &amp; Cargo</th>
             <th class="table-header-cell w-[90px] text-center">Weight</th>
             <th class="table-header-cell w-[120px] text-center">Source</th>

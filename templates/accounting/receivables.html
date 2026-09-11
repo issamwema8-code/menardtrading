@@ -8,12 +8,12 @@
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
     <div>
       <h1 class="text-xl font-semibold text-slate-900 tracking-tight">Accounts Receivable (AR)</h1>
-      <p class="text-xs text-slate-500 mt-0.5">Customer balances, aging analysis buckets, and outstanding invoices</p>
+      <p class="text-xs text-slate-500 mt-0.5">Client balances, aging analysis buckets, and outstanding invoices</p>
     </div>
     <div class="flex items-center gap-2">
       <a href="{% url 'accounting:customer_statements' %}" class="btn-secondary text-xs">
         <svg class="w-3.5 h-3.5 text-slate-500 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-        <span>Customer Statements</span>
+        <span>Client Statements</span>
       </a>
       <a href="{% url 'billing_list' %}" class="btn-primary text-xs">
         <span>View Invoices</span>
@@ -65,7 +65,7 @@
   <!-- Customer Balances Breakdown -->
   <div class="card overflow-hidden">
     <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-      <h3 class="text-xs font-semibold text-slate-900 uppercase tracking-wider">Customer Balances &amp; Aging Breakdown</h3>
+      <h3 class="text-xs font-semibold text-slate-900 uppercase tracking-wider">Client Balances &amp; Aging Breakdown</h3>
       <span class="text-xs text-slate-500 font-mono">Total Outstanding: N$ {{ ar.total_receivables|money }}</span>
     </div>
     <div class="overflow-x-auto">
@@ -73,7 +73,7 @@
         <thead class="bg-slate-100 text-slate-700 text-[11px] uppercase tracking-wider border-b border-slate-200">
           <tr>
             <th class="py-3 px-3.5 text-center w-12">S/No.</th>
-            <th class="py-3 px-3.5">Customer Name</th>
+            <th class="py-3 px-3.5">Client Name</th>
             <th class="py-3 px-3.5">Payment Terms</th>
             <th class="py-3 px-3.5 text-center">Unpaid Invoices</th>
             <th class="py-3 px-3.5 text-right">Current</th>
@@ -116,7 +116,7 @@
           {% empty %}
           <tr>
             <td colspan="8" class="py-8 text-center text-slate-400">
-              No outstanding receivables. All customer accounts are fully settled.
+              No outstanding receivables. All client accounts are fully settled.
             </td>
           </tr>
           {% endfor %}
@@ -139,7 +139,7 @@
             <th class="py-3 px-3.5">Invoice #</th>
             <th class="py-3 px-3.5">Issue Date</th>
             <th class="py-3 px-3.5">Due Date</th>
-            <th class="py-3 px-3.5">Customer</th>
+            <th class="py-3 px-3.5">Client</th>
             <th class="py-3 px-3.5">Type</th>
             <th class="py-3 px-3.5 text-right">Total (Incl VAT)</th>
             <th class="py-3 px-3.5 text-right">Amount Paid</th>
@@ -183,7 +183,7 @@
           {% empty %}
           <tr>
             <td colspan="11" class="py-8 text-center text-slate-400">
-              No outstanding invoices. All customer accounts are fully paid.
+              No outstanding invoices. All client accounts are fully paid.
             </td>
           </tr>
           {% endfor %}

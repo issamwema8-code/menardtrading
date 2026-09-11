@@ -127,7 +127,7 @@ class ReplyPurchaseOrderView(PermissionRequiredMixin, View):
             messages.error(request, "A valid recipient email address and message body are required.")
             return redirect('purchase_order_detail', pk=pk)
 
-        recipient_name = po.customer.contact_name if (po.customer and po.customer.contact_name) else (po.customer.company_name if po.customer else 'Customer')
+        recipient_name = po.customer.contact_name if (po.customer and po.customer.contact_name) else (po.customer.company_name if po.customer else 'Client')
 
         try:
             # Send email via Brevo / SMTP
@@ -173,7 +173,7 @@ class PurchaseOrderDataAPIView(PermissionRequiredMixin, View):
             'id': po.id,
             'po_number': po.po_number,
             'customer_id': po.customer_id,
-            'customer_name': po.customer.company_name if po.customer else (po.raw_email_sender or 'Unassigned Customer'),
+            'customer_name': po.customer.company_name if po.customer else (po.raw_email_sender or 'Unassigned Client'),
             'customer_email': po.customer.email if po.customer else po.raw_email_sender,
             'cargo_description': po.cargo_description or '',
             'weight_tons': str(po.weight_tons) if po.weight_tons is not None else '',

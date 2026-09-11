@@ -396,6 +396,11 @@ class CompanySettings(models.Model):
                 quotes_email="quotes@menardtrading.com",
                 accounts_email="accounts@menardtrading.com",
                 website="https://menardtrading.com",
+                bank_name="FNB NAMIBIA",
+                account_name="MENARD TRADING CC",
+                account_number="64280229012",
+                account_type="Business Cheque Account",
+                branch_name="WALVIS BAY",
             )
         return obj
 

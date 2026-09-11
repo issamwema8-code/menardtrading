@@ -4,57 +4,171 @@
 {% block title %}Company &amp; Business Settings — Menard Trading CC{% endblock %}
 
 {% block content %}
-<div class="space-y-6 max-w-6xl mx-auto pb-16">
+<style>
+  [x-cloak] { display: none !important; }
+</style>
 
-  <!-- Header Banner -->
-  <div class="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
-    <div class="absolute -right-12 -top-12 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-      <div>
-        <div class="flex items-center gap-2 text-xs text-amber-400 font-semibold uppercase tracking-wider mb-2">
-          <span>Administration</span>
-          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-          <span class="text-slate-300">Company Settings</span>
-        </div>
-        <h1 class="text-lg sm:text-xl font-semibold text-white tracking-tight">Company &amp; Business Information</h1>
-        <p class="text-xs text-slate-400 mt-1 max-w-2xl">
-          Configure centralized business details, branding assets, addresses, and settlement banking.
-          All customer-facing quotations, invoices, receipts, and emails dynamically reflect these settings.
-        </p>
-      </div>
+<div 
+  x-data="{
+    activeTab: 'brand',
+    setTab(tab) {
+      this.activeTab = tab;
+      try {
+        localStorage.setItem('menard_company_settings_tab', tab);
+        if (history.replaceState) {
+          history.replaceState(null, null, '#' + tab);
+        } else {
+          window.location.hash = tab;
+        }
+      } catch (e) {}
+    },
+    init() {
+      const validTabs = ['brand', 'address', 'tax-contacts', 'banking'];
+      const hash = window.location.hash.replace('#', '');
+      const storedTab = localStorage.getItem('menard_company_settings_tab');
+      
+      if (validTabs.includes(hash)) {
+        this.activeTab = hash;
+      } else if (validTabs.includes(storedTab)) {
+        this.activeTab = storedTab;
+      } else {
+        this.activeTab = 'brand';
+      }
 
-      <!-- Quick Action / Status Badge -->
-      <div class="flex items-center gap-3">
-        {% if can_edit %}
-        <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-medium">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          Admin Edit Authorized
-        </span>
-        {% else %}
-        <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-medium">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          View Only Mode
-        </span>
-        {% endif %}
+      window.addEventListener('hashchange', () => {
+        const h = window.location.hash.replace('#', '');
+        if (validTabs.includes(h)) {
+          this.activeTab = h;
+        }
+      });
+    }
+  }"
+  class="space-y-6 max-w-6xl mx-auto pb-16"
+>
+
+  <!-- Header Banner (No Dark Background) -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-1">
+    <div>
+      <div class="flex items-center gap-2 text-xs text-amber-600 font-semibold uppercase tracking-wider mb-1">
+        <span>Administration</span>
+        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        <span class="text-slate-500">Company Settings</span>
       </div>
+      <h1 class="text-base sm:text-lg font-semibold text-slate-800 tracking-tight">Company &amp; Business Information</h1>
+    </div>
+
+    {% if not can_edit %}
+    <div class="flex items-center gap-3">
+      <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-medium">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        View Only Mode
+      </span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Tagged Navigation Bar (No Dark Background) -->
+  <div class="border-b border-slate-200">
+    <div class="flex flex-wrap gap-2 -mb-px" role="tablist">
+      
+      <!-- Tab 1: Brand & Identity -->
+      <button 
+        type="button"
+        role="tab"
+        :aria-selected="activeTab === 'brand'"
+        @click="setTab('brand')"
+        :class="activeTab === 'brand' 
+          ? 'border-amber-600 text-amber-700 bg-amber-50/60 font-bold shadow-xs' 
+          : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 font-medium'"
+        class="inline-flex items-center justify-center gap-2 px-4 py-3 border-b-2 text-xs sm:text-sm transition-all duration-150 cursor-pointer rounded-t-xl"
+      >
+        <svg class="w-4 h-4 shrink-0" :class="activeTab === 'brand' ? 'text-amber-600' : 'text-slate-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
+        </svg>
+        <span>Brand &amp; Identity</span>
+      </button>
+
+      <!-- Tab 2: Address & Depot -->
+      <button 
+        type="button"
+        role="tab"
+        :aria-selected="activeTab === 'address'"
+        @click="setTab('address')"
+        :class="activeTab === 'address' 
+          ? 'border-amber-600 text-amber-700 bg-amber-50/60 font-bold shadow-xs' 
+          : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 font-medium'"
+        class="inline-flex items-center justify-center gap-2 px-4 py-3 border-b-2 text-xs sm:text-sm transition-all duration-150 cursor-pointer rounded-t-xl"
+      >
+        <svg class="w-4 h-4 shrink-0" :class="activeTab === 'address' ? 'text-amber-600' : 'text-slate-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        </svg>
+        <span>Address &amp; Depot</span>
+      </button>
+
+      <!-- Tab 3: Tax & Contacts -->
+      <button 
+        type="button"
+        role="tab"
+        :aria-selected="activeTab === 'tax-contacts'"
+        @click="setTab('tax-contacts')"
+        :class="activeTab === 'tax-contacts' 
+          ? 'border-amber-600 text-amber-700 bg-amber-50/60 font-bold shadow-xs' 
+          : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 font-medium'"
+        class="inline-flex items-center justify-center gap-2 px-4 py-3 border-b-2 text-xs sm:text-sm transition-all duration-150 cursor-pointer rounded-t-xl"
+      >
+        <svg class="w-4 h-4 shrink-0" :class="activeTab === 'tax-contacts' ? 'text-amber-600' : 'text-slate-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        <span>Tax &amp; Contacts</span>
+      </button>
+
+      <!-- Tab 4: Bank Settlement -->
+      <button 
+        type="button"
+        role="tab"
+        :aria-selected="activeTab === 'banking'"
+        @click="setTab('banking')"
+        :class="activeTab === 'banking' 
+          ? 'border-amber-600 text-amber-700 bg-amber-50/60 font-bold shadow-xs' 
+          : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300 hover:bg-slate-50 font-medium'"
+        class="inline-flex items-center justify-center gap-2 px-4 py-3 border-b-2 text-xs sm:text-sm transition-all duration-150 cursor-pointer rounded-t-xl"
+      >
+        <svg class="w-4 h-4 shrink-0" :class="activeTab === 'banking' ? 'text-amber-600' : 'text-slate-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+        </svg>
+        <span>Bank Settlement</span>
+      </button>
+
     </div>
   </div>
 
   <!-- Main Settings Form -->
-  <form method="POST" action="{% url 'administration-company-settings' %}" enctype="multipart/form-data" class="space-y-8">
+  <form 
+    method="POST" 
+    action="{% url 'administration-company-settings' %}" 
+    @submit="try { localStorage.setItem('menard_company_settings_tab', activeTab); } catch(e){}"
+    enctype="multipart/form-data" 
+    class="space-y-8"
+  >
     {% csrf_token %}
 
     <!-- 1. Brand Identity & Logo Card -->
-    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-      <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-700 flex items-center justify-center font-bold">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
-          </div>
-          <div>
-            <h2 class="text-base font-bold text-slate-900">Brand Identity &amp; Visual Lockup</h2>
-            <p class="text-xs text-slate-500">Official company name, tagline, and corporate logo image</p>
-          </div>
+    <div 
+      id="section-brand" 
+      x-show="activeTab === 'brand'" 
+      x-transition:enter="transition ease-out duration-200" 
+      x-transition:enter-start="opacity-0 translate-y-1" 
+      x-transition:enter-end="opacity-100 translate-y-0"
+      class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden"
+    >
+      <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-700 flex items-center justify-center font-bold">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path></svg>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-slate-900">Brand Identity &amp; Visual Lockup</h2>
+          <p class="text-xs text-slate-500">Official company name, tagline, corporate logo image and portal backgrounds</p>
         </div>
       </div>
 
@@ -217,16 +331,22 @@
     </div>
 
     <!-- 2. Address & Physical Location Card -->
-    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-      <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-sky-500/15 text-sky-700 flex items-center justify-center font-bold">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-          </div>
-          <div>
-            <h2 class="text-base font-bold text-slate-900">Address &amp; Location Details</h2>
-            <p class="text-xs text-slate-500">Postal and physical headquarters rendered on documents and tax invoices</p>
-          </div>
+    <div 
+      id="section-address" 
+      x-show="activeTab === 'address'" 
+      x-cloak 
+      x-transition:enter="transition ease-out duration-200" 
+      x-transition:enter-start="opacity-0 translate-y-1" 
+      x-transition:enter-end="opacity-100 translate-y-0"
+      class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden"
+    >
+      <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-sky-500/15 text-sky-700 flex items-center justify-center font-bold">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-slate-900">Address &amp; Location Details</h2>
+          <p class="text-xs text-slate-500">Postal and physical headquarters rendered on documents and tax invoices</p>
         </div>
       </div>
 
@@ -295,16 +415,22 @@
     </div>
 
     <!-- 3. Legal, Tax & Contact Details Card -->
-    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-      <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-700 flex items-center justify-center font-bold">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-          </div>
-          <div>
-            <h2 class="text-base font-bold text-slate-900">Tax, Registration &amp; Contact Directory</h2>
-            <p class="text-xs text-slate-500">Official numbers and departmental contact inboxes</p>
-          </div>
+    <div 
+      id="section-tax-contacts" 
+      x-show="activeTab === 'tax-contacts'" 
+      x-cloak 
+      x-transition:enter="transition ease-out duration-200" 
+      x-transition:enter-start="opacity-0 translate-y-1" 
+      x-transition:enter-end="opacity-100 translate-y-0"
+      class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden"
+    >
+      <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-emerald-500/15 text-emerald-700 flex items-center justify-center font-bold">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-slate-900">Tax, Registration &amp; Contact Directory</h2>
+          <p class="text-xs text-slate-500">Official numbers, tax rate and departmental contact inboxes</p>
         </div>
       </div>
 
@@ -429,16 +555,22 @@
     </div>
 
     <!-- 4. Bank Settlement & Remittance Card -->
-    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-      <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-purple-500/15 text-purple-700 flex items-center justify-center font-bold">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-          </div>
-          <div>
-            <h2 class="text-base font-bold text-slate-900">Bank Settlement &amp; Remittance Details</h2>
-            <p class="text-xs text-slate-500">Official banking information rendered on Invoices and Statements for client EFT payments</p>
-          </div>
+    <div 
+      id="section-banking" 
+      x-show="activeTab === 'banking'" 
+      x-cloak 
+      x-transition:enter="transition ease-out duration-200" 
+      x-transition:enter-start="opacity-0 translate-y-1" 
+      x-transition:enter-end="opacity-100 translate-y-0"
+      class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden"
+    >
+      <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-purple-500/15 text-purple-700 flex items-center justify-center font-bold">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-slate-900">Bank Settlement &amp; Remittance Details</h2>
+          <p class="text-xs text-slate-500">Official banking information rendered on Invoices and Statements for client EFT payments</p>
         </div>
       </div>
 
@@ -451,8 +583,8 @@
               name="bank_name" 
               value="{{ company_settings.bank_name }}" 
               {% if not can_edit %}disabled{% endif %}
-              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition"
-              placeholder="e.g. First National Bank (FNB)"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition"
+              placeholder="e.g. FNB NAMIBIA"
             >
           </div>
 
@@ -463,8 +595,8 @@
               name="account_name" 
               value="{{ company_settings.account_name }}" 
               {% if not can_edit %}disabled{% endif %}
-              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition"
-              placeholder="e.g. Menard Trading CC"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition"
+              placeholder="e.g. MENARD TRADING CC"
             >
           </div>
 
@@ -475,8 +607,8 @@
               name="account_number" 
               value="{{ company_settings.account_number }}" 
               {% if not can_edit %}disabled{% endif %}
-              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-mono text-slate-900 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition"
-              placeholder="e.g. 62890000000"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-mono text-slate-900 focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition"
+              placeholder="e.g. 64280229012"
             >
           </div>
 
@@ -487,7 +619,7 @@
               name="account_type" 
               value="{{ company_settings.account_type }}" 
               {% if not can_edit %}disabled{% endif %}
-              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition"
               placeholder="e.g. Business Cheque Account"
             >
           </div>
@@ -499,7 +631,7 @@
               name="branch_code" 
               value="{{ company_settings.branch_code }}" 
               {% if not can_edit %}disabled{% endif %}
-              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-mono text-slate-900 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-mono text-slate-900 focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition"
               placeholder="e.g. 280172"
             >
           </div>
@@ -511,8 +643,8 @@
               name="branch_name" 
               value="{{ company_settings.branch_name }}" 
               {% if not can_edit %}disabled{% endif %}
-              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition"
-              placeholder="e.g. Rundu Branch / Commercial"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition"
+              placeholder="e.g. WALVIS BAY"
             >
           </div>
 
@@ -523,7 +655,7 @@
               name="swift_code" 
               value="{{ company_settings.swift_code }}" 
               {% if not can_edit %}disabled{% endif %}
-              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-mono text-slate-900 focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 transition"
+              class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-mono text-slate-900 focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition"
               placeholder="e.g. FIRNNANX"
             >
           </div>
@@ -533,17 +665,28 @@
 
     <!-- Save Bar -->
     {% if can_edit %}
-    <div class="sticky bottom-6 z-40 bg-slate-950/90 backdrop-blur-md border border-slate-800 rounded-2xl p-4 shadow-2xl flex items-center justify-between">
-      <div class="text-xs text-slate-400">
-        Changes take effect immediately across all documents, PDF generators, and emails.
+    <div class="sticky bottom-6 z-40 bg-slate-950/95 backdrop-blur-md border border-slate-800 rounded-2xl p-4 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div class="flex items-center gap-3 text-xs text-slate-400">
+        <button 
+          type="button" 
+          @click="window.scrollTo({ top: 0, behavior: 'smooth' })" 
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 transition text-xs font-semibold cursor-pointer"
+          title="Scroll back to top"
+        >
+          <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+          <span>Top</span>
+        </button>
+        <span>Changes take effect immediately across all documents, PDF generators, and emails.</span>
       </div>
-      <button 
-        type="submit" 
-        class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 hover:from-amber-400 hover:to-amber-500 transition transform active:scale-95"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-        <span>Save Company Settings</span>
-      </button>
+      <div class="flex items-center gap-3">
+        <button 
+          type="submit" 
+          class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 hover:from-amber-400 hover:to-amber-500 transition transform active:scale-95 cursor-pointer"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+          <span>Save Company Settings</span>
+        </button>
+      </div>
     </div>
     {% endif %}
   </form>

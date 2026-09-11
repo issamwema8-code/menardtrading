@@ -22,7 +22,7 @@
 
       <!-- Action Buttons -->
       <div class="flex flex-wrap items-center gap-2.5">
-        <button type="button" @click="$dispatch('open-merge-pos', { primaryId: '{{ po.id }}' })" class="btn-outline" title="Merge this PO with another customer PO">
+        <button type="button" @click="$dispatch('open-merge-pos', { primaryId: '{{ po.id }}' })" class="btn-outline" title="Merge this PO with another client PO">
           <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
           <span>Merge with another PO</span>
         </button>
@@ -52,12 +52,12 @@
     <!-- LEFT COLUMN (1/3): PO Details, Customer & Delivery Info -->
     <div class="space-y-6">
 
-      <!-- Customer Details Card -->
+      <!-- Client Details Card -->
       <div class="surface-card p-6 space-y-4">
         <div class="flex items-center justify-between border-b border-slate-100 pb-3">
           <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
             <svg class="w-4 h-4 text-[#b47828]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-            <span>Customer Details</span>
+            <span>Client Details</span>
           </h3>
           <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono font-bold">ID #{{ po.customer.id|default:"-" }}</span>
         </div>
@@ -143,7 +143,7 @@
         </div>
         <div class="flex flex-col gap-2 pt-2">
           <a href="{% url 'quote_portal' quote.approval_token %}" target="_blank" class="btn-primary w-full text-center">
-            <span>View Customer Quote &rarr;</span>
+            <span>View Client Quote &rarr;</span>
           </a>
           <a href="{% url 'quote_pdf_download' quote.id %}" target="_blank" class="btn-outline w-full text-center text-xs">
             <span>Download PDF</span>
@@ -233,7 +233,7 @@
               <svg class="w-5 h-5 text-[#b47828]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg>
               <span>Send Email Reply</span>
             </h3>
-            <p class="text-xs text-slate-500 mt-0.5">Send an email directly to the customer.</p>
+            <p class="text-xs text-slate-500 mt-0.5">Send an email directly to the client.</p>
           </div>
         </div>
 
@@ -263,7 +263,7 @@
 
           <div>
             <label class="form-label">Message</label>
-            <textarea name="message_body" rows="5" required placeholder="Write your message or question for the customer..." class="form-input leading-relaxed"></textarea>
+            <textarea name="message_body" rows="5" required placeholder="Write your message or question for the client..." class="form-input leading-relaxed"></textarea>
           </div>
 
           <div class="flex justify-end pt-2">
