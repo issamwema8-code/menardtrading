@@ -365,6 +365,8 @@ class CompanySettings(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
 
+    _cached_singleton = None
+
     class Meta:
         verbose_name = "Company Settings"
         verbose_name_plural = "Company Settings"
@@ -372,11 +374,29 @@ class CompanySettings(models.Model):
     def __str__(self):
         return f"{self.company_name} ({self.get_formatted_address()})"
 
+    def save(self, *args, **kwargs):
+        CompanySettings._cached_singleton = None
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        CompanySettings._cached_singleton = None
+        super().delete(*args, **kwargs)
+
     @classmethod
     def get_settings(cls):
         """
-        Retrieves the singleton CompanySettings instance or initializes with default values.
+        Retrieves the singleton CompanySettings instance with in-memory caching or initializes with default values.
         """
+        if cls._cached_singleton is not None and cls._cached_singleton.pk:
+            try:
+                # Validate that the cached singleton is still in the active database transaction/session
+                db_obj = cls.objects.filter(pk=cls._cached_singleton.pk).first()
+                if db_obj:
+                    cls._cached_singleton = db_obj
+                    return cls._cached_singleton
+            except Exception:
+                cls._cached_singleton = None
+
         obj = cls.objects.first()
         if not obj:
             obj = cls.objects.create(
@@ -402,6 +422,7 @@ class CompanySettings(models.Model):
                 account_type="Business Cheque Account",
                 branch_name="WALVIS BAY",
             )
+        cls._cached_singleton = obj
         return obj
 
     def get_formatted_address(self) -> str:
@@ -531,3 +552,32 @@ class AdminNotification(models.Model):
 
     def __str__(self):
         return f"{self.get_notification_type_display()}: {self.title}"
+
+
+# Signal Handlers for Cache Invalidation
+from django.db.models.signals import m2m_changed, post_save, post_delete
+from django.dispatch import receiver
+
+
+@receiver(m2m_changed, sender=UserProfile.roles.through)
+def clear_user_profile_cached_perms_m2m(sender, instance, **kwargs):
+    if hasattr(instance, 'user') and hasattr(instance.user, '_cached_effective_perms'):
+        try:
+            delattr(instance.user, '_cached_effective_perms')
+        except AttributeError:
+            pass
+
+
+@receiver(post_save, sender=UserProfile)
+def clear_user_cached_perms_on_profile_save(sender, instance, **kwargs):
+    if hasattr(instance, 'user') and hasattr(instance.user, '_cached_effective_perms'):
+        try:
+            delattr(instance.user, '_cached_effective_perms')
+        except AttributeError:
+            pass
+
+
+@receiver(post_save, sender=CompanySettings)
+@receiver(post_delete, sender=CompanySettings)
+def clear_company_settings_cache(sender, **kwargs):
+    CompanySettings._cached_singleton = None

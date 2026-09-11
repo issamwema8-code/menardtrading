@@ -59,13 +59,13 @@ class Quotation(models.Model):
     vat_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
 
-    valid_until = models.DateField(null=True, blank=True)
+    valid_until = models.DateField(null=True, blank=True, db_index=True)
     notes = models.TextField(blank=True, default="Rates include comprehensive transit goods insurance. Payment terms as per agreement.")
     
     quote_pdf = models.FileField(upload_to='quotes/%Y/%m/', null=True, blank=True)
     sent_at = models.DateTimeField(null=True, blank=True)
     approved_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

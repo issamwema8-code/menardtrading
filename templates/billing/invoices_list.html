@@ -207,7 +207,7 @@
           </tr>
 
           <!-- MODAL: Record Payment for this Invoice -->
-          <div x-show="activeModal === 'pay_modal_{{ inv.id }}'" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-3 sm:p-4 md:p-6 overflow-y-auto" x-cloak>
+          <div x-show="activeModal === 'pay_modal_{{ inv.id }}'" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-3 sm:p-4 md:p-6 overflow-y-auto" x-cloak>
             <div @click.away="activeModal = null" class="bg-white rounded-2xl p-4 sm:p-6 max-w-md w-full shadow-2xl border border-slate-200 space-y-4 sm:space-y-5 my-auto max-h-[94vh] overflow-y-auto">
               <div class="flex justify-between items-center border-b border-slate-100 pb-3">
                 <div>

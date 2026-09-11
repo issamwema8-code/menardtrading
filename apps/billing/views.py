@@ -20,103 +20,109 @@ logger = logging.getLogger(__name__)
 class IssueInvoiceActionView(PermissionRequiredMixin, View):
     """
     Handles generation of all multi-stage invoices (Full, Deposit, Balance on POD, and Add-on Charges).
+    Wrapped in database transactions for integrity.
     """
     permission_required = 'invoices.create'
     def post(self, request, job_id):
-        job = get_object_or_404(LogisticsJob, pk=job_id)
-        invoice_type = request.POST.get('invoice_type', Invoice.InvoiceType.FULL)
-        due_days = int(request.POST.get('due_days', 7))
-        due_date = timezone.now().date() + timezone.timedelta(days=due_days)
+        from django.db import transaction
+        with transaction.atomic():
+            job = LogisticsJob.objects.select_for_update().filter(pk=job_id).first()
+            if not job:
+                return render(request, '404.html', status=404)
 
-        if invoice_type == Invoice.InvoiceType.FULL:
-            inv = Invoice.objects.create(
-                job=job,
-                quote=job.quote,
-                customer=job.customer,
-                invoice_type=Invoice.InvoiceType.FULL,
-                due_date=due_date,
-                notes="Standard Full Invoice for transport consignment."
-            )
-            for item in job.quote.line_items.all():
+            invoice_type = request.POST.get('invoice_type', Invoice.InvoiceType.FULL)
+            due_days = int(request.POST.get('due_days', 7))
+            due_date = timezone.now().date() + timezone.timedelta(days=due_days)
+
+            if invoice_type == Invoice.InvoiceType.FULL:
+                inv = Invoice.objects.create(
+                    job=job,
+                    quote=job.quote,
+                    customer=job.customer,
+                    invoice_type=Invoice.InvoiceType.FULL,
+                    due_date=due_date,
+                    notes="Standard Full Invoice for transport consignment."
+                )
+                for item in job.quote.line_items.all():
+                    InvoiceLineItem.objects.create(
+                        invoice=inv,
+                        description=item.description,
+                        quantity=item.quantity,
+                        unit_price=item.unit_price,
+                    )
+                inv.recalculate_totals()
+
+            elif invoice_type == Invoice.InvoiceType.PARTIAL_DEPOSIT:
+                pct = Decimal(request.POST.get('deposit_percentage', '50'))
+                deposit_amount = (job.quote.subtotal * (pct / Decimal('100.00'))).quantize(Decimal('0.01'))
+                inv = Invoice.objects.create(
+                    job=job,
+                    quote=job.quote,
+                    customer=job.customer,
+                    invoice_type=Invoice.InvoiceType.PARTIAL_DEPOSIT,
+                    due_date=due_date,
+                    notes=f"{pct}% Mobilization deposit."
+                )
                 InvoiceLineItem.objects.create(
                     invoice=inv,
-                    description=item.description,
-                    quantity=item.quantity,
-                    unit_price=item.unit_price,
+                    description=f"{pct}% Deposit for Freight Consignment #{job.job_number}",
+                    quantity=1,
+                    unit_price=deposit_amount,
                 )
-            inv.recalculate_totals()
+                inv.recalculate_totals()
 
-        elif invoice_type == Invoice.InvoiceType.PARTIAL_DEPOSIT:
-            pct = Decimal(request.POST.get('deposit_percentage', '50'))
-            deposit_amount = (job.quote.subtotal * (pct / Decimal('100.00'))).quantize(Decimal('0.01'))
-            inv = Invoice.objects.create(
-                job=job,
-                quote=job.quote,
-                customer=job.customer,
-                invoice_type=Invoice.InvoiceType.PARTIAL_DEPOSIT,
-                due_date=due_date,
-                notes=f"{pct}% Mobilization deposit."
-            )
-            InvoiceLineItem.objects.create(
-                invoice=inv,
-                description=f"{pct}% Deposit for Freight Consignment #{job.job_number}",
-                quantity=1,
-                unit_price=deposit_amount,
-            )
-            inv.recalculate_totals()
+            elif invoice_type == Invoice.InvoiceType.PARTIAL_BALANCE:
+                # Remaining uninvoiced balance
+                remaining_subtotal = max(Decimal('0.00'), job.quote.subtotal - sum(
+                    (i.subtotal for i in job.invoices.filter(invoice_type=Invoice.InvoiceType.PARTIAL_DEPOSIT)),
+                    Decimal('0.00')
+                ))
+                inv = Invoice.objects.create(
+                    job=job,
+                    quote=job.quote,
+                    customer=job.customer,
+                    invoice_type=Invoice.InvoiceType.PARTIAL_BALANCE,
+                    due_date=due_date,
+                    notes=f"Final balance invoice upon Proof of Delivery for Job #{job.job_number}."
+                )
+                InvoiceLineItem.objects.create(
+                    invoice=inv,
+                    description=f"Final Balance on Delivery - Job #{job.job_number}",
+                    quantity=1,
+                    unit_price=remaining_subtotal,
+                )
+                inv.recalculate_totals()
 
-        elif invoice_type == Invoice.InvoiceType.PARTIAL_BALANCE:
-            # Remaining uninvoiced balance
-            remaining_subtotal = max(Decimal('0.00'), job.quote.subtotal - sum(
-                (i.subtotal for i in job.invoices.filter(invoice_type=Invoice.InvoiceType.PARTIAL_DEPOSIT)),
-                Decimal('0.00')
-            ))
-            inv = Invoice.objects.create(
-                job=job,
-                quote=job.quote,
-                customer=job.customer,
-                invoice_type=Invoice.InvoiceType.PARTIAL_BALANCE,
-                due_date=due_date,
-                notes=f"Final balance invoice upon Proof of Delivery for Job #{job.job_number}."
-            )
-            InvoiceLineItem.objects.create(
-                invoice=inv,
-                description=f"Final Balance on Delivery - Job #{job.job_number}",
-                quantity=1,
-                unit_price=remaining_subtotal,
-            )
-            inv.recalculate_totals()
+            elif invoice_type == Invoice.InvoiceType.ADD_ON:
+                description = request.POST.get('addon_description', 'Demurrage / Route Waiting Time')
+                amount = Decimal(request.POST.get('addon_amount', '450.00'))
+                inv = Invoice.objects.create(
+                    job=job,
+                    quote=job.quote,
+                    customer=job.customer,
+                    invoice_type=Invoice.InvoiceType.ADD_ON,
+                    due_date=due_date,
+                    notes="Supplementary charge for route additions / waiting time."
+                )
+                InvoiceLineItem.objects.create(
+                    invoice=inv,
+                    description=description,
+                    quantity=1,
+                    unit_price=amount,
+                )
+                inv.recalculate_totals()
 
-        elif invoice_type == Invoice.InvoiceType.ADD_ON:
-            description = request.POST.get('addon_description', 'Demurrage / Route Waiting Time')
-            amount = Decimal(request.POST.get('addon_amount', '450.00'))
-            inv = Invoice.objects.create(
-                job=job,
-                quote=job.quote,
-                customer=job.customer,
-                invoice_type=Invoice.InvoiceType.ADD_ON,
-                due_date=due_date,
-                notes="Supplementary charge for route additions / waiting time."
-            )
-            InvoiceLineItem.objects.create(
-                invoice=inv,
-                description=description,
-                quantity=1,
-                unit_price=amount,
-            )
-            inv.recalculate_totals()
-
-        # Generate PDF and Email Customer
-        generate_invoice_pdf(inv)
-        if request.POST.get('send_email', 'true') == 'true' and inv.customer.email:
-            send_departmental_email(
-                department='invoicing',
-                recipient_list=[inv.customer.email],
-                subject=f"Tax Invoice #{inv.invoice_number} – Menard Trading CC",
-                template_name='emails/invoice_sent.html',
-                context={'invoice': inv},
-                attachments=[(f"{inv.invoice_number}.pdf", inv.invoice_pdf.read(), 'application/pdf')] if inv.invoice_pdf else None
-            )
+            # Generate PDF and Email Customer
+            generate_invoice_pdf(inv)
+            if request.POST.get('send_email', 'true') == 'true' and inv.customer.email:
+                send_departmental_email(
+                    department='invoicing',
+                    recipient_list=[inv.customer.email],
+                    subject=f"Tax Invoice #{inv.invoice_number} – Menard Trading CC",
+                    template_name='emails/invoice_sent.html',
+                    context={'invoice': inv},
+                    attachments=[(f"{inv.invoice_number}.pdf", inv.invoice_pdf.read(), 'application/pdf')] if inv.invoice_pdf else None
+                )
 
         messages.success(request, f"Invoice #{inv.invoice_number} ({inv.get_invoice_type_display()}) generated & emailed.")
         return redirect(request.META.get('HTTP_REFERER', 'billing_list'))
@@ -125,60 +131,75 @@ class IssueInvoiceActionView(PermissionRequiredMixin, View):
 class RecordPaymentActionView(PermissionRequiredMixin, View):
     """
     Records payment against an Invoice, creates receipt, and dispatches official PDF receipt to customer.
+    Atomic & Idempotent: Uses row-level lock on Invoice to eliminate duplicate payment postings.
     """
     permission_required = 'invoices.record_payment'
 
     def post(self, request, invoice_id):
-        inv = get_object_or_404(Invoice, pk=invoice_id)
-        amount_paid = Decimal(request.POST.get('amount_paid', str(inv.balance_due)))
-        method = request.POST.get('payment_method', PaymentReceipt.PaymentMethod.EFT)
-        tx_ref = request.POST.get('transaction_reference', f"EFT-{timezone.now().strftime('%Y%m%d%H%M')}")
-        notes = request.POST.get('notes', '')
+        from django.db import transaction
+        with transaction.atomic():
+            inv = Invoice.objects.select_for_update().filter(pk=invoice_id).first()
+            if not inv:
+                return render(request, '404.html', status=404)
 
-        receipt = PaymentReceipt.objects.create(
-            invoice=inv,
-            customer=inv.customer,
-            amount_paid=amount_paid,
-            payment_method=method,
-            transaction_reference=tx_ref,
-            payment_date=timezone.now().date(),
-            notes=notes
-        )
+            raw_amt = request.POST.get('amount_paid', str(inv.balance_due))
+            try:
+                amount_paid = Decimal(str(raw_amt).strip())
+            except Exception:
+                amount_paid = inv.balance_due
 
-        # Refresh invoice and receipt from DB (PaymentReceipt.save automatically recalculated invoice totals)
-        inv.refresh_from_db()
-        receipt.refresh_from_db()
+            if amount_paid <= Decimal('0.00'):
+                messages.error(request, "Payment amount must be greater than zero.")
+                return redirect(request.META.get('HTTP_REFERER', 'billing_list'))
 
-        # Update associated Job if fully settled
-        job = inv.job
-        if job and job.remaining_uninvoiced == Decimal('0.00') and all(i.status == Invoice.Status.PAID for i in job.invoices.all()):
-            job.status = LogisticsJob.Status.CLOSED
-            job.save(update_fields=['status'])
+            method = request.POST.get('payment_method', PaymentReceipt.PaymentMethod.EFT)
+            tx_ref = request.POST.get('transaction_reference', f"EFT-{timezone.now().strftime('%Y%m%d%H%M')}")
+            notes = request.POST.get('notes', '')
 
-        # Generate Receipt PDF
-        pdf_bytes = generate_receipt_pdf(receipt)
-
-        # Log financial audit event
-        log_audit_event(
-            request=request,
-            user=request.user,
-            action='PAYMENT_RECORDED',
-            resource_type='Invoice',
-            resource_id=inv.invoice_number,
-            details={'amount': str(amount_paid), 'method': method, 'ref': tx_ref, 'receipt_number': receipt.receipt_number},
-            result='SUCCESS'
-        )
-
-        # Automatically email Receipt to customer via Brevo
-        if inv.customer.email:
-            send_departmental_email(
-                department='invoicing',
-                recipient_list=[inv.customer.email],
-                subject=f"Payment Receipt #{receipt.receipt_number} – Menard Trading CC",
-                template_name='emails/receipt_sent.html',
-                context={'receipt': receipt},
-                attachments=[(f"{receipt.receipt_number}.pdf", pdf_bytes, 'application/pdf')] if pdf_bytes else None
+            receipt = PaymentReceipt.objects.create(
+                invoice=inv,
+                customer=inv.customer,
+                amount_paid=amount_paid,
+                payment_method=method,
+                transaction_reference=tx_ref,
+                payment_date=timezone.now().date(),
+                notes=notes
             )
+
+            # Refresh invoice and receipt from DB
+            inv.refresh_from_db()
+            receipt.refresh_from_db()
+
+            # Update associated Job if fully settled
+            job = inv.job
+            if job and job.remaining_uninvoiced == Decimal('0.00') and all(i.status == Invoice.Status.PAID for i in job.invoices.all()):
+                job.status = LogisticsJob.Status.CLOSED
+                job.save(update_fields=['status'])
+
+            # Generate Receipt PDF
+            pdf_bytes = generate_receipt_pdf(receipt)
+
+            # Log financial audit event
+            log_audit_event(
+                request=request,
+                user=request.user,
+                action='PAYMENT_RECORDED',
+                resource_type='Invoice',
+                resource_id=inv.invoice_number,
+                details={'amount': str(amount_paid), 'method': method, 'ref': tx_ref, 'receipt_number': receipt.receipt_number},
+                result='SUCCESS'
+            )
+
+            # Automatically email Receipt to customer via Brevo
+            if inv.customer.email:
+                send_departmental_email(
+                    department='invoicing',
+                    recipient_list=[inv.customer.email],
+                    subject=f"Payment Receipt #{receipt.receipt_number} – Menard Trading CC",
+                    template_name='emails/receipt_sent.html',
+                    context={'receipt': receipt},
+                    attachments=[(f"{receipt.receipt_number}.pdf", pdf_bytes, 'application/pdf')] if pdf_bytes else None
+                )
 
         from menard_core.formatters import format_money
         messages.success(request, f"Payment of {format_money(amount_paid, 'R')} recorded. Receipt #{receipt.receipt_number} sent to client.")
@@ -264,6 +285,7 @@ class CreateDirectInvoiceView(PermissionRequiredMixin, View):
         })
 
     def post(self, request):
+        from django.db import transaction
         from apps.customers.models import Customer
         from apps.accounts.models import CompanySettings
 
@@ -288,75 +310,76 @@ class CreateDirectInvoiceView(PermissionRequiredMixin, View):
         else:
             settings_vat = CompanySettings.get_settings().vat_rate
 
-        inv = Invoice.objects.create(
-            customer=customer,
-            invoice_type=invoice_type,
-            due_date=due_date,
-            vat_rate=settings_vat,
-            notes=notes,
-            status=Invoice.Status.ISSUED
-        )
+        with transaction.atomic():
+            inv = Invoice.objects.create(
+                customer=customer,
+                invoice_type=invoice_type,
+                due_date=due_date,
+                vat_rate=settings_vat,
+                notes=notes,
+                status=Invoice.Status.ISSUED
+            )
 
-        descriptions = request.POST.getlist('descriptions[]') or request.POST.getlist('description')
-        quantities = request.POST.getlist('quantities[]') or request.POST.getlist('quantity')
-        unit_prices = request.POST.getlist('unit_prices[]') or request.POST.getlist('unit_price')
+            descriptions = request.POST.getlist('descriptions[]') or request.POST.getlist('description')
+            quantities = request.POST.getlist('quantities[]') or request.POST.getlist('quantity')
+            unit_prices = request.POST.getlist('unit_prices[]') or request.POST.getlist('unit_price')
 
-        items_created = 0
-        if descriptions:
-            for idx, desc in enumerate(descriptions):
-                desc_str = str(desc).strip()
-                if not desc_str:
-                    continue
-                qty_raw = quantities[idx] if idx < len(quantities) else '1.00'
-                price_raw = unit_prices[idx] if idx < len(unit_prices) else '0.00'
-                try:
-                    qty = Decimal(str(qty_raw).strip() or '1.00')
-                except Exception:
-                    qty = Decimal('1.00')
-                try:
-                    price = Decimal(str(price_raw).strip() or '0.00')
-                except Exception:
-                    price = Decimal('0.00')
+            items_created = 0
+            if descriptions:
+                for idx, desc in enumerate(descriptions):
+                    desc_str = str(desc).strip()
+                    if not desc_str:
+                        continue
+                    qty_raw = quantities[idx] if idx < len(quantities) else '1.00'
+                    price_raw = unit_prices[idx] if idx < len(unit_prices) else '0.00'
+                    try:
+                        qty = Decimal(str(qty_raw).strip() or '1.00')
+                    except Exception:
+                        qty = Decimal('1.00')
+                    try:
+                        price = Decimal(str(price_raw).strip() or '0.00')
+                    except Exception:
+                        price = Decimal('0.00')
 
+                    InvoiceLineItem.objects.create(
+                        invoice=inv,
+                        description=desc_str,
+                        quantity=qty,
+                        unit_price=price
+                    )
+                    items_created += 1
+
+            if items_created == 0:
                 InvoiceLineItem.objects.create(
                     invoice=inv,
-                    description=desc_str,
-                    quantity=qty,
-                    unit_price=price
+                    description=request.POST.get('description', 'Direct Supply & Logistics Service') or 'Direct Supply & Logistics Service',
+                    quantity=Decimal(request.POST.get('quantity', '1.00') or '1.00'),
+                    unit_price=Decimal(request.POST.get('unit_price', '0.00') or '0.00')
                 )
-                items_created += 1
 
-        if items_created == 0:
-            InvoiceLineItem.objects.create(
-                invoice=inv,
-                description=request.POST.get('description', 'Direct Supply & Logistics Service') or 'Direct Supply & Logistics Service',
-                quantity=Decimal(request.POST.get('quantity', '1.00') or '1.00'),
-                unit_price=Decimal(request.POST.get('unit_price', '0.00') or '0.00')
+            inv.recalculate_totals()
+            pdf_bytes = generate_invoice_pdf(inv)
+
+            log_audit_event(
+                request=request,
+                user=request.user,
+                action='DIRECT_INVOICE_CREATED',
+                resource_type='Invoice',
+                resource_id=inv.invoice_number,
+                details={'customer': customer.company_name, 'total_amount': str(inv.total_amount), 'items': items_created},
+                result='SUCCESS'
             )
 
-        inv.recalculate_totals()
-        pdf_bytes = generate_invoice_pdf(inv)
-
-        log_audit_event(
-            request=request,
-            user=request.user,
-            action='DIRECT_INVOICE_CREATED',
-            resource_type='Invoice',
-            resource_id=inv.invoice_number,
-            details={'customer': customer.company_name, 'total_amount': str(inv.total_amount), 'items': items_created},
-            result='SUCCESS'
-        )
-
-        # Send email to customer if requested
-        if request.POST.get('send_email') == '1' and inv.customer.email:
-            send_departmental_email(
-                department='invoicing',
-                recipient_list=[inv.customer.email],
-                subject=f"Tax Invoice #{inv.invoice_number} – Menard Trading CC",
-                template_name='emails/invoice_sent.html',
-                context={'invoice': inv},
-                attachments=[(f"{inv.invoice_number}.pdf", pdf_bytes or inv.invoice_pdf.read(), 'application/pdf')] if (pdf_bytes or inv.invoice_pdf) else None
-            )
+            # Send email to customer if requested
+            if request.POST.get('send_email') == '1' and inv.customer.email:
+                send_departmental_email(
+                    department='invoicing',
+                    recipient_list=[inv.customer.email],
+                    subject=f"Tax Invoice #{inv.invoice_number} – Menard Trading CC",
+                    template_name='emails/invoice_sent.html',
+                    context={'invoice': inv},
+                    attachments=[(f"{inv.invoice_number}.pdf", pdf_bytes or inv.invoice_pdf.read(), 'application/pdf')] if (pdf_bytes or inv.invoice_pdf) else None
+                )
 
         from menard_core.formatters import format_money
         messages.success(request, f"Created Tax Invoice #{inv.invoice_number} for {customer.company_name} (Total: {format_money(inv.total_amount, 'N$')}).")

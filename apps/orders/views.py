@@ -213,6 +213,7 @@ class MergePurchaseOrdersView(PermissionRequiredMixin, View):
 
     def post(self, request):
         from decimal import Decimal
+        from django.db import transaction
         from django.utils import timezone
         from apps.accounts.audit import log_audit_event
         from apps.billing.pdf_services import generate_quotation_pdf
@@ -228,14 +229,19 @@ class MergePurchaseOrdersView(PermissionRequiredMixin, View):
             messages.error(request, "Cannot merge a Purchase Order with itself. Please select two different POs.")
             return redirect('orders_list')
 
-        primary_po = get_object_or_404(PurchaseOrder, pk=primary_id)
-        secondary_po = get_object_or_404(PurchaseOrder, pk=secondary_id)
+        with transaction.atomic():
+            primary_po = PurchaseOrder.objects.select_for_update().filter(pk=primary_id).first()
+            secondary_po = PurchaseOrder.objects.select_for_update().filter(pk=secondary_id).first()
 
-        # Combined PO Number
-        combined_po_number = request.POST.get('combined_po_number', '').strip()
-        if combined_po_number:
-            if combined_po_number != primary_po.po_number and not PurchaseOrder.objects.filter(po_number=combined_po_number).exclude(pk=primary_po.id).exists():
-                primary_po.po_number = combined_po_number
+            if not primary_po or not secondary_po:
+                messages.error(request, "One or both selected Purchase Orders could not be found.")
+                return redirect('orders_list')
+
+            # Combined PO Number
+            combined_po_number = request.POST.get('combined_po_number', '').strip()
+            if combined_po_number:
+                if combined_po_number != primary_po.po_number and not PurchaseOrder.objects.filter(po_number=combined_po_number).exclude(pk=primary_po.id).exists():
+                    primary_po.po_number = combined_po_number
 
         # Combined Cargo Description
         custom_cargo = request.POST.get('cargo_description', '').strip()

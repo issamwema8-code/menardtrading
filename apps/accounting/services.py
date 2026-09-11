@@ -253,15 +253,16 @@ def get_profit_and_loss(start_date=None, end_date=None):
 
     operating_expenses_breakdown = operating_expenses_qs.values('category__name').annotate(total=Sum('subtotal')).order_by('-total')
 
+    expenses_by_category_qs = ExpenseCategory.objects.exclude(name__in=direct_categories).annotate(
+        cat_total=Sum(
+            'expenses__subtotal',
+            filter=Q(expenses__date__gte=start_date, expenses__date__lte=end_date) & ~Q(expenses__status=Expense.Status.VOID)
+        )
+    ).order_by('-cat_total')
+
     expenses_by_category = []
-    all_categories = ExpenseCategory.objects.exclude(name__in=direct_categories).order_by('name')
-    for cat in all_categories:
-        cat_total = Expense.objects.filter(
-            category=cat,
-            date__gte=start_date,
-            date__lte=end_date
-        ).exclude(status=Expense.Status.VOID).aggregate(total=Sum('subtotal'))['total'] or Decimal('0.00')
-        
+    for cat in expenses_by_category_qs:
+        cat_total = cat.cat_total or Decimal('0.00')
         cat_pct = (cat_total / total_revenue * Decimal('100.00')).quantize(Decimal('0.01')) if total_revenue > 0 else Decimal('0.00')
         expenses_by_category.append({
             'category': cat,
@@ -665,24 +666,17 @@ def get_financial_analytics(period='year'):
             'margin_pct': pnl['net_profit_margin_pct']
         })
 
-    # Top 5 Customers by Revenue
-    top_customers = []
-    customers = Customer.objects.filter(is_active=True)
-    for c in customers:
-        rev = Invoice.objects.filter(customer=c).exclude(status=Invoice.Status.CANCELLED).aggregate(total=Sum('subtotal'))['total'] or Decimal('0.00')
-        if rev > 0:
-            top_customers.append({'customer': c, 'revenue': rev})
-    top_customers.sort(key=lambda x: x['revenue'], reverse=True)
-    top_customers = top_customers[:5]
+    # Top 5 Customers by Revenue (ORM annotated aggregation)
+    top_customers_qs = Customer.objects.filter(is_active=True).annotate(
+        revenue=Sum('invoices__subtotal', filter=~Q(invoices__status=Invoice.Status.CANCELLED))
+    ).filter(revenue__gt=0).order_by('-revenue')[:5]
+    top_customers = [{'customer': c, 'revenue': c.revenue or Decimal('0.00')} for c in top_customers_qs]
 
-    # Top 5 Expense Categories
-    top_expenses = []
-    for cat in ExpenseCategory.objects.filter(is_active=True):
-        amt = Expense.objects.filter(category=cat).exclude(status=Expense.Status.VOID).aggregate(total=Sum('subtotal'))['total'] or Decimal('0.00')
-        if amt > 0:
-            top_expenses.append({'category': cat, 'amount': amt})
-    top_expenses.sort(key=lambda x: x['amount'], reverse=True)
-    top_expenses = top_expenses[:5]
+    # Top 5 Expense Categories (ORM annotated aggregation)
+    top_expenses_qs = ExpenseCategory.objects.filter(is_active=True).annotate(
+        amount=Sum('expenses__subtotal', filter=~Q(expenses__status=Expense.Status.VOID))
+    ).filter(amount__gt=0).order_by('-amount')[:5]
+    top_expenses = [{'category': cat, 'amount': cat.amount or Decimal('0.00')} for cat in top_expenses_qs]
 
     # Operations metrics
     ops_summary = {

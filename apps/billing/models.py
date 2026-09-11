@@ -87,8 +87,8 @@ class Invoice(models.Model):
         db_index=True
     )
 
-    issue_date = models.DateField(default=timezone.localdate)
-    due_date = models.DateField()
+    issue_date = models.DateField(default=timezone.localdate, db_index=True)
+    due_date = models.DateField(db_index=True)
 
     subtotal = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
     vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('0.00'))
@@ -100,7 +100,7 @@ class Invoice(models.Model):
     invoice_pdf = models.FileField(upload_to='invoices/%Y/%m/', null=True, blank=True)
     notes = models.TextField(blank=True, default="Payment strictly according to agreed terms. Direct EFT into Menard Trading CC bank account.")
     sent_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     @property
@@ -220,11 +220,11 @@ class PaymentReceipt(models.Model):
         choices=PaymentMethod.choices,
         default=PaymentMethod.EFT
     )
-    payment_date = models.DateField(default=timezone.localdate)
+    payment_date = models.DateField(default=timezone.localdate, db_index=True)
     transaction_reference = models.CharField(max_length=100, help_text="e.g. Bank Statement Reference or POP Code")
     receipt_pdf = models.FileField(upload_to='receipts/%Y/%m/', null=True, blank=True)
     notes = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
         ordering = ['-created_at']

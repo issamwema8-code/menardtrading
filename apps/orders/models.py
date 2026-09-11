@@ -71,7 +71,7 @@ class PurchaseOrder(models.Model):
         help_text="Timestamp when the automated no-reply receipt confirmation was sent."
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

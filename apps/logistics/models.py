@@ -64,7 +64,7 @@ class LogisticsJob(models.Model):
     weight_tons = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     # Dates
-    scheduled_date = models.DateField(default=timezone.now)
+    scheduled_date = models.DateField(default=timezone.now, db_index=True)
     dispatch_date = models.DateTimeField(null=True, blank=True)
     delivery_date = models.DateTimeField(null=True, blank=True)
 
@@ -73,7 +73,7 @@ class LogisticsJob(models.Model):
     pod_uploaded_at = models.DateTimeField(null=True, blank=True)
     notes = models.TextField(blank=True)
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

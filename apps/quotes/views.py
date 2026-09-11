@@ -32,99 +32,104 @@ class CustomerQuotePortalView(View):
 class CustomerApproveQuoteView(View):
     """
     1-Click Quote Approval by the Customer.
-    Automatically creates a LogisticsJob and initiates the first-stage invoice.
+    Atomic & Idempotent: Automatically creates a LogisticsJob and initiates the first-stage invoice.
+    Protected against concurrent double-clicks and race conditions via select_for_update.
     """
     def post(self, request, token):
-        quote = get_object_or_404(Quotation, approval_token=token)
-        
-        if quote.status == Quotation.Status.APPROVED:
-            messages.info(request, "This quotation has already been approved.")
-            return redirect('quote_portal', token=token)
+        from django.db import transaction
+        with transaction.atomic():
+            quote = Quotation.objects.select_for_update().filter(approval_token=token).first()
+            if not quote:
+                return render(request, '404.html', status=404)
+            
+            if quote.status == Quotation.Status.APPROVED:
+                messages.info(request, "This quotation has already been approved.")
+                return redirect('quote_portal', token=token)
 
-        quote.status = Quotation.Status.APPROVED
-        quote.approved_at = timezone.now()
-        quote.save(update_fields=['status', 'approved_at'])
+            quote.status = Quotation.Status.APPROVED
+            quote.approved_at = timezone.now()
+            quote.save(update_fields=['status', 'approved_at'])
 
-        # 1. Automatically create Logistics Job
-        po = quote.purchase_order
-        job = LogisticsJob.objects.create(
-            quote=quote,
-            customer=quote.customer,
-            status=LogisticsJob.Status.BOOKED,
-            pickup_address=po.pickup_location if po else quote.customer.physical_address,
-            delivery_address=po.delivery_location if po else 'As specified',
-            cargo_summary=po.cargo_description if po else 'General Freight',
-            weight_tons=po.weight_tons if po else None,
-            scheduled_date=timezone.now().date(),
-            notes=f"Auto-generated from approved Quote #{quote.quote_number} (PO #{po.po_number if po else 'N/A'})"
-        )
-
-        # 2. Automatically generate first invoice according to Customer Payment Terms
-        terms = (quote.customer.payment_terms if quote.customer else '50_DEPOSIT_50_POD') or '50_DEPOSIT_50_POD'
-        due_date = timezone.now().date() + timezone.timedelta(days=7)
-        inv = None
-
-        pct = None
-        if terms == '50_DEPOSIT_50_POD':
-            pct = 50
-        elif terms == '30_DEPOSIT_70_POD':
-            pct = 30
-        elif 'DEPOSIT' in str(terms).upper():
-            m = re.search(r'(\d+)', str(terms))
-            if m:
-                pct = int(m.group(1))
-
-        if terms == '100_UPFRONT' or (pct is None and terms in ['COD', '30_DAYS_NET', '14_DAYS_NET', '7_DAYS_NET', 'CUSTOM']):
-            inv = Invoice.objects.create(
-                job=job,
+            # 1. Automatically create Logistics Job
+            po = quote.purchase_order
+            job = LogisticsJob.objects.create(
                 quote=quote,
                 customer=quote.customer,
-                invoice_type=Invoice.InvoiceType.FULL,
-                due_date=due_date,
-                notes="100% Upfront payment before truck dispatch." if terms == '100_UPFRONT' else "Payment strictly according to agreed terms."
+                status=LogisticsJob.Status.BOOKED,
+                pickup_address=po.pickup_location if po else quote.customer.physical_address,
+                delivery_address=po.delivery_location if po else 'As specified',
+                cargo_summary=po.cargo_description if po else 'General Freight',
+                weight_tons=po.weight_tons if po else None,
+                scheduled_date=timezone.now().date(),
+                notes=f"Auto-generated from approved Quote #{quote.quote_number} (PO #{po.po_number if po else 'N/A'})"
             )
-            for item in quote.line_items.all():
+
+            # 2. Automatically generate first invoice according to Customer Payment Terms
+            terms = (quote.customer.payment_terms if quote.customer else '50_DEPOSIT_50_POD') or '50_DEPOSIT_50_POD'
+            due_date = timezone.now().date() + timezone.timedelta(days=7)
+            inv = None
+
+            pct = None
+            if terms == '50_DEPOSIT_50_POD':
+                pct = 50
+            elif terms == '30_DEPOSIT_70_POD':
+                pct = 30
+            elif 'DEPOSIT' in str(terms).upper():
+                m = re.search(r'(\d+)', str(terms))
+                if m:
+                    pct = int(m.group(1))
+
+            if terms == '100_UPFRONT' or (pct is None and terms in ['COD', '30_DAYS_NET', '14_DAYS_NET', '7_DAYS_NET', 'CUSTOM']):
+                inv = Invoice.objects.create(
+                    job=job,
+                    quote=quote,
+                    customer=quote.customer,
+                    invoice_type=Invoice.InvoiceType.FULL,
+                    due_date=due_date,
+                    notes="100% Upfront payment before truck dispatch." if terms == '100_UPFRONT' else "Payment strictly according to agreed terms."
+                )
+                for item in quote.line_items.all():
+                    InvoiceLineItem.objects.create(
+                        invoice=inv,
+                        description=item.description,
+                        quantity=item.quantity,
+                        unit_price=item.unit_price,
+                    )
+                inv.recalculate_totals()
+                generate_invoice_pdf(inv)
+
+            elif pct:
+                inv = Invoice.objects.create(
+                    job=job,
+                    quote=quote,
+                    customer=quote.customer,
+                    invoice_type=Invoice.InvoiceType.PARTIAL_DEPOSIT,
+                    due_date=due_date,
+                    notes=f"{pct}% Mobilization deposit required prior to loading."
+                )
+                deposit_subtotal = (quote.subtotal * (Decimal(str(pct)) / Decimal('100.00'))).quantize(Decimal('0.01'))
                 InvoiceLineItem.objects.create(
                     invoice=inv,
-                    description=item.description,
-                    quantity=item.quantity,
-                    unit_price=item.unit_price,
+                    description=f"{pct}% Mobilization Deposit for Job #{job.job_number} ({quote.quote_number})",
+                    quantity=Decimal('1.00'),
+                    unit_price=deposit_subtotal,
                 )
-            inv.recalculate_totals()
-            generate_invoice_pdf(inv)
+                inv.recalculate_totals()
+                generate_invoice_pdf(inv)
 
-        elif pct:
-            inv = Invoice.objects.create(
-                job=job,
-                quote=quote,
-                customer=quote.customer,
-                invoice_type=Invoice.InvoiceType.PARTIAL_DEPOSIT,
-                due_date=due_date,
-                notes=f"{pct}% Mobilization deposit required prior to loading."
-            )
-            deposit_subtotal = (quote.subtotal * (Decimal(str(pct)) / Decimal('100.00'))).quantize(Decimal('0.01'))
-            InvoiceLineItem.objects.create(
-                invoice=inv,
-                description=f"{pct}% Mobilization Deposit for Job #{job.job_number} ({quote.quote_number})",
-                quantity=Decimal('1.00'),
-                unit_price=deposit_subtotal,
-            )
-            inv.recalculate_totals()
-            generate_invoice_pdf(inv)
+            # Send notification email with the new invoice to the customer
+            if 'inv' in locals() and inv and quote.customer.email:
+                send_departmental_email(
+                    department='invoicing',
+                    recipient_list=[quote.customer.email],
+                    subject=f"Tax Invoice #{inv.invoice_number} – Menard Trading CC",
+                    template_name='emails/invoice_sent.html',
+                    context={'invoice': inv},
+                    attachments=[(f"{inv.invoice_number}.pdf", inv.invoice_pdf.read(), 'application/pdf')] if inv.invoice_pdf else None
+                )
 
-        # Send notification email with the new invoice to the customer
-        if 'inv' in locals() and quote.customer.email:
-            send_departmental_email(
-                department='invoicing',
-                recipient_list=[quote.customer.email],
-                subject=f"Tax Invoice #{inv.invoice_number} – Menard Trading CC",
-                template_name='emails/invoice_sent.html',
-                context={'invoice': inv},
-                attachments=[(f"{inv.invoice_number}.pdf", inv.invoice_pdf.read(), 'application/pdf')] if inv.invoice_pdf else None
-            )
-
-        messages.success(request, f"Quotation #{quote.quote_number} approved! Job #{job.job_number} created.")
-        return redirect('quote_portal', token=token)
+            messages.success(request, f"Quotation #{quote.quote_number} approved! Job #{job.job_number} created.")
+            return redirect('quote_portal', token=token)
 
 
 class SendQuoteEmailView(PermissionRequiredMixin, View):
@@ -186,6 +191,7 @@ class CreateQuotationView(PermissionRequiredMixin, View):
         })
 
     def post(self, request):
+        from django.db import transaction
         from apps.customers.models import Customer
         from apps.quotes.models import QuoteLineItem
         from decimal import Decimal
@@ -206,57 +212,58 @@ class CreateQuotationView(PermissionRequiredMixin, View):
 
         valid_days = int(request.POST.get('validity_days') or request.POST.get('valid_days') or 14)
 
-        quote = Quotation.objects.create(
-            customer=customer,
-            valid_until=timezone.now().date() + timezone.timedelta(days=valid_days),
-            notes=notes,
-            vat_rate=vat_rate,
-            status=Quotation.Status.DRAFT
-        )
-
-        descriptions = request.POST.getlist('descriptions[]') or request.POST.getlist('description')
-        quantities = request.POST.getlist('quantities[]') or request.POST.getlist('quantity')
-        unit_prices = request.POST.getlist('unit_prices[]') or request.POST.getlist('unit_price')
-        item_types = request.POST.getlist('item_types[]') or request.POST.getlist('item_type')
-
-        items_created = 0
-        if descriptions:
-            for idx, desc in enumerate(descriptions):
-                desc_str = str(desc).strip()
-                if not desc_str:
-                    continue
-                qty_raw = quantities[idx] if idx < len(quantities) else '1.00'
-                price_raw = unit_prices[idx] if idx < len(unit_prices) else '0.00'
-                itype = item_types[idx] if idx < len(item_types) else QuoteLineItem.ItemType.OTHER
-                try:
-                    qty = Decimal(str(qty_raw).strip() or '1.00')
-                except Exception:
-                    qty = Decimal('1.00')
-                try:
-                    price = Decimal(str(price_raw).strip() or '0.00')
-                except Exception:
-                    price = Decimal('0.00')
-
-                QuoteLineItem.objects.create(
-                    quote=quote,
-                    description=desc_str,
-                    quantity=qty,
-                    unit_price=price,
-                    item_type=itype if itype in QuoteLineItem.ItemType.values else QuoteLineItem.ItemType.OTHER
-                )
-                items_created += 1
-
-        if items_created == 0:
-            QuoteLineItem.objects.create(
-                quote=quote,
-                description=request.POST.get('description', 'General Supply & Logistics Service') or 'General Supply & Logistics Service',
-                quantity=Decimal(request.POST.get('quantity', '1.00') or '1.00'),
-                unit_price=Decimal(request.POST.get('unit_price', '0.00') or '0.00'),
-                item_type=QuoteLineItem.ItemType.OTHER
+        with transaction.atomic():
+            quote = Quotation.objects.create(
+                customer=customer,
+                valid_until=timezone.now().date() + timezone.timedelta(days=valid_days),
+                notes=notes,
+                vat_rate=vat_rate,
+                status=Quotation.Status.DRAFT
             )
 
-        quote.recalculate_totals()
-        generate_quotation_pdf(quote)
+            descriptions = request.POST.getlist('descriptions[]') or request.POST.getlist('description')
+            quantities = request.POST.getlist('quantities[]') or request.POST.getlist('quantity')
+            unit_prices = request.POST.getlist('unit_prices[]') or request.POST.getlist('unit_price')
+            item_types = request.POST.getlist('item_types[]') or request.POST.getlist('item_type')
+
+            items_created = 0
+            if descriptions:
+                for idx, desc in enumerate(descriptions):
+                    desc_str = str(desc).strip()
+                    if not desc_str:
+                        continue
+                    qty_raw = quantities[idx] if idx < len(quantities) else '1.00'
+                    price_raw = unit_prices[idx] if idx < len(unit_prices) else '0.00'
+                    itype = item_types[idx] if idx < len(item_types) else QuoteLineItem.ItemType.OTHER
+                    try:
+                        qty = Decimal(str(qty_raw).strip() or '1.00')
+                    except Exception:
+                        qty = Decimal('1.00')
+                    try:
+                        price = Decimal(str(price_raw).strip() or '0.00')
+                    except Exception:
+                        price = Decimal('0.00')
+
+                    QuoteLineItem.objects.create(
+                        quote=quote,
+                        description=desc_str,
+                        quantity=qty,
+                        unit_price=price,
+                        item_type=itype if itype in QuoteLineItem.ItemType.values else QuoteLineItem.ItemType.OTHER
+                    )
+                    items_created += 1
+
+            if items_created == 0:
+                QuoteLineItem.objects.create(
+                    quote=quote,
+                    description=request.POST.get('description', 'General Supply & Logistics Service') or 'General Supply & Logistics Service',
+                    quantity=Decimal(request.POST.get('quantity', '1.00') or '1.00'),
+                    unit_price=Decimal(request.POST.get('unit_price', '0.00') or '0.00'),
+                    item_type=QuoteLineItem.ItemType.OTHER
+                )
+
+            quote.recalculate_totals()
+            generate_quotation_pdf(quote)
 
         from menard_core.formatters import format_money
         messages.success(request, f"Created Quotation #{quote.quote_number} for {customer.company_name} (Total: {format_money(quote.total_amount, 'N$')}).")
@@ -348,89 +355,94 @@ class UpdateQuotationView(PermissionRequiredMixin, View):
         })
 
     def post(self, request, pk):
-        quote = get_object_or_404(Quotation, pk=pk)
+        from django.db import transaction
         from apps.customers.models import Customer
         from apps.quotes.models import QuoteLineItem
         from apps.accounts.audit import log_audit_event
         from decimal import Decimal
         import datetime
 
-        customer_id = request.POST.get('customer_id') or request.POST.get('customer')
-        if customer_id:
-            customer = get_object_or_404(Customer, pk=customer_id)
-            quote.customer = customer
+        with transaction.atomic():
+            quote = Quotation.objects.select_for_update().filter(pk=pk).first()
+            if not quote:
+                return render(request, '404.html', status=404)
 
-        if 'notes' in request.POST:
-            quote.notes = request.POST.get('notes', '')
+            customer_id = request.POST.get('customer_id') or request.POST.get('customer')
+            if customer_id:
+                customer = get_object_or_404(Customer, pk=customer_id)
+                quote.customer = customer
 
-        if request.POST.get('valid_until'):
-            try:
-                quote.valid_until = datetime.datetime.strptime(request.POST.get('valid_until'), '%Y-%m-%d').date()
-            except Exception:
-                pass
-        elif request.POST.get('validity_days') or request.POST.get('valid_days'):
-            valid_days = int(request.POST.get('validity_days') or request.POST.get('valid_days') or 14)
-            quote.valid_until = timezone.now().date() + timezone.timedelta(days=valid_days)
+            if 'notes' in request.POST:
+                quote.notes = request.POST.get('notes', '')
 
-        new_status = request.POST.get('status')
-        if new_status and new_status in Quotation.Status.values:
-            quote.status = new_status
-
-        vat_rate_post = request.POST.get('vat_rate')
-        if vat_rate_post is not None and str(vat_rate_post).strip() != '':
-            try:
-                quote.vat_rate = Decimal(str(vat_rate_post).strip())
-            except Exception:
-                pass
-
-        quote.save()
-
-        # Update Line Items if provided
-        descriptions = request.POST.getlist('descriptions[]') or request.POST.getlist('description')
-        quantities = request.POST.getlist('quantities[]') or request.POST.getlist('quantity')
-        unit_prices = request.POST.getlist('unit_prices[]') or request.POST.getlist('unit_price')
-        item_types = request.POST.getlist('item_types[]') or request.POST.getlist('item_type')
-
-        if descriptions:
-            quote.line_items.all().delete()
-            items_created = 0
-            for idx, desc in enumerate(descriptions):
-                desc_str = str(desc).strip()
-                if not desc_str:
-                    continue
-                qty_raw = quantities[idx] if idx < len(quantities) else '1.00'
-                price_raw = unit_prices[idx] if idx < len(unit_prices) else '0.00'
-                itype = item_types[idx] if idx < len(item_types) else QuoteLineItem.ItemType.OTHER
+            if request.POST.get('valid_until'):
                 try:
-                    qty = Decimal(str(qty_raw).strip() or '1.00')
+                    quote.valid_until = datetime.datetime.strptime(request.POST.get('valid_until'), '%Y-%m-%d').date()
                 except Exception:
-                    qty = Decimal('1.00')
+                    pass
+            elif request.POST.get('validity_days') or request.POST.get('valid_days'):
+                valid_days = int(request.POST.get('validity_days') or request.POST.get('valid_days') or 14)
+                quote.valid_until = timezone.now().date() + timezone.timedelta(days=valid_days)
+
+            new_status = request.POST.get('status')
+            if new_status and new_status in Quotation.Status.values:
+                quote.status = new_status
+
+            vat_rate_post = request.POST.get('vat_rate')
+            if vat_rate_post is not None and str(vat_rate_post).strip() != '':
                 try:
-                    price = Decimal(str(price_raw).strip() or '0.00')
+                    quote.vat_rate = Decimal(str(vat_rate_post).strip())
                 except Exception:
-                    price = Decimal('0.00')
+                    pass
 
-                QuoteLineItem.objects.create(
-                    quote=quote,
-                    description=desc_str,
-                    quantity=qty,
-                    unit_price=price,
-                    item_type=itype if itype in QuoteLineItem.ItemType.values else QuoteLineItem.ItemType.OTHER
-                )
-                items_created += 1
+            quote.save()
 
-        quote.recalculate_totals()
-        generate_quotation_pdf(quote)
+            # Update Line Items if provided
+            descriptions = request.POST.getlist('descriptions[]') or request.POST.getlist('description')
+            quantities = request.POST.getlist('quantities[]') or request.POST.getlist('quantity')
+            unit_prices = request.POST.getlist('unit_prices[]') or request.POST.getlist('unit_price')
+            item_types = request.POST.getlist('item_types[]') or request.POST.getlist('item_type')
 
-        log_audit_event(
-            request=request,
-            user=request.user,
-            action='QUOTATION_UPDATED',
-            resource_type='Quotation',
-            resource_id=quote.quote_number,
-            details={'customer': quote.customer.company_name, 'total_amount': str(quote.total_amount)},
-            result='SUCCESS'
-        )
+            if descriptions:
+                quote.line_items.all().delete()
+                items_created = 0
+                for idx, desc in enumerate(descriptions):
+                    desc_str = str(desc).strip()
+                    if not desc_str:
+                        continue
+                    qty_raw = quantities[idx] if idx < len(quantities) else '1.00'
+                    price_raw = unit_prices[idx] if idx < len(unit_prices) else '0.00'
+                    itype = item_types[idx] if idx < len(item_types) else QuoteLineItem.ItemType.OTHER
+                    try:
+                        qty = Decimal(str(qty_raw).strip() or '1.00')
+                    except Exception:
+                        qty = Decimal('1.00')
+                    try:
+                        price = Decimal(str(price_raw).strip() or '0.00')
+                    except Exception:
+                        price = Decimal('0.00')
+
+                    QuoteLineItem.objects.create(
+                        quote=quote,
+                        description=desc_str,
+                        quantity=qty,
+                        unit_price=price,
+                        item_type=itype if itype in QuoteLineItem.ItemType.values else QuoteLineItem.ItemType.OTHER
+                    )
+                    items_created += 1
+
+            quote.recalculate_totals()
+            generate_quotation_pdf(quote)
+
+            log_audit_event(
+                request=request,
+                user=request.user,
+                action='QUOTATION_UPDATED',
+                resource_type='Quotation',
+                resource_id=quote.quote_number,
+                details={'customer': quote.customer.company_name, 'total_amount': str(quote.total_amount)},
+                result='SUCCESS'
+            )
 
         from menard_core.formatters import format_money
         messages.success(request, f"Quotation #{quote.quote_number} updated successfully (Total: {format_money(quote.total_amount, 'N$')}).")

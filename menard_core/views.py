@@ -16,20 +16,19 @@ from apps.billing.models import Invoice, PaymentReceipt
 def get_dashboard_metrics(user=None):
     """
     Returns live operational and financial KPI metrics across all jobs and invoices.
+    Uses efficient single-query database aggregations instead of Python-level loops.
     """
     total_orders_count = PurchaseOrder.objects.count() if (user is None or has_permission(user, 'orders.view')) else 0
     pending_quotes_count = Quotation.objects.filter(status__in=[Quotation.Status.DRAFT, Quotation.Status.SENT]).count() if (user is None or has_permission(user, 'quotations.view')) else 0
     active_jobs_count = LogisticsJob.objects.exclude(status=LogisticsJob.Status.CLOSED).count() if (user is None or has_permission(user, 'logistics.view')) else 0
     
-    unpaid_invoices_balance = sum(
-        (inv.balance_due for inv in Invoice.objects.exclude(status='CANCELLED')),
-        Decimal('0.00')
-    ) if (user is None or has_permission(user, 'invoices.view')) else Decimal('0.00')
+    unpaid_invoices_balance = Invoice.objects.exclude(
+        status=Invoice.Status.CANCELLED
+    ).aggregate(total=Sum('balance_due'))['total'] or Decimal('0.00') if (user is None or has_permission(user, 'invoices.view')) else Decimal('0.00')
     
-    total_revenue_collected = sum(
-        (rcp.amount_paid for rcp in PaymentReceipt.objects.all()),
-        Decimal('0.00')
-    ) if (user is None or has_permission(user, 'receipts.view')) else Decimal('0.00')
+    total_revenue_collected = PaymentReceipt.objects.aggregate(
+        total=Sum('amount_paid')
+    )['total'] or Decimal('0.00') if (user is None or has_permission(user, 'receipts.view')) else Decimal('0.00')
 
     return {
         'total_orders': total_orders_count,
@@ -46,11 +45,11 @@ class DashboardOverviewView(LoginRequiredMixin, View):
     """
     def get(self, request):
         user = request.user
-        orders = PurchaseOrder.objects.all().order_by('-created_at')[:10] if has_permission(user, 'orders.view') else []
-        quotes = Quotation.objects.all().order_by('-created_at')[:10] if has_permission(user, 'quotations.view') else []
-        jobs = LogisticsJob.objects.all().order_by('-created_at')[:10] if has_permission(user, 'logistics.view') else []
-        invoices = Invoice.objects.all().order_by('-created_at')[:10] if has_permission(user, 'invoices.view') else []
-        receipts = PaymentReceipt.objects.all().order_by('-payment_date')[:10] if has_permission(user, 'receipts.view') else []
+        orders = PurchaseOrder.objects.select_related('customer').order_by('-created_at')[:10] if has_permission(user, 'orders.view') else []
+        quotes = Quotation.objects.select_related('customer', 'purchase_order').order_by('-created_at')[:10] if has_permission(user, 'quotations.view') else []
+        jobs = LogisticsJob.objects.select_related('quote', 'customer').order_by('-created_at')[:10] if has_permission(user, 'logistics.view') else []
+        invoices = Invoice.objects.select_related('customer', 'job').order_by('-created_at')[:10] if has_permission(user, 'invoices.view') else []
+        receipts = PaymentReceipt.objects.select_related('customer', 'invoice').order_by('-payment_date')[:10] if has_permission(user, 'receipts.view') else []
         customers = Customer.objects.all().order_by('company_name')[:10] if has_permission(user, 'customers.view') else []
 
         context = {
@@ -73,7 +72,7 @@ class InboundOrdersListView(PermissionRequiredMixin, View):
     permission_required = 'orders.view'
 
     def get(self, request):
-        orders = PurchaseOrder.objects.all().order_by('-created_at')
+        orders = PurchaseOrder.objects.select_related('customer').order_by('-created_at')
         customers = Customer.objects.all().order_by('company_name')
         context = {
             'active_tab': 'orders',
@@ -91,7 +90,7 @@ class QuotationsListView(PermissionRequiredMixin, View):
     permission_required = 'quotations.view'
 
     def get(self, request):
-        quotes = Quotation.objects.all().order_by('-created_at')
+        quotes = Quotation.objects.select_related('customer', 'purchase_order').prefetch_related('line_items').order_by('-created_at')
         customers = Customer.objects.all().order_by('company_name')
         context = {
             'active_tab': 'quotes',
@@ -109,7 +108,7 @@ class LogisticsJobsListView(PermissionRequiredMixin, View):
     permission_required = 'logistics.view'
 
     def get(self, request):
-        jobs = LogisticsJob.objects.all().order_by('-created_at')
+        jobs = LogisticsJob.objects.select_related('quote', 'customer').prefetch_related('invoices').order_by('-created_at')
         context = {
             'active_tab': 'logistics',
             'jobs': jobs,
@@ -125,7 +124,7 @@ class BillingInvoicesListView(PermissionRequiredMixin, View):
     permission_required = 'invoices.view'
 
     def get(self, request):
-        invoices = Invoice.objects.all().order_by('-created_at')
+        invoices = Invoice.objects.select_related('customer', 'job').prefetch_related('receipts', 'line_items').order_by('-created_at')
         context = {
             'active_tab': 'billing',
             'invoices': invoices,
@@ -141,7 +140,7 @@ class PaymentReceiptsListView(PermissionRequiredMixin, View):
     permission_required = 'receipts.view'
 
     def get(self, request):
-        receipts = PaymentReceipt.objects.all().order_by('-payment_date', '-created_at')
+        receipts = PaymentReceipt.objects.select_related('customer', 'invoice').order_by('-payment_date', '-created_at')
         context = {
             'active_tab': 'receipts',
             'receipts': receipts,
