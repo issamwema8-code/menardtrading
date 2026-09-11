@@ -1,0 +1,181 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+
+{% block title %}Create Supplier Bill &mdash; Menard Trading CC{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6" x-data="{
+  subtotal: 0,
+  vatRate: '15.00',
+  customVat: '',
+  isSubmitting: false,
+
+  get activeVatRate() {
+    if (this.vatRate === 'custom') {
+      return parseFloat(this.customVat) || 0;
+    }
+    return parseFloat(this.vatRate) || 0;
+  },
+  get vatAmount() {
+    const sub = parseFloat(this.subtotal) || 0;
+    return sub * (this.activeVatRate / 100);
+  },
+  get totalAmount() {
+    const sub = parseFloat(this.subtotal) || 0;
+    return sub + this.vatAmount;
+  },
+  formatMoney(val) {
+    return Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+}">
+
+  <!-- Breadcrumbs & Navigation Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-1">
+        <a href="{% url 'accounting:payables' %}" class="hover:text-slate-900 inline-flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+          <span>Back to Payables</span>
+        </a>
+        <span>/</span>
+        <span class="text-slate-900 font-bold">Create Supplier Bill</span>
+      </div>
+      <h1 class="page-title text-2xl">Create Supplier Bill</h1>
+      <p class="page-description">Record vendor invoices, track settlement obligations, input VAT, and attach bills.</p>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <a href="{% url 'accounting:payables' %}" class="btn-outline">Cancel</a>
+      <button type="submit" form="createBillForm" class="btn-primary" :disabled="isSubmitting">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        <span x-text="isSubmitting ? 'Creating Bill...' : 'Save Supplier Bill'">Save Supplier Bill</span>
+      </button>
+    </div>
+  </div>
+
+  <form id="createBillForm" method="POST" action="{% url 'accounting:bills_create' %}" enctype="multipart/form-data" @submit="isSubmitting = true" class="space-y-6">
+    {% csrf_token %}
+
+    <!-- 1. Vendor & Reference Details -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-5">
+      <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700 pb-2 border-b border-slate-100 flex items-center gap-2">
+        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+        <span>Vendor &amp; Invoice Reference</span>
+      </h3>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Vendor -->
+        <div class="space-y-1.5">
+          <label class="form-label">Vendor / Supplier *</label>
+          <select name="vendor" required class="form-input">
+            <option value="">-- Select Vendor --</option>
+            {% for v in vendors %}
+            <option value="{{ v.id }}">{{ v.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Supplier Invoice Ref # -->
+        <div class="space-y-1.5">
+          <label class="form-label">Supplier Invoice / Ref #</label>
+          <input type="text" name="supplier_reference" placeholder="e.g. INV-98741 or BILL-2026-088" class="form-input font-mono">
+        </div>
+
+        <!-- Issue Date -->
+        <div class="space-y-1.5">
+          <label class="form-label">Bill Issue Date *</label>
+          <input type="date" name="issue_date" value="{{ default_issue_date|date:'Y-m-d' }}" required class="form-input font-mono">
+        </div>
+
+        <!-- Due Date -->
+        <div class="space-y-1.5">
+          <label class="form-label">Payment Due Date *</label>
+          <input type="date" name="due_date" value="{{ default_due_date|date:'Y-m-d' }}" required class="form-input font-mono">
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Financials & VAT Calculation -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-5">
+      <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700 pb-2 border-b border-slate-100 flex items-center gap-2">
+        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span>Bill Financials &amp; VAT</span>
+      </h3>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Subtotal -->
+        <div class="space-y-1.5">
+          <label class="form-label">Subtotal (Excl. VAT) *</label>
+          <input type="number" step="0.01" min="0.01" name="subtotal" x-model="subtotal" required class="form-input font-mono" placeholder="0.00">
+        </div>
+
+        <!-- VAT Treatment -->
+        <div class="space-y-1.5">
+          <label class="form-label">VAT Rate</label>
+          <select x-model="vatRate" class="form-input">
+            <option value="15.00">15.00% (Standard Rate)</option>
+            <option value="0.00">0.00% (Zero-Rated / Exempt)</option>
+            <option value="custom">Custom VAT %</option>
+          </select>
+        </div>
+
+        <!-- Custom VAT Input -->
+        <div class="space-y-1.5 sm:col-span-2" x-show="vatRate === 'custom'">
+          <label class="form-label">Custom VAT Rate (%)</label>
+          <input type="number" step="0.01" min="0" max="100" x-model="customVat" class="form-input font-mono sm:w-1/2" placeholder="e.g. 16.5">
+        </div>
+
+        <!-- Hidden input for effective VAT rate -->
+        <input type="hidden" name="vat_rate" :value="activeVatRate">
+      </div>
+
+      <!-- Live Calculation Summary -->
+      <div class="bg-slate-50/80 rounded-xl p-4 border border-slate-200/80 space-y-2 font-mono text-xs max-w-sm ml-auto">
+        <div class="flex justify-between text-slate-600">
+          <span>Subtotal (Excl. VAT):</span>
+          <span class="font-bold">N$ <span x-text="formatMoney(subtotal)"></span></span>
+        </div>
+        <div class="flex justify-between text-slate-600">
+          <span>VAT (<span x-text="activeVatRate.toFixed(2)"></span>%):</span>
+          <span class="font-bold text-emerald-600">N$ <span x-text="formatMoney(vatAmount)"></span></span>
+        </div>
+        <div class="flex justify-between text-slate-900 font-black text-sm pt-2 border-t border-slate-200">
+          <span>Total Bill Amount:</span>
+          <span class="text-[#b47828]">N$ <span x-text="formatMoney(totalAmount)"></span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Attachment & Notes -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-5">
+      <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700 pb-2 border-b border-slate-100 flex items-center gap-2">
+        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+        <span>Bill Attachment &amp; Notes</span>
+      </h3>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="form-label">Upload Supplier Bill PDF</label>
+          <input type="file" name="bill_pdf" accept=".pdf,.png,.jpg,.jpeg" class="form-input text-xs py-1.5">
+          <span class="text-[10px] text-slate-400 mt-1 block">Original supplier invoice document (PDF preferred)</span>
+        </div>
+
+        <div>
+          <label class="form-label">Notes / Line Item Breakdown</label>
+          <textarea name="notes" rows="3" placeholder="Order references, goods received notes, or remarks..." class="form-input"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions Toolbar -->
+    <div class="flex items-center justify-end gap-3 pt-2">
+      <a href="{% url 'accounting:payables' %}" class="btn-outline">Cancel</a>
+      <button type="submit" class="btn-primary" :disabled="isSubmitting">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        <span x-text="isSubmitting ? 'Creating Bill...' : 'Save Supplier Bill'">Save Supplier Bill</span>
+      </button>
+    </div>
+  </form>
+
+</div>
+{% endblock %}

@@ -249,9 +249,24 @@ class QuotationPDFDownloadView(PermissionRequiredMixin, View):
 class CreateDirectInvoiceView(PermissionRequiredMixin, View):
     """
     Directly create a new Tax Invoice without requiring a pre-existing Quotation or Logistics Job.
-    Supports multi-row line items with descriptions, quantities, and unit prices.
+    Supports dedicated full-page UI and multi-row line items with descriptions, quantities, and unit prices.
     """
     permission_required = 'invoices.create'
+
+    def get(self, request):
+        from apps.customers.models import Customer
+        from apps.accounts.models import CompanySettings
+
+        customers = Customer.objects.filter(is_active=True).order_by('company_name')
+        comp_settings = CompanySettings.get_settings()
+        selected_customer_id = request.GET.get('customer_id', '')
+
+        return render(request, 'billing/invoice_create.html', {
+            'customers': customers,
+            'selected_customer_id': selected_customer_id,
+            'default_vat_rate': comp_settings.vat_rate,
+            'active_tab': 'billing',
+        })
 
     def post(self, request):
         from apps.customers.models import Customer
@@ -350,5 +365,5 @@ class CreateDirectInvoiceView(PermissionRequiredMixin, View):
 
         from menard_core.formatters import format_money
         messages.success(request, f"Created Tax Invoice #{inv.invoice_number} for {customer.company_name} (Total: {format_money(inv.total_amount, 'N$')}).")
-        return redirect('billing_list')
+        return redirect('invoice_preview', pk=inv.id)
 

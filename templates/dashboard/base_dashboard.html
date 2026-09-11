@@ -450,10 +450,10 @@
               <span class="font-mono text-[10px] text-slate-500">({{ header_counts.quotes_count|default:"0" }})</span>
             </a>
             {% if can_create_quotes %}
-            <button @click="activeModal = 'create_quote_modal'; openMenu = null;" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left font-normal">
+            <a href="{% url 'create_quotation' %}" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left font-normal">
               <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
               <span>Quotation</span>
-            </button>
+            </a>
             {% endif %}
           </div>
         </div>
@@ -511,6 +511,12 @@
               <span class="font-normal">All Invoices</span>
               <span class="font-mono text-[10px] text-slate-500">({{ header_counts.invoices_count|default:"0" }})</span>
             </a>
+            {% if can_create_invoices %}
+            <a href="{% url 'create_invoice' %}" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-200 hover:text-amber-400 transition text-left font-normal">
+              <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+              <span>Invoice</span>
+            </a>
+            {% endif %}
           </div>
         </div>
         {% endif %}

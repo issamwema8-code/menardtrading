@@ -1,0 +1,254 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+
+{% block title %}Create Tax Invoice &mdash; Menard Trading CC{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6" x-data="{
+  items: [
+    { description: '', quantity: 1, unit_price: 0 }
+  ],
+  vatRate: '{{ default_vat_rate|default:0.00 }}',
+  customVat: '',
+  selectedCustomer: '{{ selected_customer_id }}',
+  invoiceType: 'FULL',
+  dueDays: 30,
+  notes: 'Payment strictly according to agreed terms. Direct EFT into Menard Trading CC bank account.',
+  sendEmail: false,
+  isSubmitting: false,
+  
+  addItem() {
+    this.items.push({ description: '', quantity: 1, unit_price: 0 });
+  },
+  removeItem(index) {
+    if (this.items.length > 1) {
+      this.items.splice(index, 1);
+    }
+  },
+  get activeVatRate() {
+    if (this.vatRate === 'custom') {
+      return parseFloat(this.customVat) || 0;
+    }
+    return parseFloat(this.vatRate) || 0;
+  },
+  get subtotal() {
+    return this.items.reduce((acc, item) => {
+      const q = parseFloat(item.quantity) || 0;
+      const p = parseFloat(item.unit_price) || 0;
+      return acc + (q * p);
+    }, 0);
+  },
+  get vatAmount() {
+    return this.subtotal * (this.activeVatRate / 100);
+  },
+  get total() {
+    return this.subtotal + this.vatAmount;
+  },
+  formatMoney(val) {
+    return Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+}">
+
+  <!-- Breadcrumbs & Navigation Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-1">
+        <a href="{% url 'billing_list' %}" class="hover:text-slate-900 inline-flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+          <span>Back to Invoices</span>
+        </a>
+        <span>/</span>
+        <span class="text-slate-900 font-bold">Create Tax Invoice</span>
+      </div>
+      <h1 class="page-title text-2xl">Create Tax Invoice</h1>
+      <p class="page-description">Generate a formal tax invoice with line items, tax rate, and instant preview.</p>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <a href="{% url 'billing_list' %}" class="btn-outline">Cancel</a>
+      <button type="submit" form="createInvoiceForm" class="btn-primary" :disabled="isSubmitting || !selectedCustomer">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        <span x-text="isSubmitting ? 'Creating Invoice...' : 'Save & Preview Invoice'">Save & Preview Invoice</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Invoice Form -->
+  <form id="createInvoiceForm" method="POST" action="{% url 'create_invoice' %}" @submit="isSubmitting = true" class="space-y-6">
+    {% csrf_token %}
+
+    <!-- 1. Client & Invoice Settings Card -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-5">
+      <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700 pb-2 border-b border-slate-100 flex items-center gap-2">
+        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+        <span>Client & Invoicing Details</span>
+      </h3>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <!-- Client Selection -->
+        <div class="md:col-span-2 space-y-1.5">
+          <div class="flex justify-between items-center">
+            <label class="form-label mb-0">Client *</label>
+            <button type="button" @click="activeModal = 'create_customer_modal'" class="text-xs text-[#b47828] hover:text-[#935f1b] font-bold inline-flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+              <span>+ Quick Add Client</span>
+            </button>
+          </div>
+          <select name="customer_id" x-model="selectedCustomer" required class="form-input">
+            <option value="">-- Select Client --</option>
+            {% for customer in customers %}
+            <option value="{{ customer.id }}" {% if selected_customer_id == customer.id|stringformat:"i" %}selected{% endif %}>
+              {{ customer.company_name }} ({{ customer.contact_name }} - {{ customer.email }})
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Invoice Type -->
+        <div class="space-y-1.5">
+          <label class="form-label">Invoice Type</label>
+          <select name="invoice_type" x-model="invoiceType" class="form-input">
+            <option value="FULL">Standard Full Invoice</option>
+            <option value="PARTIAL_DEPOSIT">Mobilization Deposit</option>
+            <option value="PARTIAL_BALANCE">Balance on Delivery</option>
+            <option value="ADD_ON">Supplementary / Add-on</option>
+          </select>
+        </div>
+
+        <!-- Payment Due In -->
+        <div class="space-y-1.5">
+          <label class="form-label">Payment Due In (Days)</label>
+          <input type="number" name="due_days" x-model="dueDays" min="0" class="form-input font-mono" placeholder="30">
+        </div>
+
+        <!-- VAT Rate Selection -->
+        <div class="space-y-1.5">
+          <label class="form-label">VAT Treatment</label>
+          <select x-model="vatRate" class="form-input">
+            <option value="0.00">0.00% (Zero-Rated / Exempt)</option>
+            <option value="15.00">15.00% (Standard Rate)</option>
+            <option value="custom">Custom VAT %</option>
+          </select>
+        </div>
+
+        <!-- Custom VAT Input -->
+        <div class="space-y-1.5" x-show="vatRate === 'custom'">
+          <label class="form-label">Custom VAT Rate (%)</label>
+          <input type="number" step="0.01" min="0" max="100" x-model="customVat" class="form-input font-mono" placeholder="e.g. 16.5">
+        </div>
+
+        <!-- Hidden input for effective VAT rate -->
+        <input type="hidden" name="vat_rate" :value="activeVatRate">
+      </div>
+    </div>
+
+    <!-- 2. Line Items Table Card -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
+      <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+          <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+          <span>Invoice Line Items & Products *</span>
+        </h3>
+        <button type="button" @click="addItem()" class="btn-outline text-xs py-1.5 px-3">
+          <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          <span>+ Add Line Item</span>
+        </button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse min-w-[700px]">
+          <thead>
+            <tr class="border-b border-slate-200 bg-slate-50/75 text-xs text-slate-500 uppercase font-semibold">
+              <th class="py-2.5 px-3 w-[45%]">Item / Service Description *</th>
+              <th class="py-2.5 px-3 w-[15%] text-right">Qty</th>
+              <th class="py-2.5 px-3 w-[20%] text-right">Unit Price (N$)</th>
+              <th class="py-2.5 px-3 w-[15%] text-right">Amount (N$)</th>
+              <th class="py-2.5 px-3 w-[5%] text-center"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 font-sans">
+            <template x-for="(item, index) in items" :key="index">
+              <tr>
+                <td class="py-2 px-3">
+                  <input type="text" name="descriptions[]" x-model="item.description" required
+                         class="form-input text-xs" placeholder="e.g. Doors, Aluminium Windows, Freight Consignment">
+                </td>
+                <td class="py-2 px-3">
+                  <input type="number" step="0.01" min="0.01" name="quantities[]" x-model="item.quantity" required
+                         class="form-input text-xs text-right font-mono" placeholder="1.00">
+                </td>
+                <td class="py-2 px-3">
+                  <input type="number" step="0.01" min="0" name="unit_prices[]" x-model="item.unit_price" required
+                         class="form-input text-xs text-right font-mono" placeholder="0.00">
+                </td>
+                <td class="py-2 px-3 text-right font-mono font-bold text-slate-800 text-xs">
+                  N$ <span x-text="formatMoney((parseFloat(item.quantity) || 0) * (parseFloat(item.unit_price) || 0))"></span>
+                </td>
+                <td class="py-2 px-3 text-center">
+                  <button type="button" @click="removeItem(index)" x-show="items.length > 1"
+                          class="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition" title="Remove row">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                  </button>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Add item button & Totals Summary Panel -->
+      <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-start gap-4">
+        <button type="button" @click="addItem()" class="btn-outline text-xs">
+          <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          <span>+ Add Row</span>
+        </button>
+
+        <div class="w-full sm:w-80 bg-slate-50/80 rounded-xl p-4 border border-slate-200/80 space-y-2 font-mono text-xs">
+          <div class="flex justify-between text-slate-600">
+            <span>Subtotal:</span>
+            <span class="font-bold">N$ <span x-text="formatMoney(subtotal)"></span></span>
+          </div>
+          <div class="flex justify-between text-slate-600">
+            <span>VAT (<span x-text="activeVatRate.toFixed(2)"></span>%):</span>
+            <span class="font-bold">N$ <span x-text="formatMoney(vatAmount)"></span></span>
+          </div>
+          <div class="flex justify-between text-slate-900 font-black text-sm pt-2 border-t border-slate-200">
+            <span>Invoice Total:</span>
+            <span class="text-[#b47828]">N$ <span x-text="formatMoney(total)"></span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Notes & Options Card -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-4">
+      <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700 pb-2 border-b border-slate-100 flex items-center gap-2">
+        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+        <span>Invoice Notes & Bank Instructions</span>
+      </h3>
+
+      <div class="space-y-4">
+        <div>
+          <label class="form-label">Notes / Terms</label>
+          <textarea name="notes" x-model="notes" rows="3" class="form-input" placeholder="Bank details, terms, etc."></textarea>
+        </div>
+
+        <label class="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-slate-700">
+          <input type="checkbox" name="send_email" value="1" x-model="sendEmail" class="rounded border-slate-300 text-[#b47828] focus:ring-[#b47828]">
+          <span>Email invoice directly to client upon creation</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Bottom Actions Toolbar -->
+    <div class="flex items-center justify-end gap-3 pt-2">
+      <a href="{% url 'billing_list' %}" class="btn-outline">Cancel</a>
+      <button type="submit" class="btn-primary" :disabled="isSubmitting || !selectedCustomer">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        <span x-text="isSubmitting ? 'Creating Invoice...' : 'Save & Preview Invoice'">Save & Preview Invoice</span>
+      </button>
+    </div>
+  </form>
+
+</div>
+{% endblock %}

@@ -37,16 +37,16 @@
         </form>
 
         <!-- Quick Action: Create Quote -->
-        <button type="button" @click="activeModal = 'create_quote_modal'" class="btn-outline text-xs py-2 px-3 flex items-center gap-1.5 cursor-pointer">
+        <a href="{% url 'create_quotation' %}" class="btn-outline text-xs py-2 px-3 flex items-center gap-1.5 cursor-pointer">
           <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
           <span>Quotation</span>
-        </button>
+        </a>
 
         <!-- Quick Action: Create Invoice -->
-        <button type="button" @click="activeModal = 'create_invoice_modal'" class="btn-primary text-xs py-2 px-3 flex items-center gap-1.5 cursor-pointer">
+        <a href="{% url 'create_invoice' %}" class="btn-primary text-xs py-2 px-3 flex items-center gap-1.5 cursor-pointer">
           <svg class="w-3.5 h-3.5 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
           <span>Invoice</span>
-        </button>
+        </a>
 
         <!-- Quick Action: Add Client -->
         <button type="button" @click="activeModal = 'create_customer_modal'" class="btn-secondary text-xs py-2 px-3 flex items-center gap-1.5 cursor-pointer">

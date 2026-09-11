@@ -116,6 +116,17 @@ class ExpensesListView(PermissionRequiredMixin, View):
 class CreateExpenseView(PermissionRequiredMixin, View):
     required_permissions = ('expenses.create',)
 
+    def get(self, request):
+        categories = ExpenseCategory.objects.filter(is_active=True).order_by('name')
+        vendors = Vendor.objects.filter(is_active=True).order_by('name')
+        return render(request, 'accounting/expense_create.html', {
+            'active_tab': 'accounts',
+            'sub_tab': 'expenses',
+            'categories': categories,
+            'vendors': vendors,
+            'default_date': timezone.now().date(),
+        })
+
     def post(self, request):
         category_id = request.POST.get('category')
         vendor_id = request.POST.get('vendor')
@@ -287,6 +298,17 @@ class AccountsPayableView(PermissionRequiredMixin, View):
 
 class CreateSupplierBillView(PermissionRequiredMixin, View):
     required_permissions = ('accounts.payables.create',)
+
+    def get(self, request):
+        vendors = Vendor.objects.filter(is_active=True).order_by('name')
+        today = timezone.now().date()
+        return render(request, 'accounting/bill_create.html', {
+            'active_tab': 'accounts',
+            'sub_tab': 'payables',
+            'vendors': vendors,
+            'default_issue_date': today,
+            'default_due_date': today + timedelta(days=30),
+        })
 
     def post(self, request):
         vendor_id = request.POST.get('vendor')

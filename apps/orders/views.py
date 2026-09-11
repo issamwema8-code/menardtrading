@@ -199,6 +199,18 @@ class MergePurchaseOrdersView(PermissionRequiredMixin, View):
     """
     permission_required = ('orders.create', 'orders.view')
 
+    def get(self, request):
+        orders = PurchaseOrder.objects.exclude(status=PurchaseOrder.Status.CANCELLED).order_by('-created_at')
+        primary_id = request.GET.get('primary_po_id', '')
+        secondary_id = request.GET.get('secondary_po_id', '')
+
+        return render(request, 'orders/order_merge.html', {
+            'orders': orders,
+            'primary_id': primary_id,
+            'secondary_id': secondary_id,
+            'active_tab': 'orders',
+        })
+
     def post(self, request):
         from decimal import Decimal
         from django.utils import timezone

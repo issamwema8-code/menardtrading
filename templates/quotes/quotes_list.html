@@ -41,10 +41,10 @@
       </div>
 
       <div>
-        <button @click="activeModal = 'create_quote_modal'" class="btn-primary">
+        <a href="{% url 'create_quotation' %}" class="btn-primary">
           <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
           <span>Quotation</span>
-        </button>
+        </a>
       </div>
     </div>
   </div>
@@ -157,11 +157,11 @@
                   <span>Preview</span>
                 </a>
 
-                <button type="button" @click="activeModal = 'edit_quote_modal'; $dispatch('open-edit-quote', { id: {{ quote.id }} })" 
-                        class="btn-outline text-xs py-1.5 px-2.5 whitespace-nowrap text-amber-600 hover:text-amber-700 hover:bg-amber-50" title="Edit Quotation">
+                <a href="{% url 'update_quotation' quote.id %}" 
+                   class="btn-outline text-xs py-1.5 px-2.5 whitespace-nowrap text-amber-600 hover:text-amber-700 hover:bg-amber-50" title="Edit Quotation">
                   <svg class="w-3.5 h-3.5 text-amber-500 inline-block mr-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                   <span>Edit</span>
-                </button>
+                </a>
 
                 <a href="{% url 'quote_pdf_download' quote.id %}" target="_blank" class="btn-outline text-xs py-1.5 px-2.5 whitespace-nowrap" title="Download PDF">
                   PDF

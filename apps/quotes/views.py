@@ -170,6 +170,21 @@ class CreateQuotationView(PermissionRequiredMixin, View):
     Manually create a real quotation for a customer with custom line items.
     """
     permission_required = 'quotations.create'
+
+    def get(self, request):
+        from apps.customers.models import Customer, PaymentTermOption
+        from apps.accounts.models import CompanySettings
+        customers = list(Customer.objects.all().order_by('company_name'))
+        payment_terms = list(PaymentTermOption.get_all_terms())
+        branding_vat = CompanySettings.get_settings().vat_rate or Decimal('0.00')
+
+        return render(request, 'quotes/quote_create.html', {
+            'active_tab': 'quotes',
+            'customers': customers,
+            'payment_terms': payment_terms,
+            'default_vat_rate': branding_vat,
+        })
+
     def post(self, request):
         from apps.customers.models import Customer
         from apps.quotes.models import QuoteLineItem
@@ -245,7 +260,7 @@ class CreateQuotationView(PermissionRequiredMixin, View):
 
         from menard_core.formatters import format_money
         messages.success(request, f"Created Quotation #{quote.quote_number} for {customer.company_name} (Total: {format_money(quote.total_amount, 'N$')}).")
-        return redirect('quotes_list')
+        return redirect('quote_preview', pk=quote.id)
 
 
 class QuotationPreviewView(PermissionRequiredMixin, View):
@@ -303,6 +318,34 @@ class UpdateQuotationView(PermissionRequiredMixin, View):
     Recalculates subtotals, VAT, and regenerates the branded PDF.
     """
     permission_required = ('quotes.create', 'quotations.create')
+
+    def get(self, request, pk):
+        quote = get_object_or_404(Quotation, pk=pk)
+        from apps.customers.models import Customer, PaymentTermOption
+        import json
+
+        customers = list(Customer.objects.all().order_by('company_name'))
+        payment_terms = list(PaymentTermOption.get_all_terms())
+        
+        items_data = [
+            {
+                'id': item.id,
+                'description': item.description,
+                'quantity': str(item.quantity),
+                'unit_price': str(item.unit_price),
+                'total_price': str(item.total_price),
+                'item_type': item.item_type,
+            }
+            for item in quote.line_items.all()
+        ]
+
+        return render(request, 'quotes/quote_edit.html', {
+            'active_tab': 'quotes',
+            'quote': quote,
+            'customers': customers,
+            'payment_terms': payment_terms,
+            'items_json': json.dumps(items_data),
+        })
 
     def post(self, request, pk):
         quote = get_object_or_404(Quotation, pk=pk)
