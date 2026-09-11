@@ -457,5 +457,81 @@ class DocumentDesignSystemTestCase(TestCase):
         self.assertEqual(quote1.subtotal, Decimal('14800.00'))
         self.assertFalse(Quotation.objects.filter(id=quote2.id).exists())
 
+    def test_partial_payment_balance_calculation_and_receipt(self):
+        """
+        Verify that recording a partial payment against an invoice calculates exact remaining balance,
+        sets status to PARTIALLY_PAID, and does not falsely claim the invoice is fully settled.
+        """
+        # Create an invoice billed at N$ 3,000.00
+        inv = Invoice.objects.create(
+            customer=self.customer,
+            invoice_number='INV-2026-0003-TEST',
+            subtotal=Decimal('3000.00'),
+            vat_rate=Decimal('0.00'),
+            vat_amount=Decimal('0.00'),
+            total_amount=Decimal('3000.00'),
+            amount_paid=Decimal('0.00'),
+            balance_due=Decimal('3000.00'),
+            status=Invoice.Status.ISSUED,
+            due_date=timezone.now().date() + datetime.timedelta(days=14)
+        )
+        InvoiceLineItem.objects.create(
+            invoice=inv,
+            description='Transport Freight Service',
+            quantity=Decimal('1.00'),
+            unit_price=Decimal('3000.00'),
+            total_price=Decimal('3000.00')
+        )
+        inv.recalculate_totals()
+        self.assertEqual(inv.total_amount, Decimal('3000.00'))
+        self.assertEqual(inv.balance_due, Decimal('3000.00'))
+
+        # Record partial payment of N$ 2,500.00 via the record payment action endpoint
+        record_url = reverse('record_payment_action', kwargs={'invoice_id': inv.id})
+        response = self.client.post(record_url, {
+            'amount_paid': '2500.00',
+            'payment_method': 'EFT_BANK_TRANSFER',
+            'transaction_reference': '1244',
+            'notes': 'Partial payment'
+        }, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        inv.refresh_from_db()
+        # Amount paid should be EXACTLY 2500.00, NOT double-counted (5000.00)
+        self.assertEqual(inv.amount_paid, Decimal('2500.00'))
+        self.assertEqual(inv.balance_due, Decimal('500.00'))
+        self.assertEqual(inv.status, Invoice.Status.PARTIALLY_PAID)
+
+        # Check receipt
+        receipt = inv.receipts.latest('created_at')
+        self.assertEqual(receipt.amount_paid, Decimal('2500.00'))
+        self.assertEqual(receipt.invoice.balance_due, Decimal('500.00'))
+
+        # Check receipt preview text
+        preview_url = reverse('receipt_preview', kwargs={'pk': receipt.id})
+        resp_preview = self.client.get(preview_url)
+        self.assertEqual(resp_preview.status_code, 200)
+        self.assertContains(resp_preview, 'The remaining balance due on this invoice is N$ 500.00.')
+        self.assertNotContains(resp_preview, 'This invoice has been fully settled in our accounts ledger.')
+
+        # Now pay remaining N$ 500.00
+        response2 = self.client.post(record_url, {
+            'amount_paid': '500.00',
+            'payment_method': 'EFT_BANK_TRANSFER',
+            'transaction_reference': '1245',
+            'notes': 'Final settlement'
+        }, follow=True)
+        self.assertEqual(response2.status_code, 200)
+
+        inv.refresh_from_db()
+        self.assertEqual(inv.amount_paid, Decimal('3000.00'))
+        self.assertEqual(inv.balance_due, Decimal('0.00'))
+        self.assertEqual(inv.status, Invoice.Status.PAID)
+
+        receipt2 = inv.receipts.latest('created_at')
+        resp_preview2 = self.client.get(reverse('receipt_preview', kwargs={'pk': receipt2.id}))
+        self.assertContains(resp_preview2, 'This invoice has been fully settled in our accounts ledger.')
+
+
 
 

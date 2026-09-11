@@ -145,16 +145,27 @@ class Invoice(models.Model):
             except Exception:
                 self.vat_rate = Decimal('0.00')
 
-        items_total = sum((item.total_price for item in self.line_items.all()), Decimal('0.00'))
-        self.subtotal = items_total
-        self.vat_amount = (self.subtotal * (self.vat_rate / Decimal('100.00'))).quantize(Decimal('0.01'))
-        self.total_amount = self.subtotal + self.vat_amount
+        if self.line_items.exists():
+            items_total = sum((item.total_price for item in self.line_items.all()), Decimal('0.00'))
+            self.subtotal = items_total
+            self.vat_amount = (self.subtotal * (self.vat_rate / Decimal('100.00'))).quantize(Decimal('0.01'))
+            self.total_amount = self.subtotal + self.vat_amount
+        elif self.total_amount == Decimal('0.00') and self.subtotal > Decimal('0.00'):
+            self.vat_amount = (self.subtotal * (self.vat_rate / Decimal('100.00'))).quantize(Decimal('0.01'))
+            self.total_amount = self.subtotal + self.vat_amount
+
+        total_paid = sum((rcp.amount_paid for rcp in self.receipts.all()), Decimal('0.00'))
+        self.amount_paid = total_paid
         self.balance_due = max(Decimal('0.00'), self.total_amount - self.amount_paid)
         if self.amount_paid >= self.total_amount and self.total_amount > 0:
             self.status = self.Status.PAID
         elif self.amount_paid > 0:
             self.status = self.Status.PARTIALLY_PAID
-        self.save(update_fields=['vat_rate', 'subtotal', 'vat_amount', 'total_amount', 'balance_due', 'status'])
+        elif self.due_date and self.due_date < timezone.localdate() and self.status != self.Status.DRAFT and self.status != self.Status.CANCELLED:
+            self.status = self.Status.OVERDUE
+        elif self.status != self.Status.DRAFT and self.status != self.Status.CANCELLED:
+            self.status = self.Status.ISSUED
+        self.save(update_fields=['vat_rate', 'subtotal', 'vat_amount', 'total_amount', 'amount_paid', 'balance_due', 'status'])
 
 
 class InvoiceLineItem(models.Model):
@@ -225,15 +236,12 @@ class PaymentReceipt(models.Model):
         return f"{self.receipt_number} - {format_money(self.amount_paid, 'R')} for {self.invoice.invoice_number}"
 
     def save(self, *args, **kwargs):
-        is_new = self.pk is None
         super().save(*args, **kwargs)
-        if is_new:
-            # Update invoice paid balance
-            total_paid = sum((rcp.amount_paid for rcp in self.invoice.receipts.all()), Decimal('0.00'))
-            self.invoice.amount_paid = total_paid
-            self.invoice.balance_due = max(Decimal('0.00'), self.invoice.total_amount - total_paid)
-            if self.invoice.amount_paid >= self.invoice.total_amount and self.invoice.total_amount > 0:
-                self.invoice.status = Invoice.Status.PAID
-            elif self.invoice.amount_paid > 0:
-                self.invoice.status = Invoice.Status.PARTIALLY_PAID
-            self.invoice.save(update_fields=['amount_paid', 'balance_due', 'status'])
+        if self.invoice:
+            self.invoice.recalculate_totals()
+
+    def delete(self, *args, **kwargs):
+        inv = self.invoice
+        super().delete(*args, **kwargs)
+        if inv:
+            inv.recalculate_totals()

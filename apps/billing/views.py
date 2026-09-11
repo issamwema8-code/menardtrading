@@ -145,14 +145,9 @@ class RecordPaymentActionView(PermissionRequiredMixin, View):
             notes=notes
         )
 
-        # Update Invoice balance & status
-        inv.amount_paid += amount_paid
-        inv.balance_due = max(inv.total_amount - inv.amount_paid, Decimal('0.00'))
-        if inv.balance_due == Decimal('0.00'):
-            inv.status = Invoice.Status.PAID
-        else:
-            inv.status = Invoice.Status.PARTIALLY_PAID
-        inv.save()
+        # Refresh invoice and receipt from DB (PaymentReceipt.save automatically recalculated invoice totals)
+        inv.refresh_from_db()
+        receipt.refresh_from_db()
 
         # Update associated Job if fully settled
         job = inv.job
