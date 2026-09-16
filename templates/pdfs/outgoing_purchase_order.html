@@ -1,0 +1,65 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    @page { size: a4; margin: 18mm; }
+    body { font-family: Helvetica, Arial, sans-serif; color: #172033; font-size: 10pt; }
+    .header { border-bottom: 3px solid #b47828; padding-bottom: 12px; margin-bottom: 22px; }
+    .brand { color: #b47828; font-size: 19pt; font-weight: bold; letter-spacing: 1px; }
+    .muted { color: #64748b; }
+    .title { color: #0f172a; font-size: 18pt; font-weight: bold; text-align: right; }
+    .meta { width: 100%; }
+    .meta td { vertical-align: top; width: 50%; }
+    .box { border: 1px solid #dbe1e8; padding: 12px; margin-top: 18px; min-height: 100px; }
+    .label { color: #64748b; font-size: 8pt; font-weight: bold; text-transform: uppercase; }
+    .value { margin-top: 3px; }
+    table.lines { width: 100%; border-collapse: collapse; margin-top: 25px; }
+    .lines th { background: #b47828; color: white; text-align: left; padding: 9px; font-size: 9pt; }
+    .lines td { border-bottom: 1px solid #e2e8f0; padding: 10px 9px; vertical-align: top; }
+    .right { text-align: right; }
+    .total { font-size: 14pt; font-weight: bold; color: #0f172a; }
+    .notes { margin-top: 22px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; }
+    .footer { margin-top: 35px; color: #64748b; font-size: 8pt; border-top: 1px solid #dbe1e8; padding-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <table class="meta"><tr>
+      <td><div class="brand">{{ company.company_name|default:"MENARD TRADING CC" }}</div><div class="muted">Transport, logistics and procurement services</div></td>
+      <td><div class="title">PURCHASE ORDER</div><div class="right">{{ po.po_number }}<br>{{ po.issue_date|date:"d M Y" }}</div></td>
+    </tr></table>
+  </div>
+
+  <table class="meta"><tr>
+    <td><div class="label">Issued To</div><div class="box">
+      <strong>{{ po.supplier.company_name|default:"Service Provider" }}</strong><br>
+      {% if po.supplier.contact_name %}Attn: {{ po.supplier.contact_name }}<br>{% endif %}
+      {{ po.supplier.billing_address|default:po.supplier.physical_address|linebreaksbr }}<br>
+      {% if po.supplier.phone %}Tel: {{ po.supplier.phone }} &bull; {% endif %}Email: {{ po.recipient_email }}
+    </div></td>
+    <td style="padding-left: 12px;"><div class="label">Load Reference</div><div class="box">
+      <strong>{{ po.load_reference|default:"Not specified" }}</strong><br>
+      {% if po.source_purchase_order %}Client PO: {{ po.source_purchase_order.po_number }}<br>{% endif %}
+      {% if po.job %}Job: {{ po.job.job_number }}{% endif %}
+    </div></td>
+  </tr></table>
+
+  <table class="lines">
+    <tr><th>Description</th><th>Pickup</th><th>Delivery</th><th class="right">Qty</th><th class="right">Rate</th><th class="right">Amount</th></tr>
+    <tr>
+      <td>{{ po.cargo_description|default:"Transport or service charge"|linebreaksbr }}</td>
+      <td>{{ po.pickup_location|default:"-"|linebreaksbr }}</td>
+      <td>{{ po.delivery_location|default:"-"|linebreaksbr }}</td>
+      <td class="right">{{ po.quantity }}</td>
+      <td class="right">{{ po.currency }} {{ po.unit_price|floatformat:2 }}</td>
+      <td class="right">{{ po.currency }} {{ po.total_amount|floatformat:2 }}</td>
+    </tr>
+  </table>
+
+  <table style="width: 100%; margin-top: 18px;"><tr><td></td><td class="right total">Total: {{ po.currency }} {{ po.total_amount|floatformat:2 }}</td></tr></table>
+  <div class="notes"><div class="label">Payment Terms and Instructions</div><div class="value">{{ po.payment_terms|default:"As agreed" }}<br>{{ po.special_instructions|default:po.notes|default:"Please confirm acceptance and advise of any issues before commencement."|linebreaksbr }}</div></div>
+  <div class="footer">This Purchase Order is issued by {{ company.company_name|default:"Menard Trading CC" }} and represents a supplier/service commitment. It is not a customer sales invoice.</div>
+</body>
+</html>

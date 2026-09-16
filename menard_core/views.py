@@ -72,12 +72,20 @@ class InboundOrdersListView(PermissionRequiredMixin, View):
     permission_required = 'orders.view'
 
     def get(self, request):
-        orders = PurchaseOrder.objects.select_related('customer').order_by('-created_at')
+        orders = PurchaseOrder.objects.select_related('customer', 'supplier').order_by('-created_at')
+        direction = request.GET.get('direction', 'ALL').upper()
+        status = request.GET.get('status', 'ALL').upper()
+        if direction in {PurchaseOrder.Direction.INCOMING, PurchaseOrder.Direction.OUTGOING}:
+            orders = orders.filter(direction=direction)
+        if status and status != 'ALL':
+            orders = orders.filter(status=status)
         customers = Customer.objects.all().order_by('company_name')
         context = {
             'active_tab': 'orders',
             'orders': orders,
             'customers': customers,
+            'selected_direction': direction,
+            'selected_status': status,
             'metrics': get_dashboard_metrics(request.user),
         }
         return render(request, 'orders/orders_list.html', context)

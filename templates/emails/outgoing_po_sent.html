@@ -1,0 +1,7 @@
+{% extends 'emails/base_email.html' %}
+{% block content %}
+<p>Dear {{ recipient_name }},</p>
+<p>Please find attached Purchase Order <strong>#{{ po.po_number }}</strong> from {{ company.company_name|default:'Menard Trading CC' }}.</p>
+<p>This document confirms the requested transport or service assignment. Please review the load details, rate, payment terms, and instructions, then confirm acceptance or contact our operations team with any changes.</p>
+<p>Kind regards,<br>{{ company.company_name|default:'Menard Trading CC' }} Operations</p>
+{% endblock %}

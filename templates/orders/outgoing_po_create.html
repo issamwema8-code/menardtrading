@@ -1,0 +1,43 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% block title %}Create Outgoing Purchase Order{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-6">
+  <div class="page-header-card flex flex-col md:flex-row justify-between gap-4 md:items-center">
+    <div><h1 class="page-title">Create Outgoing PO</h1><p class="page-description">Issue a supplier or transporter purchase order for an assigned load or service.</p></div>
+    <a href="{% url 'orders_list' %}" class="btn-outline">Back to POs</a>
+  </div>
+  <form method="post" enctype="multipart/form-data" class="space-y-6">
+    {% csrf_token %}
+    <div class="surface-card p-6 space-y-5">
+      <h2 class="text-sm font-bold uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-3">Supplier / Service Provider</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div><label class="form-label">Existing provider</label><select name="supplier_id" class="form-input"><option value="">Enter a new provider below</option>{% for customer in customers %}<option value="{{ customer.id }}">{{ customer.company_name }} - {{ customer.email }}</option>{% endfor %}</select></div>
+        <div><label class="form-label">Recipient email *</label><input type="email" name="recipient_email" required class="form-input" placeholder="provider@example.com"></div>
+        <div><label class="form-label">New provider company</label><input name="supplier_company_name" class="form-input" placeholder="Transporter or service provider"></div>
+        <div><label class="form-label">Contact person</label><input name="supplier_contact_name" class="form-input" placeholder="Contact name"></div>
+        <div><label class="form-label">Phone</label><input name="supplier_phone" class="form-input" placeholder="+264 ..."></div>
+        <div><label class="form-label">Address</label><textarea name="supplier_address" rows="2" class="form-input" placeholder="Postal or physical address"></textarea></div>
+      </div>
+    </div>
+    <div class="surface-card p-6 space-y-5">
+      <h2 class="text-sm font-bold uppercase tracking-wider text-slate-700 border-b border-slate-100 pb-3">Load and Commercial Details</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div><label class="form-label">Issue date *</label><input type="date" name="issue_date" value="{% now 'Y-m-d' %}" required class="form-input"></div>
+        <div><label class="form-label">Load / job reference</label><input name="load_reference" class="form-input" placeholder="Load or client reference"></div>
+        <div><label class="form-label">Currency</label><input name="currency" value="NAD" maxlength="10" class="form-input"></div>
+        <div><label class="form-label">Link incoming client PO</label><select name="source_purchase_order" class="form-input"><option value="">No linked client PO</option>{% for item in incoming_orders %}<option value="{{ item.id }}">{{ item.po_number }} - {{ item.customer.company_name|default:item.raw_email_sender }}</option>{% endfor %}</select></div>
+        <div><label class="form-label">Link logistics job</label><select name="job_id" class="form-input"><option value="">No linked job</option>{% for job in jobs %}<option value="{{ job.id }}">{{ job.job_number }} - {{ job.customer.company_name }}</option>{% endfor %}</select></div>
+        <div><label class="form-label">Quantity *</label><input type="number" name="quantity" value="1" min="0" step="0.01" required class="form-input"></div>
+        <div><label class="form-label">Rate / unit price *</label><input type="number" name="unit_price" value="0" min="0" step="0.01" required class="form-input"></div>
+        <div class="md:col-span-2"><label class="form-label">Description *</label><textarea name="cargo_description" rows="2" required class="form-input" placeholder="Transport or service description"></textarea></div>
+        <div><label class="form-label">Payment terms</label><input name="payment_terms" class="form-input" placeholder="30 Days Net, COD, etc."></div>
+        <div><label class="form-label">Pickup location</label><textarea name="pickup_location" rows="2" class="form-input"></textarea></div>
+        <div><label class="form-label">Delivery location</label><textarea name="delivery_location" rows="2" class="form-input"></textarea></div>
+        <div><label class="form-label">Attachment</label><input type="file" name="attachment" class="form-input"></div>
+        <div class="md:col-span-3"><label class="form-label">Special instructions / notes</label><textarea name="special_instructions" rows="4" class="form-input" placeholder="Delivery requirements, insurance, POD, or other instructions"></textarea><input type="hidden" name="notes" value=""></div>
+      </div>
+    </div>
+    <div class="flex justify-end gap-3"><a href="{% url 'orders_list' %}" class="btn-outline">Cancel</a><button type="submit" class="btn-primary">Create Draft PO</button></div>
+  </form>
+</div>
+{% endblock %}

@@ -1,6 +1,9 @@
 import email.utils
 import re
 import logging
+from decimal import Decimal
+from django.db import transaction
+from django.utils import timezone
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, HttpResponse
 from django.views import View
@@ -10,6 +13,9 @@ from apps.accounts.permissions import PermissionRequiredMixin
 from apps.orders.models import PurchaseOrder, OrderCommunication
 from apps.customers.models import Customer
 from apps.orders.services import process_inbound_purchase_order
+from apps.orders.outgoing import generate_outgoing_po_number, parse_decimal, send_outgoing_po
+from apps.logistics.models import LogisticsJob
+from apps.accounts.audit import log_audit_event
 from menard_core.brevo_email import send_departmental_email
 
 logger = logging.getLogger(__name__)
@@ -28,6 +34,142 @@ def extract_clean_email(raw_address: str) -> str:
     if match:
         return match.group(0).strip().lower()
     return raw_address.strip()
+
+
+class CreateOutgoingPurchaseOrderView(PermissionRequiredMixin, View):
+    permission_required = 'orders.create'
+
+    def get(self, request):
+        return render(request, 'orders/outgoing_po_create.html', {
+            'customers': Customer.objects.filter(is_active=True).order_by('company_name'),
+            'incoming_orders': PurchaseOrder.objects.filter(direction=PurchaseOrder.Direction.INCOMING).order_by('-created_at')[:100],
+            'jobs': LogisticsJob.objects.select_related('customer').exclude(status=LogisticsJob.Status.CLOSED).order_by('-created_at')[:100],
+        })
+
+    def post(self, request):
+        company_name = request.POST.get('supplier_company_name', '').strip()
+        supplier_id = request.POST.get('supplier_id', '').strip()
+        supplier = Customer.objects.filter(pk=supplier_id, is_active=True).first() if supplier_id else None
+        recipient_email = extract_clean_email(request.POST.get('recipient_email', ''))
+        contact_name = request.POST.get('supplier_contact_name', '').strip()
+        phone = request.POST.get('supplier_phone', '').strip()
+        address = request.POST.get('supplier_address', '').strip()
+
+        if not recipient_email or '@' not in recipient_email:
+            messages.error(request, 'A valid supplier or service provider email address is required.')
+            return self._render_form(request)
+        if not supplier and not company_name:
+            messages.error(request, 'Select an existing provider or enter a company name.')
+            return self._render_form(request)
+
+        try:
+            quantity = parse_decimal(request.POST.get('quantity', '1'), 'Quantity')
+            unit_price = parse_decimal(request.POST.get('unit_price', '0'), 'Rate / unit price')
+        except ValueError as exc:
+            messages.error(request, str(exc))
+            return self._render_form(request)
+
+        with transaction.atomic():
+            if not supplier:
+                supplier = Customer.objects.create(
+                    company_name=company_name,
+                    contact_name=contact_name or company_name,
+                    email=recipient_email,
+                    phone=phone or 'N/A',
+                    physical_address=address or 'N/A',
+                    billing_address=address,
+                    payment_terms=request.POST.get('payment_terms', '').strip(),
+                )
+
+            source_po = PurchaseOrder.objects.filter(
+                pk=request.POST.get('source_purchase_order'),
+                direction=PurchaseOrder.Direction.INCOMING,
+            ).first() or None
+            job = LogisticsJob.objects.filter(pk=request.POST.get('job_id')).first() if request.POST.get('job_id') else None
+            po = PurchaseOrder.objects.create(
+                po_number=generate_outgoing_po_number(),
+                direction=PurchaseOrder.Direction.OUTGOING,
+                status=PurchaseOrder.Status.DRAFT,
+                supplier=supplier,
+                recipient_email=recipient_email,
+                source_purchase_order=source_po,
+                job=job,
+                load_reference=request.POST.get('load_reference', '').strip(),
+                issue_date=request.POST.get('issue_date') or timezone.localdate(),
+                cargo_description=request.POST.get('cargo_description', '').strip(),
+                pickup_location=request.POST.get('pickup_location', '').strip(),
+                delivery_location=request.POST.get('delivery_location', '').strip(),
+                quantity=quantity,
+                unit_price=unit_price,
+                currency=(request.POST.get('currency', 'NAD').strip().upper() or 'NAD')[:10],
+                payment_terms=request.POST.get('payment_terms', '').strip(),
+                special_instructions=request.POST.get('special_instructions', '').strip(),
+                notes=request.POST.get('notes', '').strip(),
+                supporting_attachment=request.FILES.get('attachment'),
+                created_by=request.user,
+                updated_by=request.user,
+            )
+            log_audit_event(
+                request=request, user=request.user, action='OUTGOING_PURCHASE_ORDER_CREATED',
+                resource_type='PurchaseOrder', resource_id=po.po_number,
+                details={'supplier': supplier.company_name, 'total': str(po.total_amount)},
+            )
+        messages.success(request, f'Outgoing PO #{po.po_number} created as a draft.')
+        return redirect('purchase_order_detail', pk=po.pk)
+
+    def _render_form(self, request):
+        return render(request, 'orders/outgoing_po_create.html', {
+            'customers': Customer.objects.filter(is_active=True).order_by('company_name'),
+            'incoming_orders': PurchaseOrder.objects.filter(direction=PurchaseOrder.Direction.INCOMING).order_by('-created_at')[:100],
+            'jobs': LogisticsJob.objects.select_related('customer').exclude(status=LogisticsJob.Status.CLOSED).order_by('-created_at')[:100],
+        }, status=400)
+
+
+class SendOutgoingPurchaseOrderView(PermissionRequiredMixin, View):
+    permission_required = 'orders.email'
+
+    def post(self, request, pk):
+        po = get_object_or_404(PurchaseOrder, pk=pk)
+        try:
+            po, sent, message = send_outgoing_po(po, request.user, request=request)
+            (messages.success if sent else messages.info)(request, message)
+        except ValueError as exc:
+            messages.error(request, str(exc))
+        return redirect('purchase_order_detail', pk=po.pk)
+
+
+class UpdateOutgoingPurchaseOrderStatusView(PermissionRequiredMixin, View):
+    permission_required = 'orders.create'
+
+    def post(self, request, pk):
+        po = get_object_or_404(PurchaseOrder, pk=pk, direction=PurchaseOrder.Direction.OUTGOING)
+        new_status = request.POST.get('status', '').strip().upper()
+        allowed = {
+            PurchaseOrder.Status.ACCEPTED,
+            PurchaseOrder.Status.REJECTED,
+            PurchaseOrder.Status.COMPLETED,
+            PurchaseOrder.Status.CANCELLED,
+        }
+        if new_status not in allowed:
+            messages.error(request, 'Invalid outgoing PO status transition.')
+            return redirect('purchase_order_detail', pk=pk)
+        po.status = new_status
+        now = timezone.now()
+        if new_status == PurchaseOrder.Status.ACCEPTED:
+            po.accepted_at = now
+        elif new_status == PurchaseOrder.Status.REJECTED:
+            po.rejected_at = now
+        elif new_status == PurchaseOrder.Status.CANCELLED:
+            po.cancelled_at = now
+        po.updated_by = request.user
+        po.save()
+        log_audit_event(
+            request=request, user=request.user, action=f'OUTGOING_PURCHASE_ORDER_{new_status}',
+            resource_type='PurchaseOrder', resource_id=po.po_number,
+            details={'status': new_status},
+        )
+        messages.success(request, f'PO #{po.po_number} marked {po.get_status_display()}.')
+        return redirect('purchase_order_detail', pk=pk)
 
 
 class UploadPurchaseOrderView(PermissionRequiredMixin, View):

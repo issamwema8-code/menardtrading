@@ -1,17 +1,28 @@
 import uuid
+from decimal import Decimal
 from django.utils import timezone
 from django.db import models
+from django.contrib.auth.models import User
 from django.core.serializers.json import DjangoJSONEncoder
 from apps.customers.models import Customer
 
 
 class PurchaseOrder(models.Model):
+    class Direction(models.TextChoices):
+        INCOMING = 'INCOMING', 'Incoming'
+        OUTGOING = 'OUTGOING', 'Outgoing'
+
     class Status(models.TextChoices):
         RECEIVED = 'RECEIVED', 'PO Received'
         PARSING = 'PARSING', 'Parsing Document'
         PARSED = 'PARSED', 'Parsed & Ready for Quote'
         QUOTED = 'QUOTED', 'Quote Generated'
         JOB_CREATED = 'JOB_CREATED', 'Job Created'
+        DRAFT = 'DRAFT', 'Draft'
+        SENT = 'SENT', 'Sent'
+        VIEWED = 'VIEWED', 'Viewed'
+        ACCEPTED = 'ACCEPTED', 'Accepted'
+        REJECTED = 'REJECTED', 'Rejected'
         COMPLETED = 'COMPLETED', 'Completed'
         CANCELLED = 'CANCELLED', 'Cancelled'
 
@@ -20,6 +31,12 @@ class PurchaseOrder(models.Model):
         MANUAL_UPLOAD = 'MANUAL_UPLOAD', 'Manual Upload'
 
     po_number = models.CharField(max_length=100, unique=True, db_index=True)
+    direction = models.CharField(
+        max_length=10,
+        choices=Direction.choices,
+        default=Direction.INCOMING,
+        db_index=True
+    )
     customer = models.ForeignKey(
         Customer,
         on_delete=models.SET_NULL,
@@ -27,6 +44,64 @@ class PurchaseOrder(models.Model):
         blank=True,
         related_name='purchase_orders'
     )
+    supplier = models.ForeignKey(
+        Customer,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='outgoing_purchase_orders'
+    )
+    source_purchase_order = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='outgoing_orders',
+        limit_choices_to={'direction': 'INCOMING'}
+    )
+    job = models.ForeignKey(
+        'logistics.LogisticsJob',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='purchase_orders'
+    )
+    load_reference = models.CharField(max_length=100, blank=True)
+    recipient_email = models.EmailField(blank=True)
+    issue_date = models.DateField(default=timezone.localdate)
+    quantity = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('1.00'))
+    unit_price = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0.00'))
+    total_amount = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0.00'))
+    currency = models.CharField(max_length=10, default='NAD')
+    payment_terms = models.CharField(max_length=255, blank=True)
+    notes = models.TextField(blank=True)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_purchase_orders'
+    )
+    updated_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='updated_purchase_orders'
+    )
+    sent_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='sent_purchase_orders'
+    )
+    sent_at = models.DateTimeField(null=True, blank=True)
+    viewed_at = models.DateTimeField(null=True, blank=True)
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    rejected_at = models.DateTimeField(null=True, blank=True)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    email_send_status = models.CharField(max_length=20, blank=True, default='')
     source = models.CharField(
         max_length=20,
         choices=Source.choices,
@@ -40,6 +115,7 @@ class PurchaseOrder(models.Model):
         db_index=True
     )
     po_file = models.FileField(upload_to='purchase_orders/%Y/%m/', null=True, blank=True)
+    supporting_attachment = models.FileField(upload_to='purchase_order_supporting/%Y/%m/', null=True, blank=True)
     
     # Inbound email metadata
     raw_email_sender = models.EmailField(blank=True)
@@ -80,8 +156,14 @@ class PurchaseOrder(models.Model):
         verbose_name_plural = 'Purchase Orders'
 
     def __str__(self):
-        customer_name = self.customer.company_name if self.customer else self.raw_email_sender
-        return f"PO #{self.po_number} - {customer_name} ({self.get_status_display()})"
+        party = self.supplier if self.direction == self.Direction.OUTGOING else self.customer
+        party_name = party.company_name if party else self.raw_email_sender
+        return f"PO #{self.po_number} - {party_name} ({self.get_status_display()})"
+
+    def save(self, *args, **kwargs):
+        if self.direction == self.Direction.OUTGOING:
+            self.total_amount = (self.quantity or Decimal('0.00')) * (self.unit_price or Decimal('0.00'))
+        super().save(*args, **kwargs)
 
 
 class OrderCommunication(models.Model):

@@ -6,6 +6,7 @@
 <div class="space-y-6" x-data="{
   searchQuery: '',
   sourceFilter: 'ALL',
+  directionFilter: 'ALL',
   statusFilter: 'ALL',
   matches(order) {
     const q = this.searchQuery.toLowerCase().trim();
@@ -16,19 +17,22 @@
       order.route.toLowerCase().includes(q) || 
       order.cargo.toLowerCase().includes(q);
     const matchesSource = this.sourceFilter === 'ALL' || order.source === this.sourceFilter;
+    const matchesDirection = this.directionFilter === 'ALL' || order.direction === this.directionFilter;
     const matchesStatus = this.statusFilter === 'ALL' || order.status === this.statusFilter;
-    return matchesSearch && matchesSource && matchesStatus;
+    return matchesSearch && matchesSource && matchesDirection && matchesStatus;
   },
   get activeFilterCount() {
     let count = 0;
     if (this.searchQuery.trim()) count++;
     if (this.sourceFilter !== 'ALL') count++;
+    if (this.directionFilter !== 'ALL') count++;
     if (this.statusFilter !== 'ALL') count++;
     return count;
   },
   clearFilters() {
     this.searchQuery = '';
     this.sourceFilter = 'ALL';
+    this.directionFilter = 'ALL';
     this.statusFilter = 'ALL';
   }
 }">
@@ -64,6 +68,9 @@
           <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
           <span>Upload PO</span>
         </button>
+        <a href="{% url 'create_outgoing_purchase_order' %}" class="btn-primary">
+          <span>Create PO</span>
+        </a>
       </div>
     </div>
   </div>
@@ -78,6 +85,9 @@
       
       <!-- Source Filter Pill Tabs -->
       <div class="flex items-center gap-1.5 bg-slate-200/60 p-1 rounded-xl">
+        <button type="button" @click="directionFilter = 'ALL'" :class="directionFilter === 'ALL' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900 font-medium'" class="px-3 py-1.5 rounded-lg text-xs transition">All POs</button>
+        <button type="button" @click="directionFilter = 'INCOMING'" :class="directionFilter === 'INCOMING' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900 font-medium'" class="px-3 py-1.5 rounded-lg text-xs transition">Incoming</button>
+        <button type="button" @click="directionFilter = 'OUTGOING'" :class="directionFilter === 'OUTGOING' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900 font-medium'" class="px-3 py-1.5 rounded-lg text-xs transition">Outgoing</button>
         <button 
           type="button" 
           @click="sourceFilter = 'ALL'" 
@@ -137,7 +147,13 @@
           <option value="PARSED">Parsed &amp; Ready</option>
           <option value="QUOTED">Quote Generated</option>
           <option value="JOB_CREATED">Job Created</option>
+          <option value="DRAFT">Draft</option>
+          <option value="SENT">Sent</option>
+          <option value="VIEWED">Viewed</option>
+          <option value="ACCEPTED">Accepted</option>
+          <option value="REJECTED">Rejected</option>
           <option value="COMPLETED">Completed</option>
+          <option value="CANCELLED">Cancelled</option>
         </select>
 
         <!-- Clear Filters Button -->
@@ -183,6 +199,7 @@
               cargo: '{{ po.cargo_description|default:''|escapejs }}',
               source: '{{ po.source }}',
               status: '{{ po.status }}'
+              ,direction: '{{ po.direction }}'
             })"
           >
             <!-- 0. S/No. -->
@@ -201,10 +218,10 @@
             <!-- 2. Customer / Sender -->
             <td class="table-body-cell whitespace-nowrap">
               <span class="font-bold text-slate-900 block truncate max-w-[210px]" title="{{ po.customer.company_name|default:po.raw_email_sender }}">
-                {{ po.customer.company_name|default:po.raw_email_sender }}
+                {% if po.direction == 'OUTGOING' %}{{ po.supplier.company_name|default:po.recipient_email }}{% else %}{{ po.customer.company_name|default:po.raw_email_sender }}{% endif %}
               </span>
               <span class="text-xs text-slate-400 font-mono block truncate max-w-[210px]" title="{{ po.raw_email_sender }}">
-                {{ po.raw_email_sender }}
+                {% if po.direction == 'OUTGOING' %}{{ po.recipient_email }}{% else %}{{ po.raw_email_sender }}{% endif %}
               </span>
             </td>
 
@@ -227,7 +244,9 @@
 
             <!-- 5. Source Column -->
             <td class="table-body-cell whitespace-nowrap text-center">
-              {% if po.source == 'MANUAL_UPLOAD' %}
+              {% if po.direction == 'OUTGOING' %}
+              <span class="badge-gold text-[10px]">Outgoing</span>
+              {% elif po.source == 'MANUAL_UPLOAD' %}
               <span class="badge-gold text-[10px]">Manual Upload</span>
               {% else %}
               <span class="badge-sky text-[10px]">Email</span>

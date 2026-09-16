@@ -23,6 +23,9 @@ from apps.orders.views import (
     ReplyPurchaseOrderView,
     PurchaseOrderDataAPIView,
     MergePurchaseOrdersView,
+    CreateOutgoingPurchaseOrderView,
+    SendOutgoingPurchaseOrderView,
+    UpdateOutgoingPurchaseOrderStatusView,
 )
 from apps.customers.views import (
     CreateCustomerView,
@@ -126,10 +129,13 @@ urlpatterns = [
     # 2. Inbound Orders Page & Actions
     path('orders/', InboundOrdersListView.as_view(), name='orders_list'),
     path('orders/upload/', UploadPurchaseOrderView.as_view(), name='upload_purchase_order'),
+    path('orders/create/', CreateOutgoingPurchaseOrderView.as_view(), name='create_outgoing_purchase_order'),
     path('orders/merge/', MergePurchaseOrdersView.as_view(), name='merge_purchase_orders'),
     path('orders/<int:pk>/data/', PurchaseOrderDataAPIView.as_view(), name='po_data_api'),
     path('orders/<int:pk>/', PurchaseOrderDetailView.as_view(), name='purchase_order_detail'),
     path('orders/<int:pk>/reply/', ReplyPurchaseOrderView.as_view(), name='reply_purchase_order'),
+    path('orders/<int:pk>/send/', SendOutgoingPurchaseOrderView.as_view(), name='send_outgoing_purchase_order'),
+    path('orders/<int:pk>/status/', UpdateOutgoingPurchaseOrderStatusView.as_view(), name='update_outgoing_purchase_order_status'),
 
     # 3. Quotations Page & Actions
     path('quotes/', QuotationsListView.as_view(), name='quotes_list'),
