@@ -295,9 +295,9 @@
         <div class="party-title">BILL TO</div>
         <div class="party-box">
           <strong style="font-size: 10pt; color: #0f172a;">{{ invoice.customer.company_name }}</strong><br>
-          {% if invoice.customer.contact_name %}Attn: {{ invoice.customer.contact_name }}<br>{% endif %}
           {% if invoice.customer.billing_address and invoice.customer.billing_address != 'N/A' %}{{ invoice.customer.billing_address|linebreaksbr }}<br>{% endif %}
           {% if invoice.customer.physical_address and invoice.customer.physical_address != 'N/A' and invoice.customer.physical_address != invoice.customer.billing_address %}{{ invoice.customer.physical_address|linebreaksbr }}<br>{% endif %}
+          {% if invoice.customer.contact_name %}Attn: {{ invoice.customer.contact_name }}<br>{% endif %}
           {% if invoice.customer.phone %}Tel: {{ invoice.customer.phone }} &bull; {% endif %}Email: {{ invoice.customer.email|default:"N/A" }}<br>
           {% if invoice.customer.vat_number %}Client VAT No: <strong>{{ invoice.customer.vat_number }}</strong>{% endif %}
         </div>
