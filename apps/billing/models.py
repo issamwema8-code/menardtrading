@@ -105,6 +105,7 @@ class Invoice(models.Model):
 
     invoice_pdf = models.FileField(upload_to='invoices/%Y/%m/', null=True, blank=True)
     notes = models.TextField(blank=True, default="Payment strictly according to agreed terms. Direct EFT into Menard Trading CC bank account.")
+    payment_terms_snapshot = models.CharField(max_length=255, blank=True, default='')
     sent_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -138,6 +139,11 @@ class Invoice(models.Model):
             upstream_reference = self.quote.reference_number if self.quote and self.quote.reference_number else self.upstream_po_number
             if upstream_reference:
                 self.reference_number = upstream_reference
+        if is_new and not self.payment_terms_snapshot and self.customer_id:
+            if self.quote and self.quote.payment_terms_snapshot:
+                self.payment_terms_snapshot = self.quote.payment_terms_snapshot
+            else:
+                self.payment_terms_snapshot = self.customer.get_payment_terms_display()
         if is_new:
             try:
                 from apps.accounts.models import CompanySettings

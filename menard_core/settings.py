@@ -272,11 +272,15 @@ EMAIL_CONFIGS = {
     },
     'quotes': {
         **BREVO_EMAIL_SETTINGS,
-        'DEFAULT_FROM_EMAIL': 'Menard Trading Quotations <quotes@menardtrading.com>',
+        'DEFAULT_FROM_EMAIL': 'Menard Trading CC <billing@menardtrading.com>',
     },
     'invoicing': {
         **BREVO_EMAIL_SETTINGS,
-        'DEFAULT_FROM_EMAIL': 'Menard Trading Accounts <accounts@menardtrading.com>',
+        'DEFAULT_FROM_EMAIL': 'Menard Trading CC <billing@menardtrading.com>',
+    },
+    'billing': {
+        **BREVO_EMAIL_SETTINGS,
+        'DEFAULT_FROM_EMAIL': 'Menard Trading CC <billing@menardtrading.com>',
     },
     'operations': {
         **BREVO_EMAIL_SETTINGS,
@@ -288,24 +292,24 @@ EMAIL_CONFIGS = {
     },
     'support': {
         **BREVO_EMAIL_SETTINGS,
-        'DEFAULT_FROM_EMAIL': 'Menard Trading Support <support@menardtrading.com>',
+        'DEFAULT_FROM_EMAIL': 'Menard Trading CC <billing@menardtrading.com>',
     },
     'info': {
         **BREVO_EMAIL_SETTINGS,
-        'DEFAULT_FROM_EMAIL': 'Menard Trading Support <support@menardtrading.com>',
+        'DEFAULT_FROM_EMAIL': 'Menard Trading CC <billing@menardtrading.com>',
     },
 }
 
-# Production Email Settings (Default: support)
+# Production Email Settings (Default: billing)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = EMAIL_CONFIGS['support']['EMAIL_HOST']
-EMAIL_PORT = EMAIL_CONFIGS['support']['EMAIL_PORT']
-EMAIL_USE_TLS = EMAIL_CONFIGS['support']['EMAIL_USE_TLS']
-EMAIL_USE_SSL = EMAIL_CONFIGS['support']['EMAIL_USE_SSL']
-EMAIL_HOST_USER = EMAIL_CONFIGS['support']['EMAIL_HOST_USER']
-EMAIL_HOST_PASSWORD = EMAIL_CONFIGS['support']['EMAIL_HOST_PASSWORD']
-DEFAULT_FROM_EMAIL = EMAIL_CONFIGS['support']['DEFAULT_FROM_EMAIL']
-SERVER_EMAIL = EMAIL_CONFIGS['support']['EMAIL_HOST_USER']
+EMAIL_HOST = EMAIL_CONFIGS['billing']['EMAIL_HOST']
+EMAIL_PORT = EMAIL_CONFIGS['billing']['EMAIL_PORT']
+EMAIL_USE_TLS = EMAIL_CONFIGS['billing']['EMAIL_USE_TLS']
+EMAIL_USE_SSL = EMAIL_CONFIGS['billing']['EMAIL_USE_SSL']
+EMAIL_HOST_USER = EMAIL_CONFIGS['billing']['EMAIL_HOST_USER']
+EMAIL_HOST_PASSWORD = EMAIL_CONFIGS['billing']['EMAIL_HOST_PASSWORD']
+DEFAULT_FROM_EMAIL = EMAIL_CONFIGS['billing']['DEFAULT_FROM_EMAIL']
+SERVER_EMAIL = EMAIL_CONFIGS['billing']['EMAIL_HOST_USER']
 
 # Incoming orders mailbox (separate from Brevo SMTP credentials)
 IMAP_HOST = config('IMAP_HOST', default='mail.menardtrading.com')
@@ -354,10 +358,11 @@ EMAIL_BRANDING = {
     'text_color': '#334155',
     'bg_color': '#f8fafc',
     'website_url': 'https://menardtrading.com',
-    'support_email': 'support@menardtrading.com',
-    'accounts_email': 'accounts@menardtrading.com',
+    'support_email': 'billing@menardtrading.com',
+    'accounts_email': 'billing@menardtrading.com',
+    'billing_email': 'billing@menardtrading.com',
     'orders_email': 'orders@menardtrading.com',
-    'quotes_email': 'quotes@menardtrading.com',
+    'quotes_email': 'billing@menardtrading.com',
     'phone': '+264 81 445 5188',
     'company_reg_number': 'CC/2022/03892',
     'vat_number': '13009715-11',

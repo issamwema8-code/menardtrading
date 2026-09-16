@@ -3,31 +3,7 @@
 {% block title %}Clients{% endblock %}
 
 {% block content %}
-<div class="space-y-6" x-data="{
-  searchQuery: '',
-  termsFilter: 'ALL',
-  matches(company, contact, email, phone, vat, terms) {
-    const q = this.searchQuery.toLowerCase().trim();
-    const matchSearch = !q || 
-      company.toLowerCase().includes(q) || 
-      contact.toLowerCase().includes(q) || 
-      email.toLowerCase().includes(q) ||
-      phone.toLowerCase().includes(q) ||
-      vat.toLowerCase().includes(q);
-    const matchTerms = this.termsFilter === 'ALL' || terms === this.termsFilter;
-    return matchSearch && matchTerms;
-  },
-  get activeFilterCount() {
-    let count = 0;
-    if (this.searchQuery.trim()) count++;
-    if (this.termsFilter !== 'ALL') count++;
-    return count;
-  },
-  clearFilters() {
-    this.searchQuery = '';
-    this.termsFilter = 'ALL';
-  }
-}">
+<div class="space-y-6" x-data="clientManager()">
 
   <!-- ============================================================ -->
   <!-- 1. PAGE HEADER & ACTIONS                                     -->
@@ -37,18 +13,36 @@
       <div class="space-y-1.5">
         <div class="flex items-center gap-2.5">
           <h1 class="page-title">Clients</h1>
-          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200/80 font-mono">{{ customers|length }} Account{{ customers|length|pluralize }}</span>
+          <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200/80 font-mono">
+            <span x-text="filteredClients.length"></span> Account<span x-text="filteredClients.length === 1 ? '' : 's'"></span>
+          </span>
+          {% if show_archived %}
+          <span class="badge badge-gold text-[11px]">Archived View</span>
+          {% endif %}
         </div>
         <p class="page-description max-w-2xl">
-          Manage your client accounts, contact details, and payment terms.
+          Manage your client accounts, billing profiles, contact details, and payment terms across Menard Trading CC.
         </p>
       </div>
 
       <div class="flex items-center gap-3">
-        <button type="button" @click="activeModal = 'create_customer_modal'" class="btn-primary">
+        {% if is_superuser or 'customers.create' in user_perms %}
+        <a href="{% url 'create_customer' %}" class="btn-primary" id="btn-add-client">
           <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-          <span>Client</span>
-        </button>
+          <span>+ Add Client</span>
+        </a>
+        {% endif %}
+        {% if show_archived %}
+        <a href="{% url 'customers_list' %}" class="btn-outline">
+          <svg class="w-4 h-4 text-slate-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+          Active Clients (<span>{{ active_count|default:0 }}</span>)
+        </a>
+        {% else %}
+        <a href="{% url 'customers_list' %}?archived=1" class="btn-outline">
+          <svg class="w-4 h-4 text-slate-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path></svg>
+          Archived (<span>{{ archived_count|default:0 }}</span>)
+        </a>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -61,8 +55,10 @@
     <!-- Table Toolbar: Search, Payment Terms Filter & Clear -->
     <div class="p-4 border-b border-slate-200/80 bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
       <div>
-        <h3 class="text-sm font-bold text-slate-900">Client Accounts</h3>
-        <p class="text-xs text-slate-500">Default terms applied to quotations and invoices for each client</p>
+        <h3 class="text-sm font-bold text-slate-900">
+          {% if show_archived %}Archived Client Directory{% else %}Active Client Directory{% endif %}
+        </h3>
+        <p class="text-xs text-slate-500">Default payment terms and contact details auto-populated into quotes & invoices</p>
       </div>
 
       <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
@@ -74,8 +70,9 @@
           <input 
             type="text" 
             x-model="searchQuery" 
-            placeholder="Search clients, email, phone..." 
+            placeholder="Search company, contact, email, phone, VAT..." 
             class="form-input pl-9 pr-8 text-xs py-1.5"
+            id="client-search-input"
           >
           <button 
             type="button" 
@@ -89,8 +86,8 @@
         </div>
 
         <!-- Payment Terms Filter -->
-        <select x-model="termsFilter" class="form-input text-xs py-1.5 w-auto">
-          <option value="ALL">All Terms</option>
+        <select x-model="termsFilter" class="form-input text-xs py-1.5 w-auto" id="client-terms-filter">
+          <option value="ALL">All Payment Terms</option>
           {% for t in global_payment_terms %}
           <option value="{{ t.code }}">{{ t.name }}</option>
           {% endfor %}
@@ -109,70 +106,186 @@
       </div>
     </div>
 
+    <!-- Responsive Table -->
     <div class="overflow-x-auto">
-      <table class="w-full text-left border-collapse min-w-[1000px]">
+      <table class="w-full text-left border-collapse min-w-[1050px]">
         <thead>
-          <tr class="border-b border-slate-200 bg-slate-50/75">
+          <tr class="border-b border-slate-200 bg-slate-50/75 text-xs font-semibold text-slate-600">
             <th class="table-header-cell w-14 text-center">S/No.</th>
             <th class="table-header-cell w-[220px]">Company Name</th>
-            <th class="table-header-cell w-[180px]">Primary Contact</th>
-            <th class="table-header-cell w-[220px]">Email Address</th>
-            <th class="table-header-cell w-[140px]">Phone</th>
-            <th class="table-header-cell w-[160px]">Payment Terms</th>
-            <th class="table-header-cell w-[140px]">VAT Number</th>
-            <th class="table-header-cell min-w-[200px]">Address</th>
+            <th class="table-header-cell w-[170px]">Primary Contact</th>
+            <th class="table-header-cell w-[210px]">Email Address</th>
+            <th class="table-header-cell w-[130px]">Phone</th>
+            <th class="table-header-cell w-[170px]">Payment Terms</th>
+            <th class="table-header-cell w-[130px]">VAT Number</th>
+            <th class="table-header-cell min-w-[190px]">Address</th>
+            <th class="table-header-cell w-[180px] text-right pr-6">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-200/60 bg-white">
-          {% for cust in customers %}
-          <tr 
-            class="table-body-row" 
-            x-show="matches('{{ cust.company_name|escapejs }}', '{{ cust.contact_name|escapejs }}', '{{ cust.email|escapejs }}', '{{ cust.phone|escapejs }}', '{{ cust.vat_number|default:''|escapejs }}', '{{ cust.payment_terms }}')"
-          >
-            <!-- 0. S/No. -->
-            <td class="table-body-cell text-center font-mono text-xs text-slate-400 font-semibold">{{ forloop.counter }}</td>
+          <template x-for="(cust, index) in filteredClients" :key="cust.id">
+            <tr class="table-body-row hover:bg-slate-50/80 transition-colors">
+              <!-- S/No. -->
+              <td class="table-body-cell text-center font-mono text-xs text-slate-400 font-semibold" x-text="index + 1"></td>
 
-            <td class="table-body-cell whitespace-nowrap">
-              <span class="font-bold text-slate-900 block truncate max-w-[210px]" title="{{ cust.company_name }}">{{ cust.company_name }}</span>
-            </td>
-            <td class="table-body-cell whitespace-nowrap">
-              <span class="font-medium text-slate-800 text-xs block truncate max-w-[170px]">{{ cust.contact_name }}</span>
-            </td>
-            <td class="table-body-cell whitespace-nowrap">
-              <a href="mailto:{{ cust.email }}" class="font-mono text-xs text-slate-600 hover:text-amber-700 hover:underline transition block truncate max-w-[210px]" title="{{ cust.email }}">{{ cust.email }}</a>
-            </td>
-            <td class="table-body-cell whitespace-nowrap">
-              <span class="text-xs text-slate-600 font-mono">{{ cust.phone }}</span>
-            </td>
-            <td class="table-body-cell whitespace-nowrap">
-              <span class="badge badge-gold text-[11px]">
-                {{ cust.get_payment_terms_display }}
-              </span>
-            </td>
-            <td class="table-body-cell whitespace-nowrap">
-              <span class="font-mono text-xs text-slate-600">{{ cust.vat_number|default:"-" }}</span>
-            </td>
-            <td class="table-body-cell whitespace-nowrap">
-              <span class="text-xs text-slate-500 truncate block max-w-[260px]" title="{{ cust.display_address|default:cust.physical_address|default:'-' }}">{{ cust.display_address|default:cust.physical_address|default:"-" }}</span>
-            </td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="8" class="px-6 py-14 text-center">
+              <!-- Company Name -->
+              <td class="table-body-cell whitespace-nowrap">
+                <a :href="'/customers/' + cust.id + '/'" class="flex items-center gap-2 group">
+                  <div class="w-7 h-7 rounded-lg bg-slate-900 text-amber-400 font-bold text-xs flex items-center justify-center flex-shrink-0" x-text="cust.company_name ? cust.company_name.substring(0, 2).toUpperCase() : '--'"></div>
+                  <div class="truncate max-w-[190px]">
+                    <span class="font-bold text-slate-900 group-hover:text-amber-700 block truncate transition" :title="cust.company_name" x-text="cust.company_name"></span>
+                    <span x-show="cust.trading_name" class="text-[11px] text-slate-500 truncate block" x-text="'t/a ' + cust.trading_name"></span>
+                  </div>
+                </a>
+              </td>
+
+              <!-- Primary Contact -->
+              <td class="table-body-cell whitespace-nowrap">
+                <span class="font-medium text-slate-800 text-xs block truncate max-w-[160px]" :title="cust.contact_name" x-text="cust.contact_name"></span>
+              </td>
+
+              <!-- Email Address -->
+              <td class="table-body-cell whitespace-nowrap">
+                <a :href="'mailto:' + cust.email" class="font-mono text-xs text-slate-600 hover:text-amber-700 hover:underline transition block truncate max-w-[200px]" :title="cust.email" x-text="cust.email"></a>
+              </td>
+
+              <!-- Phone -->
+              <td class="table-body-cell whitespace-nowrap">
+                <span class="text-xs text-slate-600 font-mono" x-text="cust.phone || '-'"></span>
+              </td>
+
+              <!-- Payment Terms -->
+              <td class="table-body-cell whitespace-nowrap">
+                <span class="badge badge-gold text-[11px]" x-text="cust.payment_terms_display"></span>
+              </td>
+
+              <!-- VAT Number -->
+              <td class="table-body-cell whitespace-nowrap">
+                <span class="font-mono text-xs text-slate-600" x-text="cust.vat_number || '-'"></span>
+              </td>
+
+              <!-- Address -->
+              <td class="table-body-cell whitespace-nowrap">
+                <span class="text-xs text-slate-500 truncate block max-w-[240px]" :title="cust.display_address || cust.physical_address || '-'" x-text="cust.display_address || cust.physical_address || '-'"></span>
+              </td>
+
+              <!-- Actions -->
+              <td class="table-body-cell whitespace-nowrap text-right pr-6">
+                <div class="flex items-center justify-end gap-1.5">
+                  <!-- View Action -->
+                  <a :href="'/customers/' + cust.id + '/'" class="btn-outline text-xs py-1 px-2.5 hover:border-slate-400" title="View Profile & Transactions">
+                    View
+                  </a>
+
+                  <!-- Edit Action -->
+                  {% if is_superuser or 'customers.update' in user_perms %}
+                  <a :href="'/customers/' + cust.id + '/edit/'" class="btn-outline text-xs py-1 px-2.5 hover:border-amber-400 hover:text-amber-700" title="Edit Client Information">
+                    Edit
+                  </a>
+                  {% endif %}
+
+                  <!-- Delete / Archive / Restore Action -->
+                  {% if is_superuser or 'customers.delete' in user_perms %}
+                  <template x-if="cust.is_active">
+                    <form :action="'/customers/' + cust.id + '/delete/'" method="POST" class="inline" @submit="return confirm('Are you sure you want to delete or archive client ' + cust.company_name + '?');">
+                      {% csrf_token %}
+                      <button type="submit" class="btn-outline text-xs py-1 px-2.5 text-rose-600 hover:bg-rose-50 hover:border-rose-300" title="Delete or Archive Client">
+                        Delete
+                      </button>
+                    </form>
+                  </template>
+                  <template x-if="!cust.is_active">
+                    <form :action="'/customers/' + cust.id + '/restore/'" method="POST" class="inline" @submit="return confirm('Restore client ' + cust.company_name + ' to active status?');">
+                      {% csrf_token %}
+                      <button type="submit" class="btn-outline text-xs py-1 px-2.5 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-300" title="Restore Archived Client">
+                        Restore
+                      </button>
+                    </form>
+                  </template>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          </template>
+
+          <!-- Empty State -->
+          <tr x-show="filteredClients.length === 0">
+            <td colspan="9" class="px-6 py-14 text-center">
               <div class="max-w-sm mx-auto space-y-3">
                 <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
                   <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                 </div>
-                <h4 class="text-sm font-bold text-slate-800">No clients yet</h4>
-                <p class="text-xs text-slate-500">Click "Client" above to add your first client account.</p>
+                <h4 class="text-sm font-bold text-slate-800" x-text="searchQuery || termsFilter !== 'ALL' ? 'No matching clients found' : 'No clients found'"></h4>
+                <p class="text-xs text-slate-500" x-text="searchQuery || termsFilter !== 'ALL' ? 'Try adjusting your search query or payment terms filter.' : 'Click Add Client above to register your first client account.'"></p>
+                <button x-show="activeFilterCount > 0" @click="clearFilters()" class="btn-outline text-xs py-1 px-3 mt-2">Clear all filters</button>
               </div>
             </td>
           </tr>
-          {% endfor %}
         </tbody>
       </table>
     </div>
   </div>
 
 </div>
+
+<!-- ============================================================ -->
+<!-- Alpine.js Client Manager (Search & Filter state)             -->
+<!-- ============================================================ -->
+<script>
+function clientManager() {
+  return {
+    clients: [
+      {% for cust in customers %}
+      {
+        id: {{ cust.id }},
+        company_name: "{{ cust.company_name|escapejs }}",
+        trading_name: "{{ cust.trading_name|default:''|escapejs }}",
+        contact_name: "{{ cust.contact_name|escapejs }}",
+        email: "{{ cust.email|escapejs }}",
+        phone: "{{ cust.phone|default:''|escapejs }}",
+        vat_number: "{{ cust.vat_number|default:''|escapejs }}",
+        registration_number: "{{ cust.registration_number|default:''|escapejs }}",
+        physical_address: "{{ cust.physical_address|default:''|escapejs }}",
+        billing_address: "{{ cust.billing_address|default:''|escapejs }}",
+        display_address: "{{ cust.display_address|default:cust.physical_address|default:''|escapejs }}",
+        payment_terms: "{{ cust.payment_terms|escapejs }}",
+        payment_terms_display: "{{ cust.get_payment_terms_display|escapejs }}",
+        credit_limit: {{ cust.credit_limit|default:0 }},
+        is_active: {{ cust.is_active|yesno:"true,false" }},
+        has_historical_records: {{ cust.has_historical_records|yesno:"true,false" }},
+      }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ],
+    searchQuery: '',
+    termsFilter: 'ALL',
+
+    get filteredClients() {
+      const q = this.searchQuery.toLowerCase().trim();
+      return this.clients.filter(c => {
+        const matchSearch = !q ||
+          (c.company_name && c.company_name.toLowerCase().includes(q)) ||
+          (c.contact_name && c.contact_name.toLowerCase().includes(q)) ||
+          (c.email && c.email.toLowerCase().includes(q)) ||
+          (c.phone && c.phone.toLowerCase().includes(q)) ||
+          (c.vat_number && c.vat_number.toLowerCase().includes(q)) ||
+          (c.trading_name && c.trading_name.toLowerCase().includes(q));
+        const matchTerms = this.termsFilter === 'ALL' || c.payment_terms === this.termsFilter;
+        return matchSearch && matchTerms;
+      });
+    },
+
+    get activeFilterCount() {
+      let count = 0;
+      if (this.searchQuery.trim()) count++;
+      if (this.termsFilter !== 'ALL') count++;
+      return count;
+    },
+
+    clearFilters() {
+      this.searchQuery = '';
+      this.termsFilter = 'ALL';
+    }
+  };
+}
+</script>
 {% endblock %}

@@ -96,7 +96,7 @@ class CustomerApproveQuoteView(View):
                         unit_price=item.unit_price,
                     )
                 inv.recalculate_totals()
-                generate_invoice_pdf(inv)
+                invoice_pdf_bytes = generate_invoice_pdf(inv)
 
             elif pct:
                 inv = Invoice.objects.create(
@@ -115,20 +115,24 @@ class CustomerApproveQuoteView(View):
                     unit_price=deposit_subtotal,
                 )
                 inv.recalculate_totals()
-                generate_invoice_pdf(inv)
+                invoice_pdf_bytes = generate_invoice_pdf(inv)
 
             # Send notification email with the new invoice to the customer
+            invoice_email_result = None
             if 'inv' in locals() and inv and quote.customer.email:
-                send_departmental_email(
+                invoice_email_result = send_departmental_email(
                     department='invoicing',
                     recipient_list=[quote.customer.email],
                     subject=f"Tax Invoice #{inv.invoice_number} – Menard Trading CC",
                     template_name='emails/invoice_sent.html',
                     context={'invoice': inv},
-                    attachments=[(f"{inv.invoice_number}.pdf", inv.invoice_pdf.read(), 'application/pdf')] if inv.invoice_pdf else None
+                    attachments=[(f"{inv.invoice_number}.pdf", invoice_pdf_bytes, 'application/pdf')]
                 )
 
-            messages.success(request, f"Quotation #{quote.quote_number} approved! Job #{job.job_number} created.")
+            if invoice_email_result and not invoice_email_result[0]:
+                messages.error(request, f"Quotation approved and Job #{job.job_number} created, but invoice email delivery failed: {invoice_email_result[1]}")
+            else:
+                messages.success(request, f"Quotation #{quote.quote_number} approved! Job #{job.job_number} created.")
             return redirect('quote_portal', token=token)
 
 
@@ -140,32 +144,46 @@ class SendQuoteEmailView(PermissionRequiredMixin, View):
 
     def post(self, request, pk):
         quote = get_object_or_404(Quotation, pk=pk)
-        
+        recipient_email = request.POST.get('recipient_email', '').strip() or (quote.customer.email if quote.customer else '')
+
+        if not recipient_email or '@' not in recipient_email:
+            messages.error(request, "Unable to send quotation: Please provide a valid recipient email address.")
+            return redirect(request.META.get('HTTP_REFERER', 'quotes_list'))
+
         # Ensure totals and PDF exist
         quote.recalculate_totals()
         pdf_bytes = generate_quotation_pdf(quote)
 
+        if not pdf_bytes or len(pdf_bytes) < 100 or not pdf_bytes.startswith(b'%PDF-'):
+            logger.error(f"[QUOTE EMAIL] PDF generation failed or produced invalid PDF for Quotation #{quote.quote_number}")
+            messages.error(request, "Unable to send quotation: The quotation document could not be prepared. Please try again.")
+            return redirect(request.META.get('HTTP_REFERER', 'quotes_list'))
+
         approval_url = request.build_absolute_uri(f"/portal/quotes/{quote.approval_token}/")
+        custom_subject = request.POST.get('subject', '').strip() or f"Quotation #{quote.quote_number} – Menard Trading CC"
+        custom_message = request.POST.get('message', '').strip()
 
         success, msg = send_departmental_email(
             department='quotes',
-            recipient_list=[quote.customer.email],
-            subject=f"Quotation #{quote.quote_number} – Menard Trading CC",
+            recipient_list=[recipient_email],
+            subject=custom_subject,
             template_name='emails/quote_sent.html',
             context={
                 'quote': quote,
-                'approval_url': approval_url
+                'approval_url': approval_url,
+                'custom_message': custom_message
             },
-            attachments=[(f"{quote.quote_number}.pdf", pdf_bytes, 'application/pdf')] if pdf_bytes else None
+            attachments=[(f"{quote.quote_number}.pdf", pdf_bytes, 'application/pdf')]
         )
 
         if success:
             quote.status = Quotation.Status.SENT
             quote.sent_at = timezone.now()
             quote.save(update_fields=['status', 'sent_at'])
-            messages.success(request, f"Quotation #{quote.quote_number} emailed to {quote.customer.email}.")
+            messages.success(request, f"Quotation sent successfully: {quote.quote_number} has been sent to {recipient_email}.")
         else:
-            messages.error(request, f"Failed to send email: {msg}")
+            logger.error(f"[QUOTE EMAIL] Delivery failed for Quotation #{quote.quote_number} to {recipient_email}: {msg}")
+            messages.error(request, f"Unable to send quotation: The document could not be delivered to {recipient_email}. Please verify the address and try again.")
 
         return redirect(request.META.get('HTTP_REFERER', 'quotes_list'))
 

@@ -117,18 +117,24 @@ class IssueInvoiceActionView(PermissionRequiredMixin, View):
                 inv.recalculate_totals()
 
             # Generate PDF and Email Customer
-            generate_invoice_pdf(inv)
+            invoice_pdf_bytes = generate_invoice_pdf(inv)
+            invoice_email_result = None
             if request.POST.get('send_email', 'true') == 'true' and inv.customer.email:
-                send_departmental_email(
+                invoice_email_result = send_departmental_email(
                     department='invoicing',
                     recipient_list=[inv.customer.email],
                     subject=f"Tax Invoice #{inv.invoice_number} – Menard Trading CC",
                     template_name='emails/invoice_sent.html',
                     context={'invoice': inv},
-                    attachments=[(f"{inv.invoice_number}.pdf", inv.invoice_pdf.read(), 'application/pdf')] if inv.invoice_pdf else None
+                    attachments=[(f"{inv.invoice_number}.pdf", invoice_pdf_bytes, 'application/pdf')]
                 )
 
-        messages.success(request, f"Invoice #{inv.invoice_number} ({inv.get_invoice_type_display()}) generated & emailed.")
+        if invoice_email_result and not invoice_email_result[0]:
+            messages.error(request, f"Invoice #{inv.invoice_number} was generated, but email delivery failed: {invoice_email_result[1]}")
+        elif invoice_email_result:
+            messages.success(request, f"Invoice #{inv.invoice_number} ({inv.get_invoice_type_display()}) generated & emailed.")
+        else:
+            messages.success(request, f"Invoice #{inv.invoice_number} ({inv.get_invoice_type_display()}) generated.")
         return redirect(request.META.get('HTTP_REFERER', 'billing_list'))
 
 
@@ -195,8 +201,9 @@ class RecordPaymentActionView(PermissionRequiredMixin, View):
             )
 
             # Automatically email Receipt to customer via Brevo
+            receipt_email_result = None
             if inv.customer.email:
-                send_departmental_email(
+                receipt_email_result = send_departmental_email(
                     department='invoicing',
                     recipient_list=[inv.customer.email],
                     subject=f"Payment Receipt #{receipt.receipt_number} – Menard Trading CC",
@@ -206,7 +213,10 @@ class RecordPaymentActionView(PermissionRequiredMixin, View):
                 )
 
         from menard_core.formatters import format_money
-        messages.success(request, f"Payment of {format_money(amount_paid, 'R')} recorded. Receipt #{receipt.receipt_number} sent to client.")
+        if receipt_email_result and not receipt_email_result[0]:
+            messages.error(request, f"Payment recorded and receipt #{receipt.receipt_number} generated, but email delivery failed: {receipt_email_result[1]}")
+        else:
+            messages.success(request, f"Payment of {format_money(amount_paid, 'R')} recorded. Receipt #{receipt.receipt_number} sent to client.")
         return redirect(request.META.get('HTTP_REFERER', 'receipts_list'))
 
 
@@ -230,6 +240,97 @@ class ReceiptPreviewView(PermissionRequiredMixin, View):
             'receipt': rcp,
             'active_tab': 'receipts'
         })
+
+
+class SendInvoiceEmailView(PermissionRequiredMixin, View):
+    """
+    Staff action: Sends invoice PDF to customer with optional custom recipient, subject, and message.
+    """
+    permission_required = 'invoices.view'
+
+    def post(self, request, pk):
+        inv = get_object_or_404(Invoice, pk=pk)
+        recipient_email = request.POST.get('recipient_email', '').strip() or (inv.customer.email if inv.customer else '')
+        
+        if not recipient_email or '@' not in recipient_email:
+            messages.error(request, "Unable to send invoice: Please provide a valid recipient email address.")
+            return redirect('invoice_preview', pk=inv.id)
+
+        inv.recalculate_totals()
+        pdf_bytes = generate_invoice_pdf(inv)
+        if not pdf_bytes or len(pdf_bytes) < 100 or not pdf_bytes.startswith(b'%PDF-'):
+            logger.error(f"[INVOICE EMAIL] PDF generation failed or produced invalid PDF for Invoice #{inv.invoice_number}")
+            messages.error(request, "Unable to send invoice: The invoice document could not be prepared. Please try again.")
+            return redirect('invoice_preview', pk=inv.id)
+
+        custom_subject = request.POST.get('subject', '').strip() or f"Menard Trading Tax Invoice {inv.invoice_number}"
+        custom_message = request.POST.get('message', '').strip()
+
+        success, msg = send_departmental_email(
+            department='invoicing',
+            recipient_list=[recipient_email],
+            subject=custom_subject,
+            template_name='emails/invoice_sent.html',
+            context={
+                'invoice': inv,
+                'custom_message': custom_message
+            },
+            attachments=[(f"{inv.invoice_number}.pdf", pdf_bytes, 'application/pdf')]
+        )
+
+        if success:
+            inv.sent_at = timezone.now()
+            inv.save(update_fields=['sent_at', 'updated_at'])
+            messages.success(request, f"Invoice sent successfully: {inv.invoice_number} has been sent to {recipient_email}.")
+        else:
+            logger.error(f"[INVOICE EMAIL] Delivery failed for Invoice #{inv.invoice_number} to {recipient_email}: {msg}")
+            messages.error(request, f"Unable to send invoice: The document could not be delivered to {recipient_email}. Please verify the address and try again.")
+
+        return redirect('invoice_preview', pk=inv.id)
+
+
+class SendReceiptEmailView(PermissionRequiredMixin, View):
+    """
+    Staff action: Sends payment receipt PDF to customer with optional custom recipient, subject, and message.
+    """
+    permission_required = 'receipts.view'
+
+    def post(self, request, pk):
+        rcp = get_object_or_404(PaymentReceipt, pk=pk)
+        recipient_email = request.POST.get('recipient_email', '').strip() or (rcp.customer.email if rcp.customer else '')
+
+        if not recipient_email or '@' not in recipient_email:
+            messages.error(request, "Unable to send receipt: Please provide a valid recipient email address.")
+            return redirect('receipt_preview', pk=rcp.id)
+
+        pdf_bytes = generate_receipt_pdf(rcp)
+        if not pdf_bytes or len(pdf_bytes) < 100 or not pdf_bytes.startswith(b'%PDF-'):
+            logger.error(f"[RECEIPT EMAIL] PDF generation failed or produced invalid PDF for Receipt #{rcp.receipt_number}")
+            messages.error(request, "Unable to send receipt: The receipt document could not be prepared. Please try again.")
+            return redirect('receipt_preview', pk=rcp.id)
+
+        custom_subject = request.POST.get('subject', '').strip() or f"Official Payment Receipt {rcp.receipt_number} – Menard Trading CC"
+        custom_message = request.POST.get('message', '').strip()
+
+        success, msg = send_departmental_email(
+            department='invoicing',
+            recipient_list=[recipient_email],
+            subject=custom_subject,
+            template_name='emails/receipt_sent.html',
+            context={
+                'receipt': rcp,
+                'custom_message': custom_message
+            },
+            attachments=[(f"{rcp.receipt_number}.pdf", pdf_bytes, 'application/pdf')]
+        )
+
+        if success:
+            messages.success(request, f"Receipt sent successfully: {rcp.receipt_number} has been sent to {recipient_email}.")
+        else:
+            logger.error(f"[RECEIPT EMAIL] Delivery failed for Receipt #{rcp.receipt_number} to {recipient_email}: {msg}")
+            messages.error(request, f"Unable to send receipt: The document could not be delivered to {recipient_email}. Please verify the address and try again.")
+
+        return redirect('receipt_preview', pk=rcp.id)
 
 
 
@@ -399,18 +500,22 @@ class CreateDirectInvoiceView(PermissionRequiredMixin, View):
             )
 
             # Send email to customer if requested
+            invoice_email_result = None
             if request.POST.get('send_email') == '1' and inv.customer.email:
-                send_departmental_email(
+                invoice_email_result = send_departmental_email(
                     department='invoicing',
                     recipient_list=[inv.customer.email],
                     subject=f"Tax Invoice #{inv.invoice_number} – Menard Trading CC",
                     template_name='emails/invoice_sent.html',
                     context={'invoice': inv},
-                    attachments=[(f"{inv.invoice_number}.pdf", pdf_bytes or inv.invoice_pdf.read(), 'application/pdf')] if (pdf_bytes or inv.invoice_pdf) else None
+                    attachments=[(f"{inv.invoice_number}.pdf", pdf_bytes, 'application/pdf')]
                 )
 
         from menard_core.formatters import format_money
-        messages.success(request, f"Created Tax Invoice #{inv.invoice_number} for {customer.company_name} (Total: {format_money(inv.total_amount, 'N$')}).")
+        if invoice_email_result and not invoice_email_result[0]:
+            messages.error(request, f"Created Tax Invoice #{inv.invoice_number}, but email delivery failed: {invoice_email_result[1]}")
+        else:
+            messages.success(request, f"Created Tax Invoice #{inv.invoice_number} for {customer.company_name} (Total: {format_money(inv.total_amount, 'N$')}).")
         return redirect('invoice_preview', pk=inv.id)
 
 

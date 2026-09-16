@@ -4,11 +4,13 @@
 {% block title %}Invoice {{ invoice.invoice_number }} — Preview &mdash; Menard Trading CC{% endblock %}
 
 {% block content %}
-<div class="space-y-4">
+{% load menard_tags %}
+
+<div class="space-y-4" x-data="{ showEmailModal: false, isSending: false }">
   <!-- Top Action Toolbar (No Print) -->
   <div class="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900 text-white p-4 rounded-2xl shadow-lg border border-slate-800">
     <div class="flex items-center gap-3">
-      <a href="{% url 'billing_list' %}" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition">
+      <a href="{% url 'billing_list' %}" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition" title="Back to Billing">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
       </a>
       <div>
@@ -17,24 +19,138 @@
             {{ invoice.get_invoice_type_display }}
           </span>
           <span class="text-xs text-slate-400 font-mono">{{ invoice.invoice_number }}</span>
+          {% if invoice.sent_at %}
+          <span class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            Sent {{ invoice.sent_at|date:"d M Y, H:i" }}
+          </span>
+          {% endif %}
         </div>
         <h1 class="text-lg font-bold text-white mt-0.5">Invoice Preview</h1>
       </div>
     </div>
 
-    <!-- Actions: PDF, Email -->
+    <!-- Actions: PDF, Edit Ref, Email -->
     <div class="flex flex-wrap items-center gap-2">
-      <a href="{% url 'invoice_pdf_download' invoice.id %}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm transition">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+      <a href="{% url 'edit_invoice_reference' invoice.id %}" class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition">
+        Edit Ref #
+      </a>
+      <a href="{% url 'invoice_pdf_download' invoice.id %}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl shadow-sm transition">
+        <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
         Download PDF
       </a>
-      <a href="{% url 'edit_invoice_reference' invoice.id %}" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition">Edit Ref #</a>
-      {% if invoice.customer.email %}
-      <a href="mailto:{{ invoice.customer.email }}?subject=Menard%20Trading%20Tax%20Invoice%20{{ invoice.invoice_number }}&body=Dear%20Client,%0A%0APlease%20find%20attached%20Tax%20Invoice%20{{ invoice.invoice_number }}%20from%20Menard%20Trading%20CC." class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition">
-        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-        Email to {{ invoice.customer.email }}
-      </a>
-      {% endif %}
+      <button type="button" @click="showEmailModal = true" class="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl shadow-md transition font-medium cursor-pointer">
+        <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+        Send Invoice
+      </button>
+    </div>
+  </div>
+
+  <!-- Email Composer Modal -->
+  <div x-show="showEmailModal" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0 transform scale-95"
+       x-transition:enter-end="opacity-100 transform scale-100"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="opacity-100 transform scale-100"
+       x-transition:leave-end="opacity-0 transform scale-95">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-lg w-full overflow-hidden" @click.away="if (!isSending) showEmailModal = false">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-white">Send Invoice by Email</h3>
+            <p class="text-xs text-slate-400">Tax Invoice {{ invoice.invoice_number }} &bull; {{ invoice.customer.company_name }}</p>
+          </div>
+        </div>
+        <button type="button" @click="showEmailModal = false" :disabled="isSending" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <!-- Composer Form -->
+      <form method="post" action="{% url 'send_invoice_email' invoice.id %}" @submit="isSending = true">
+        {% csrf_token %}
+        <div class="p-6 space-y-4 text-xs text-slate-700">
+          <!-- From Field (Standardized Company Sender) -->
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">From</label>
+            <div class="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-slate-700 font-medium">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span>Menard Trading CC</span>
+              <span class="font-mono text-slate-500 text-[11px]">&lt;billing@menardtrading.com&gt;</span>
+            </div>
+          </div>
+
+          <!-- To Field (Editable Recipient) -->
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">To (Recipient Email) <span class="text-rose-500">*</span></label>
+            <input type="email" name="recipient_email" value="{{ invoice.customer.email }}" required
+                   placeholder="e.g. accounts@clientcompany.com"
+                   class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-mono text-slate-800 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition shadow-sm">
+          </div>
+
+          <!-- Subject Field -->
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Subject <span class="text-rose-500">*</span></label>
+            <input type="text" name="subject" value="Menard Trading Tax Invoice {{ invoice.invoice_number }}" required
+                   class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition shadow-sm">
+          </div>
+
+          <!-- Message Field -->
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">Message</label>
+            <textarea name="message" rows="3"
+                      class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition shadow-sm"
+                      placeholder="Dear Client, please find attached Tax Invoice {{ invoice.invoice_number }} from Menard Trading CC.">Dear Client,&#10;&#10;Please find attached Tax Invoice {{ invoice.invoice_number }} from Menard Trading CC.</textarea>
+          </div>
+
+          <!-- Verified Attachment Card -->
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Attachment</label>
+            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center font-bold text-[10px]">
+                  PDF
+                </div>
+                <div>
+                  <div class="font-bold text-slate-800 font-mono text-xs">{{ invoice.invoice_number }}.pdf</div>
+                  <div class="text-[11px] text-slate-500">Official Tax Invoice Document &bull; Total: {{ invoice.total_amount|money:"N$" }}</div>
+                </div>
+              </div>
+              <span class="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                Attached
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2.5">
+          <button type="button" @click="showEmailModal = false" :disabled="isSending"
+                  class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition cursor-pointer">
+            Cancel
+          </button>
+          <button type="submit" :disabled="isSending"
+                  class="px-5 py-2 text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 rounded-xl shadow-sm transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50">
+            <template x-if="!isSending">
+              <span class="flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                Send Invoice
+              </span>
+            </template>
+            <template x-if="isSending">
+              <span class="flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                Sending...
+              </span>
+            </template>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

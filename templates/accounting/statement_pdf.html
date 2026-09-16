@@ -172,7 +172,7 @@
                 {% if branding.company_reg_number or branding.tax_number or branding.vat_number %}
                 Company Reg: <strong>{{ branding.company_reg_number|default:"CC/2022/03892" }}</strong> &bull; Tax No: <strong>{{ branding.tax_number|default:branding.vat_number|default:"13009715-11" }}</strong><br>
                 {% endif %}
-                Email: {{ branding.accounts_email|default:branding.support_email|default:"accounts@menardtrading.com" }}{% if branding.telephone and branding.mobile %} &bull; Tel: {{ branding.telephone }} &bull; Mob: {{ branding.mobile }}{% elif branding.phone %} &bull; Tel: {{ branding.phone }}{% endif %}
+                Email: {{ branding.billing_email|default:branding.accounts_email|default:"billing@menardtrading.com" }}{% if branding.telephone and branding.mobile %} &bull; Tel: {{ branding.telephone }} &bull; Mob: {{ branding.mobile }}{% elif branding.phone %} &bull; Tel: {{ branding.phone }}{% endif %}
             </div>
         </div>
         <div>
@@ -281,7 +281,7 @@
     <div class="bank-details">
         <strong style="font-size: 12px; color: #0f172a;">Bank Settlement Details &amp; Remittance:</strong><br>
         {% if branding.bank_details.bank_name %}Bank: {{ branding.bank_details.bank_name }} &bull; {% endif %}Account Name: {{ branding.bank_details.account_name|default:branding.company_name }} &bull; Account No: {{ branding.bank_details.account_number }}{% if branding.bank_details.branch_name %} &bull; Branch: {{ branding.bank_details.branch_name }}{% endif %}{% if branding.bank_details.branch_code %} &bull; Branch Code: {{ branding.bank_details.branch_code }}{% endif %}{% if branding.bank_details.swift_code %} &bull; Swift: {{ branding.bank_details.swift_code }}{% endif %}<br>
-        <em>Please quote your Company Name or Statement Reference when making electronic bank transfers (EFT) and email proof of payment to {{ branding.accounts_email|default:branding.support_email|default:"accounts@menardtrading.com" }}.</em>
+        <em>Please quote your Company Name or Statement Reference when making electronic bank transfers (EFT) and email proof of payment to {{ branding.billing_email|default:branding.accounts_email|default:"billing@menardtrading.com" }}.</em>
     </div>
     {% endif %}
 

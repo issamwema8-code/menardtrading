@@ -6,7 +6,7 @@ This is the repeatable workflow used on September 15-16, 2026. The production Cy
 
 - The server code replaced the outdated GitHub `main` branch.
 - A recovery branch remains available: `server-backup-2026-09-15`.
-- The local checkout now matches commit `5a0be18`.
+- The local checkout and GitHub `main` now include the latest changes through commit `49dcbb7` (`Add document references and fix IMAP sync`).
 - `.env`, `db.sqlite3`, `venv`, uploaded data, and local documents were preserved locally.
 - Django's system check passed.
 
@@ -210,6 +210,190 @@ The expected final status is:
 ```text
 ## main...origin/main
 ```
+
+## 11. Deploy GitHub `main` to Production
+
+Once the server is ready to receive the current GitHub version, connect through CyberPanel SSH and work from the deployment directory:
+
+```bash
+cd /home/menardtrading.com/public_html/menardtrading/
+source venv/bin/activate
+git fetch origin main
+git log --oneline -1 origin/main
+git status --short
+```
+
+Confirm that the server `.env` exists before updating code:
+
+```bash
+test -f .env && echo ".env exists" || echo "WARNING: .env is missing"
+```
+
+If the worktree is clean, update tracked source files without deleting ignored production data:
+
+```bash
+git reset --hard origin/main
+```
+
+Do not run `git clean -fd` on the production server. That could remove ignored files such as uploaded media or local deployment data.
+
+The production `.env` is intentionally not stored in GitHub. It remains on the server while the tracked application code is updated.
+
+## 12. Apply Production Migrations
+
+After deploying the code, apply database migrations before restarting the application:
+
+```bash
+python manage.py migrate
+python manage.py check
+```
+
+Verify the reference-number and outgoing-PO migrations:
+
+```bash
+python manage.py showmigrations quotes billing orders
+```
+
+The following migrations must show `[X]`:
+
+```text
+quotes.0003_quotation_reference_number
+billing.0003_invoice_reference_number
+orders.0007_purchaseorder_accepted_at_purchaseorder_cancelled_at_and_more
+orders.0008_purchaseorder_job
+orders.0009_purchaseorder_supporting_attachment
+```
+
+`makemigrations` reporting `No changes detected` does not apply migrations. Use `migrate` to create missing database columns.
+
+## 13. Configure the Production IMAP Mailbox
+
+Brevo SMTP credentials and the incoming `orders@menardtrading.com` mailbox password are separate credentials. The production `.env` should contain:
+
+```dotenv
+IMAP_HOST=mail.menardtrading.com
+IMAP_PORT=993
+IMAP_USER=orders@menardtrading.com
+IMAP_PASSWORD=your-orders-mailbox-password
+IMAP_SYNC_SINCE_DATE=
+IMAP_ONLY_UNSEEN=False
+```
+
+The application retains `EMAIL_PASSWORD` as a backward-compatible fallback, but `IMAP_PASSWORD` is preferred because it makes the mailbox configuration explicit.
+
+Check the runtime configuration without printing the password:
+
+```bash
+python manage.py shell -c "from django.conf import settings; print(settings.IMAP_HOST, settings.IMAP_PORT, settings.IMAP_USER, bool(settings.IMAP_PASSWORD))"
+```
+
+Test TLS and mailbox authentication without reading or changing messages:
+
+```bash
+python -c "import imaplib; import django; django.setup(); from django.conf import settings; mail=imaplib.IMAP4_SSL(settings.IMAP_HOST, settings.IMAP_PORT, timeout=15); print(mail.login(settings.IMAP_USER, settings.IMAP_PASSWORD)[0]); mail.logout()"
+```
+
+The expected authentication result is `OK`.
+
+## 14. Restart the Systemd Django Service
+
+After updating code and migrations, restart the service:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl reset-failed menardtrading-django.service
+sudo systemctl enable menardtrading-django.service
+sudo systemctl restart menardtrading-django.service
+sudo systemctl status menardtrading-django.service --no-pager
+```
+
+The expected status is:
+
+```text
+Active: active (running)
+```
+
+Verify the service is listening on its configured port:
+
+```bash
+sudo ss -ltnp | grep 8000
+```
+
+## 15. Diagnose `status=203/EXEC`
+
+The production service initially failed with:
+
+```text
+status=203/EXEC
+```
+
+This means systemd could not execute the configured `ExecStart` program. Check that Gunicorn exists and is executable:
+
+```bash
+ls -l /home/menardtrading.com/public_html/menardtrading/venv/bin/gunicorn
+```
+
+The executable must have execute permission, for example:
+
+```text
+-rwxr-xr-x
+```
+
+If necessary, fix the permission:
+
+```bash
+chmod +x /home/menardtrading.com/public_html/menardtrading/venv/bin/gunicorn
+```
+
+Inspect the configured service path:
+
+```bash
+sudo systemctl cat menardtrading-django.service
+```
+
+The `ExecStart` path must point to the real executable:
+
+```ini
+ExecStart=/home/menardtrading.com/public_html/menardtrading/venv/bin/gunicorn menard_core.wsgi:application --workers 3 --bind 127.0.0.1:8000
+```
+
+After correcting the path or permission, reload and restart systemd. Review recent failures with:
+
+```bash
+sudo journalctl -u menardtrading-django.service -n 50 --no-pager
+```
+
+## 16. Final Production Verification
+
+Confirm the deployed commit and clean tracked state:
+
+```bash
+git status --short --branch
+git log -1 --oneline --decorate
+```
+
+The deployed commit for the reference-number and IMAP changes is:
+
+```text
+49dcbb7 Add document references and fix IMAP sync
+```
+
+Then test the public site and the application workflows:
+
+```bash
+curl -I https://menardtrading.com
+```
+
+Log in to the application and verify:
+
+- Overview loads without a missing-column error.
+- Sync Email connects to the orders mailbox.
+- Invoice and quotation `REF #` values display correctly.
+- Outgoing PO creation and sending remain available.
+
+## 17. Security After Deployment
+
+The `.env` file is intentionally ignored by Git, but any credential that was exposed during troubleshooting should be rotated. Replace the Django secret key, database password, Brevo SMTP key, mailbox password, and webhook secret, then update only the production `.env` and the corresponding service configuration.
 
 ## Lessons
 

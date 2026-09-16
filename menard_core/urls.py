@@ -12,7 +12,6 @@ from menard_core.views import (
     LogisticsJobsListView,
     BillingInvoicesListView,
     PaymentReceiptsListView,
-    CustomersListView,
     SyncInboxView,
     EmailQueueStatusView,
     MarkNotificationReadView,
@@ -28,7 +27,15 @@ from apps.orders.views import (
     UpdateOutgoingPurchaseOrderStatusView,
 )
 from apps.customers.views import (
+    CustomersListView,
     CreateCustomerView,
+    CustomerCreatePageView,
+    CustomerUpdateView,
+    CustomerDetailView,
+    ArchiveCustomerView,
+    RestoreCustomerView,
+    CustomerDeleteView,
+    CustomerAPIView,
     CustomerSearchAPIView,
     QuickCreateCustomerView,
     CreatePaymentTermOptionView,
@@ -59,6 +66,8 @@ from apps.billing.views import (
     ReceiptPreviewView,
     CreateDirectInvoiceView,
     RecalculateInvoiceBalancesActionView,
+    SendInvoiceEmailView,
+    SendReceiptEmailView,
 )
 from apps.webhooks.views import BrevoInboundWebhookView
 
@@ -161,6 +170,7 @@ urlpatterns = [
     path('invoices/create/', CreateDirectInvoiceView.as_view(), name='create_invoice'),
     path('invoices/recalculate-balances/', RecalculateInvoiceBalancesActionView.as_view(), name='recalculate_invoices_action'),
     path('invoices/<int:pk>/preview/', InvoicePreviewView.as_view(), name='invoice_preview'),
+    path('invoices/<int:pk>/send/', SendInvoiceEmailView.as_view(), name='send_invoice_email'),
     path('invoices/<int:pk>/reference/', EditInvoiceReferenceView.as_view(), name='edit_invoice_reference'),
     path('jobs/<int:job_id>/issue-invoice/', IssueInvoiceActionView.as_view(), name='issue_invoice_action'),
     path('invoices/<int:invoice_id>/record-payment/', RecordPaymentActionView.as_view(), name='record_payment_action'),
@@ -169,11 +179,20 @@ urlpatterns = [
     # 6. Payment Receipts Page & PDF
     path('receipts/', PaymentReceiptsListView.as_view(), name='receipts_list'),
     path('receipts/<int:pk>/preview/', ReceiptPreviewView.as_view(), name='receipt_preview'),
+    path('receipts/<int:pk>/send/', SendReceiptEmailView.as_view(), name='send_receipt_email'),
     path('receipts/<int:pk>/pdf/', ReceiptPDFDownloadView.as_view(), name='receipt_pdf_download'),
 
     # 7. Customer Directory Page & Actions
     path('customers/', CustomersListView.as_view(), name='customers_list'),
     path('customers/create/', CreateCustomerView.as_view(), name='create_customer'),
+    path('customers/new/', CustomerCreatePageView.as_view(), name='customer_create_page'),
+    path('customers/<int:pk>/', CustomerDetailView.as_view(), name='customer_detail'),
+    path('customers/<int:pk>/edit/', CustomerUpdateView.as_view(), name='edit_customer'),
+    path('customers/<int:pk>/archive/', ArchiveCustomerView.as_view(), name='archive_customer'),
+    path('customers/<int:pk>/restore/', RestoreCustomerView.as_view(), name='restore_customer'),
+    path('customers/<int:pk>/delete/', CustomerDeleteView.as_view(), name='delete_customer'),
+    path('customers/api/', CustomerAPIView.as_view(), name='customer_api_list'),
+    path('customers/api/<int:pk>/', CustomerAPIView.as_view(), name='customer_api_detail'),
     path('customers/api/search/', CustomerSearchAPIView.as_view(), name='customer_search_api'),
     path('customers/api/quick-create/', QuickCreateCustomerView.as_view(), name='quick_create_customer'),
     path('customers/api/payment-terms/', PaymentTermOptionsAPIView.as_view(), name='payment_term_options_api'),

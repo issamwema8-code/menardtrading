@@ -1,6 +1,8 @@
 import re
 import email.utils
 import logging
+import mimetypes
+from pathlib import Path
 from django.conf import settings
 from django.utils import timezone
 from django.core.mail import EmailMultiAlternatives, get_connection
@@ -9,9 +11,71 @@ from django.utils.html import strip_tags
 
 logger = logging.getLogger(__name__)
 
+
+class AttachmentValidationError(ValueError):
+    """Raised when an email attachment cannot be safely sent."""
+
+
+def _attachment_bytes(item):
+    if isinstance(item, (tuple, list)) and len(item) == 3:
+        filename, content, mimetype = item
+    elif isinstance(item, dict):
+        filename = item.get('filename') or item.get('name')
+        content = item.get('content')
+        if content is None and item.get('path'):
+            path = item['path']
+            try:
+                from django.core.files.storage import default_storage
+                if default_storage.exists(path):
+                    with default_storage.open(path, 'rb') as stored_file:
+                        content = stored_file.read()
+                else:
+                    content = Path(path).read_bytes()
+            except (OSError, IOError) as exc:
+                raise AttachmentValidationError(f'Attachment {filename or path} could not be read: {exc}') from exc
+        mimetype = item.get('mimetype') or mimetypes.guess_type(filename or '')[0]
+    else:
+        raise AttachmentValidationError('Attachment must be a (filename, bytes, mimetype) tuple or a file descriptor.')
+
+    if not filename or content is None:
+        raise AttachmentValidationError(f'Attachment {filename or "<unnamed>"} has no readable content.')
+    if hasattr(content, 'read'):
+        content = content.read()
+    if isinstance(content, str):
+        content = content.encode()
+    if not isinstance(content, bytes) or not content:
+        raise AttachmentValidationError(f'Attachment {filename} is empty or unreadable.')
+
+    mimetype = mimetype or 'application/octet-stream'
+    if str(filename).lower().endswith('.pdf'):
+        if mimetype != 'application/pdf':
+            raise AttachmentValidationError(f'PDF attachment {filename} must use MIME type application/pdf.')
+        if not content.startswith(b'%PDF-'):
+            raise AttachmentValidationError(f'Attachment {filename} is not a valid PDF.')
+    return str(filename), content, mimetype
+
+
+def validate_attachments(attachments):
+    validated = []
+    for item in attachments or []:
+        validated.append(_attachment_bytes(item))
+    return validated
+
+
+def _document_context(context):
+    for key, document_type in (
+        ('invoice', 'Invoice'), ('quote', 'Quotation'), ('receipt', 'Receipt'), ('po', 'PurchaseOrder')
+    ):
+        document = (context or {}).get(key)
+        if document is not None:
+            identifier = getattr(document, 'invoice_number', None) or getattr(document, 'quote_number', None) or getattr(document, 'receipt_number', None) or getattr(document, 'po_number', None)
+            return document_type, str(identifier or getattr(document, 'pk', ''))
+    return '', ''
+
 LOOPBACK_DISALLOWED_PATTERNS = [
     'orders@menardtrading.com',
     'quotes@menardtrading.com',
+    'billing@menardtrading.com',
     'accounts@menardtrading.com',
     'logistics@menardtrading.com',
     'support@menardtrading.com',
@@ -103,15 +167,21 @@ def queue_departmental_email(
         else:
             safe_context[k] = v
 
-    # Convert attachments if any to JSON-safe structure
+    # Queue only durable attachment descriptors. Raw bytes must not be silently discarded.
     safe_attachments = []
     if attachments:
         for att in attachments:
             if isinstance(att, dict):
-                safe_attachments.append({
-                    'filename': att.get('filename'),
-                    'mimetype': att.get('mimetype', 'application/pdf')
-                })
+                descriptor = {'filename': att.get('filename'), 'mimetype': att.get('mimetype', 'application/pdf')}
+                if att.get('path'):
+                    descriptor['path'] = att['path']
+                elif att.get('content') is not None:
+                    raise AttachmentValidationError('Queued attachments require a durable path; raw bytes cannot be queued safely.')
+                else:
+                    raise AttachmentValidationError(f"Queued attachment {descriptor['filename']} has no durable content reference.")
+                safe_attachments.append(descriptor)
+            else:
+                raise AttachmentValidationError('Queued attachments require a filename and durable path.')
 
     queue_msg = EmailQueueMessage.objects.create(
         department=department,
@@ -183,9 +253,30 @@ def send_departmental_email(
         **context,
     }
 
+    delivery = None
+    document_type, document_id = _document_context(context)
     try:
+        from apps.orders.models import DocumentEmailDelivery
+        if document_type and clean_recipients:
+            sender_address = settings.EMAIL_CONFIGS.get(department, {}).get('DEFAULT_FROM_EMAIL', settings.DEFAULT_FROM_EMAIL)
+            delivery = DocumentEmailDelivery.objects.create(
+                document_type=document_type,
+                document_id=document_id,
+                recipient=clean_recipients[0],
+                sender=sender_address,
+                subject=subject,
+                status=DocumentEmailDelivery.Status.GENERATING,
+            )
+    except Exception:
+        logger.exception('Could not create document email delivery record')
+
+    try:
+        validated_attachments = validate_attachments(attachments)
+        claims_attachment = any(token in (html_content := render_to_string(template_name, full_context)).lower() for token in ('attached', 'attachment'))
+        if claims_attachment and not validated_attachments:
+            raise AttachmentValidationError('Email template claims a document is attached, but no attachment was supplied.')
+
         # Render HTML and text versions
-        html_content = render_to_string(template_name, full_context)
         text_content = strip_tags(html_content)
 
         # Create explicit Brevo SMTP connection for this department
@@ -227,22 +318,35 @@ def send_departmental_email(
         email.attach_alternative(html_content, "text/html")
 
         # Process attachments
-        if attachments:
-            for item in attachments:
-                if isinstance(item, (tuple, list)) and len(item) == 3:
-                    filename, content, mimetype = item
-                    email.attach(filename, content, mimetype)
-                elif isinstance(item, dict):
-                    email.attach(
-                        item.get('filename'),
-                        item.get('content'),
-                        item.get('mimetype', 'application/pdf')
-                    )
+        for filename, content, mimetype in validated_attachments:
+            email.attach(filename, content, mimetype)
+
+        attached_names = {attachment[0] for attachment in email.attachments}
+        expected_names = {filename for filename, _, _ in validated_attachments}
+        if not expected_names.issubset(attached_names):
+            raise AttachmentValidationError('One or more validated attachments were not added to the outgoing email.')
+
+        if delivery:
+            delivery.status = DocumentEmailDelivery.Status.SENDING
+            delivery.attachment_manifest = [
+                {'filename': filename, 'mimetype': mimetype, 'size': len(content)}
+                for filename, content, mimetype in validated_attachments
+            ]
+            delivery.save(update_fields=['status', 'attachment_manifest'])
 
         email.send()
+        if delivery:
+            delivery.status = DocumentEmailDelivery.Status.SENT
+            delivery.sent_at = timezone.now()
+            delivery.save(update_fields=['status', 'sent_at'])
         logger.info(f"[{department.upper()}] Email successfully delivered to {clean_recipients} - Subject: {subject}")
         return True, "Email dispatched successfully"
 
     except Exception as e:
+        if delivery:
+            from apps.orders.models import DocumentEmailDelivery
+            delivery.status = DocumentEmailDelivery.Status.ATTACHMENT_FAILED if isinstance(e, AttachmentValidationError) else DocumentEmailDelivery.Status.FAILED
+            delivery.error_message = str(e)
+            delivery.save(update_fields=['status', 'error_message'])
         logger.error(f"[{department.upper()}] Failed to send email to {clean_recipients}: {str(e)}", exc_info=True)
         return False, str(e)

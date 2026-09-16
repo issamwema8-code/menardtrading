@@ -135,3 +135,84 @@ class Customer(models.Model):
         lines = self.get_address_lines()
         return ", ".join(lines) if lines else ""
 
+    def has_historical_records(self) -> bool:
+        """
+        Returns True if the client is linked to any historical quotations, invoices,
+        payment receipts, logistics jobs, or purchase orders.
+        """
+        return (
+            self.quotations.exists()
+            or self.invoices.exists()
+            or self.payment_receipts.exists()
+            or self.logistics_jobs.exists()
+            or self.purchase_orders.exists()
+            or (hasattr(self, 'outgoing_purchase_orders') and self.outgoing_purchase_orders.exists())
+        )
+
+    def get_financial_summary(self) -> dict:
+        """
+        Calculates lifetime financial metrics for this client.
+        """
+        from decimal import Decimal
+        from django.db.models import Sum
+
+        invoices_agg = self.invoices.aggregate(
+            total_invoiced=Sum('total_amount'),
+            total_paid=Sum('amount_paid'),
+            total_balance=Sum('balance_due'),
+        )
+        total_invoiced = invoices_agg['total_invoiced'] or Decimal('0.00')
+        total_paid = invoices_agg['total_paid'] or Decimal('0.00')
+        total_balance_due = invoices_agg['total_balance'] or Decimal('0.00')
+
+        return {
+            'total_invoiced': total_invoiced,
+            'total_paid': total_paid,
+            'total_balance_due': total_balance_due,
+            'credit_limit': self.credit_limit,
+            'invoices_count': self.invoices.count(),
+            'unpaid_invoices_count': self.invoices.filter(balance_due__gt=0).count(),
+            'quotations_count': self.quotations.count(),
+            'receipts_count': self.payment_receipts.count(),
+            'jobs_count': self.logistics_jobs.count(),
+            'purchase_orders_count': self.purchase_orders.count(),
+            'has_historical_records': self.has_historical_records(),
+        }
+
+    def archive(self):
+        """
+        Safely soft-deletes / archives the customer profile to protect financial history.
+        """
+        self.is_active = False
+        self.save(update_fields=['is_active', 'updated_at'])
+
+    def restore(self):
+        """
+        Restores an archived customer profile back to active status.
+        """
+        self.is_active = True
+        self.save(update_fields=['is_active', 'updated_at'])
+
+    def to_dict(self) -> dict:
+        return {
+            'id': self.id,
+            'company_name': self.company_name,
+            'trading_name': self.trading_name or '',
+            'contact_name': self.contact_name,
+            'email': self.email,
+            'phone': self.phone or '',
+            'vat_number': self.vat_number or '',
+            'registration_number': self.registration_number or '',
+            'physical_address': self.physical_address or '',
+            'billing_address': self.billing_address or '',
+            'display_address': self.display_address or self.physical_address or '',
+            'payment_terms': self.payment_terms,
+            'payment_terms_display': self.get_payment_terms_display(),
+            'credit_limit': float(self.credit_limit or 0),
+            'is_active': self.is_active,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'has_historical_records': self.has_historical_records(),
+        }
+
+

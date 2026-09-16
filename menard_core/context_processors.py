@@ -15,7 +15,7 @@ def branding_context(request):
         quotes_count = Quotation.objects.filter(status__in=[Quotation.Status.DRAFT, Quotation.Status.SENT]).count()
         jobs_count = LogisticsJob.objects.exclude(status=LogisticsJob.Status.CLOSED).count()
         invoices_count = Invoice.objects.exclude(status='CANCELLED').count()
-        global_customers = list(Customer.objects.all().order_by('company_name')[:100])
+        global_customers = list(Customer.objects.filter(is_active=True).order_by('company_name')[:100])
         global_payment_terms = list(PaymentTermOption.get_all_terms())
         global_purchase_orders = list(PurchaseOrder.objects.exclude(status=PurchaseOrder.Status.CANCELLED).select_related('customer').order_by('-created_at')[:100])
     except Exception:

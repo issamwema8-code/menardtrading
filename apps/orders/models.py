@@ -298,3 +298,32 @@ class EmailQueueMessage(models.Model):
         recipients = ", ".join(self.recipient_list) if isinstance(self.recipient_list, list) else str(self.recipient_list)
         return f"Email [{self.get_status_display()}] to {recipients[:30]} ({self.subject[:30]})"
 
+
+class DocumentEmailDelivery(models.Model):
+    """Auditable result of sending a business document by email."""
+    class Status(models.TextChoices):
+        PENDING = 'PENDING', 'Pending'
+        GENERATING = 'GENERATING', 'Generating Document'
+        ATTACHMENT_FAILED = 'ATTACHMENT_FAILED', 'Attachment Validation Failed'
+        SENDING = 'SENDING', 'Sending'
+        SENT = 'SENT', 'Sent'
+        FAILED = 'FAILED', 'Failed'
+
+    document_type = models.CharField(max_length=50)
+    document_id = models.CharField(max_length=100)
+    recipient = models.EmailField()
+    sender = models.EmailField(blank=True)
+    subject = models.CharField(max_length=500)
+    attachment_manifest = models.JSONField(default=list, blank=True, encoder=DjangoJSONEncoder)
+    status = models.CharField(max_length=25, choices=Status.choices, default=Status.PENDING, db_index=True)
+    provider_message_id = models.CharField(max_length=255, blank=True)
+    error_message = models.TextField(blank=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.document_type} {self.document_id} -> {self.recipient} ({self.get_status_display()})"
+

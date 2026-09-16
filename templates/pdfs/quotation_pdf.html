@@ -272,7 +272,7 @@
           {% if branding.company_reg_number or branding.tax_number or branding.vat_number %}
           Company Reg: <strong>{{ branding.company_reg_number|default:"CC/2022/03892" }}</strong> &bull; Tax No: <strong>{{ branding.tax_number|default:branding.vat_number|default:"13009715-11" }}</strong><br>
           {% endif %}
-          Email: {{ branding.quotes_email|default:branding.support_email|default:"quotes@menardtrading.com" }}{% if branding.telephone and branding.mobile %} &bull; Tel: {{ branding.telephone }} &bull; Mob: {{ branding.mobile }}{% elif branding.phone %} &bull; Tel: {{ branding.phone }}{% endif %}
+          Email: {{ branding.quotes_email|default:branding.support_email|default:"quotes@menardtrading.com" }}<br>{% if branding.telephone and branding.mobile %}Tel: {{ branding.telephone }} &bull; Mob: {{ branding.mobile }}{% elif branding.phone %}Tel: {{ branding.phone }}{% endif %}
         </div>
       </td>
       <td style="width: 42%; text-align: right; vertical-align: top;">
@@ -292,7 +292,7 @@
           {% if quote.customer.contact_name %}Attn: {{ quote.customer.contact_name }}<br>{% endif %}
           {% if quote.customer.billing_address and quote.customer.billing_address != 'N/A' %}{{ quote.customer.billing_address|linebreaksbr }}<br>{% endif %}
           {% if quote.customer.physical_address and quote.customer.physical_address != 'N/A' and quote.customer.physical_address != quote.customer.billing_address %}{{ quote.customer.physical_address|linebreaksbr }}<br>{% endif %}
-          {% if quote.customer.phone %}Tel: {{ quote.customer.phone }} &bull; {% endif %}Email: {{ quote.customer.email|default:"N/A" }}<br>
+          {% if quote.customer.phone %}Tel: {{ quote.customer.phone }}<br>{% endif %}{{ quote.customer.email|default:"N/A" }}<br>
           {% if quote.customer.vat_number %}Client VAT No: <strong>{{ quote.customer.vat_number }}</strong>{% endif %}
         </div>
       </td>
@@ -314,7 +314,7 @@
           </tr>
           <tr>
             <td class="meta-card-label">PAYMENT TERMS</td>
-            <td class="meta-card-value">{{ quote.customer.get_payment_terms_display|default:"30 Days Net" }}</td>
+            <td class="meta-card-value">{{ quote.payment_terms_snapshot|default:quote.customer.get_payment_terms_display|default:"30 Days Net" }}</td>
           </tr>
           {% if quote.display_reference_number %}
           <tr>

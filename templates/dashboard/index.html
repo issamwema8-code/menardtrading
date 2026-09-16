@@ -9,7 +9,7 @@
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
     <div>
       <h2 class="text-lg font-bold text-slate-900">Menard Trading CC Operations Center</h2>
-      <p class="text-xs text-slate-500">Live order-to-cash workflow &bull; Brevo multi-sender connected &bull; Real document processing</p>
+      <p class="text-xs text-slate-500">Live order-to-cash workflow &bull; Automated email delivery &bull; Real-time document processing</p>
     </div>
     <div class="flex flex-wrap items-center gap-2">
       <!-- Sync Live Mailbox Action -->
@@ -42,7 +42,7 @@
       <div>
         <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Revenue Collected</p>
         <p class="text-2xl font-black text-emerald-600 mt-1">R {{ metrics.total_revenue|money }}</p>
-        <p class="text-[11px] text-slate-400 mt-0.5">&check; Fully receipted via Brevo</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">&check; Fully receipted &amp; emailed</p>
       </div>
       <div class="p-3 bg-emerald-50 rounded-xl text-emerald-600">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -106,7 +106,7 @@
       <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4">
         <div>
           <h3 class="text-lg font-extrabold text-amber-400">Order-to-Cash Automation Pipeline</h3>
-          <p class="text-xs text-slate-400 mt-0.5">Inbound Brevo PO &rarr; Auto-Quote &rarr; Multi-Stage Invoicing &rarr; Instant Receipts</p>
+          <p class="text-xs text-slate-400 mt-0.5">Inbound PO &rarr; Smart Quotation &rarr; Multi-Stage Invoicing &rarr; Instant Receipts</p>
         </div>
         <div class="flex gap-2">
           <button @click="currentTab = 'orders'" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition">
@@ -122,7 +122,7 @@
         <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-bold text-amber-400">1. Inbound PO</span>
-            <span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded">Brevo Webhook</span>
+            <span class="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded">Inbound Receiver</span>
           </div>
           <p class="text-xs text-slate-300">Client emails PO to <code class="text-amber-300">orders@menardtrading.com</code> or upload real PDF.</p>
         </div>
@@ -232,7 +232,7 @@
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h2 class="text-xl font-bold text-slate-900">Inbound Purchase Orders (POs)</h2>
-          <p class="text-xs text-slate-500">Automatically received via Brevo Inbound Webhook (<code class="text-amber-600">orders@menardtrading.com</code>) or uploaded directly</p>
+          <p class="text-xs text-slate-500">Automatically received via Inbound Email (<code class="text-amber-600">orders@menardtrading.com</code>) or uploaded directly</p>
         </div>
         <div class="flex items-center gap-2">
           <form method="POST" action="{% url 'sync_inbox' %}" class="inline">
@@ -303,7 +303,7 @@
             </tr>
             {% empty %}
             <tr>
-              <td colspan="8" class="px-4 py-8 text-center text-slate-400">No purchase orders uploaded yet. Click "+ Upload Client PO File" above or send to Brevo inbound.</td>
+              <td colspan="8" class="px-4 py-8 text-center text-slate-400">No purchase orders uploaded yet. Click "+ Upload Client PO File" above or email to orders@menardtrading.com.</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -321,7 +321,7 @@
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
           <h2 class="text-xl font-bold text-slate-900">Quotations Desk</h2>
-          <p class="text-xs text-slate-500">Auto-drafted from client POs or manually created, with 1-click Brevo email dispatch &amp; approval tokens</p>
+          <p class="text-xs text-slate-500">Auto-drafted from client POs or manually created, with 1-click email dispatch &amp; approval tokens</p>
         </div>
         <button @click="activeModal = 'create_quote_modal'" class="btn-primary flex items-center gap-1.5">
           <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -368,7 +368,7 @@
                 <form method="POST" action="{% url 'send_quote_email' quote.id %}" class="inline">
                   {% csrf_token %}
                   <button type="submit" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-sm">
-                    Send via Brevo &rarr;
+                    Send Quotation &rarr;
                   </button>
                 </form>
                 {% endif %}
@@ -493,7 +493,7 @@
 
                 <div class="flex items-center gap-2 pt-2">
                   <input type="checkbox" name="send_email" value="true" checked id="send_email_{{ job.id }}">
-                  <label for="send_email_{{ job.id }}" class="text-slate-700 font-medium">Automatically dispatch PDF Invoice via Brevo to {{ job.customer.email }}</label>
+                  <label for="send_email_{{ job.id }}" class="text-slate-700 font-medium">Automatically email PDF Invoice to {{ job.customer.email }}</label>
                 </div>
 
                 <div class="flex justify-end gap-2 pt-4 border-t">
@@ -603,7 +603,7 @@
                   </div>
 
                   <p class="text-[11px] text-slate-500">
-                    &check; System will automatically generate an Official Payment Receipt PDF and dispatch it to <strong>{{ inv.customer.email }}</strong> via Brevo.
+                    &check; System will automatically generate an Official Payment Receipt PDF and email it to <strong>{{ inv.customer.email }}</strong>.
                   </p>
 
                   <div class="flex justify-end gap-2 pt-4 border-t">

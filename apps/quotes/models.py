@@ -67,6 +67,7 @@ class Quotation(models.Model):
 
     valid_until = models.DateField(null=True, blank=True, db_index=True)
     notes = models.TextField(blank=True, default="Rates include comprehensive transit goods insurance. Payment terms as per agreement.")
+    payment_terms_snapshot = models.CharField(max_length=255, blank=True, default='')
     
     quote_pdf = models.FileField(upload_to='quotes/%Y/%m/', null=True, blank=True)
     sent_at = models.DateTimeField(null=True, blank=True)
@@ -91,6 +92,8 @@ class Quotation(models.Model):
         is_new = self._state.adding
         if is_new and not self.reference_number and self.purchase_order_id:
             self.reference_number = self.purchase_order.po_number
+        if is_new and not self.payment_terms_snapshot and self.customer_id:
+            self.payment_terms_snapshot = self.customer.get_payment_terms_display()
         if is_new:
             try:
                 from apps.accounts.models import CompanySettings

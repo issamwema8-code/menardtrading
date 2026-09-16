@@ -149,7 +149,13 @@ class CustomerViewSet(viewsets.ModelViewSet):
     serializer_class = CustomerSerializer
     permission_classes = [HasGranularPermission]
     permission_module = 'customers'
-    search_fields = ['company_name', 'contact_name', 'email', 'phone']
+    search_fields = ['company_name', 'contact_name', 'email', 'phone', 'vat_number', 'trading_name']
+
+    def perform_destroy(self, instance):
+        if instance.has_historical_records():
+            instance.archive()
+        else:
+            instance.delete()
 
 
 class PurchaseOrderViewSet(viewsets.ModelViewSet):

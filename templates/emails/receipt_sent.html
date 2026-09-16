@@ -5,10 +5,14 @@
 
 <p class="lead-p">Dear {{ receipt.customer.contact_name|default:receipt.customer.company_name }},</p>
 
+{% if custom_message %}
+<div class="lead-p" style="white-space: pre-line; margin-bottom: 16px;">{{ custom_message }}</div>
+{% else %}
 <p class="lead-p">
   Thank you for your payment of <strong>N$ {{ receipt.amount_paid|money }}</strong> to Menard Trading CC. 
   We have recorded your payment against Invoice <strong>#{{ receipt.invoice.invoice_number }}</strong>. Your official payment receipt is attached for your records.
 </p>
+{% endif %}
 
 <div class="info-card green-border">
   <table class="info-table">
@@ -51,12 +55,12 @@
 </p>
 
 <div class="notice-box">
-  If you have any questions regarding your account or statements, please contact our accounts team at <a href="mailto:{{ branding.accounts_email|default:'accounts@menardtrading.com' }}" style="color: #b47828; font-weight: 600; text-decoration: none;">{{ branding.accounts_email|default:'accounts@menardtrading.com' }}</a>.
+  If you have any questions regarding your account or statements, please contact our billing team at <a href="mailto:{{ branding.billing_email|default:branding.accounts_email|default:'billing@menardtrading.com' }}" style="color: #b47828; font-weight: 600; text-decoration: none;">{{ branding.billing_email|default:branding.accounts_email|default:'billing@menardtrading.com' }}</a>.
 </div>
 
 <div class="signoff">
   Kind regards,<br>
-  <strong>Menard Trading CC Accounts</strong><br>
+  <strong>Menard Trading CC</strong><br>
   <span style="color: #b47828; font-size: 11px; font-weight: 700; letter-spacing: 1px;">ALWAYS ON TIME</span>
 </div>
 {% endblock %}

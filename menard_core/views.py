@@ -164,10 +164,12 @@ class CustomersListView(PermissionRequiredMixin, View):
     permission_required = 'customers.view'
 
     def get(self, request):
-        customers = Customer.objects.all().order_by('company_name')
+        show_archived = request.GET.get('archived') == '1'
+        customers = Customer.objects.filter(is_active=not show_archived).order_by('company_name')
         context = {
             'active_tab': 'customers',
             'customers': customers,
+            'show_archived': show_archived,
             'metrics': get_dashboard_metrics(request.user),
         }
         return render(request, 'customers/customers_list.html', context)

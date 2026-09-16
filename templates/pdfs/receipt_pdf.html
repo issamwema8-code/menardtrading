@@ -225,7 +225,7 @@
           {% if branding.company_reg_number or branding.tax_number or branding.vat_number %}
           Company Reg: <strong>{{ branding.company_reg_number|default:"CC/2022/03892" }}</strong> &bull; Tax No: <strong>{{ branding.tax_number|default:branding.vat_number|default:"13009715-11" }}</strong><br>
           {% endif %}
-          Email: {{ branding.accounts_email|default:branding.support_email|default:"accounts@menardtrading.com" }}{% if branding.telephone and branding.mobile %} &bull; Tel: {{ branding.telephone }} &bull; Mob: {{ branding.mobile }}{% elif branding.phone %} &bull; Tel: {{ branding.phone }}{% endif %}
+          Email: {{ branding.billing_email|default:branding.accounts_email|default:"billing@menardtrading.com" }}<br>{% if branding.telephone and branding.mobile %}Tel: {{ branding.telephone }} &bull; Mob: {{ branding.mobile }}{% elif branding.phone %}Tel: {{ branding.phone }}{% endif %}
         </div>
       </td>
       <td style="width: 42%; text-align: right; vertical-align: top;">
@@ -245,7 +245,7 @@
           {% if receipt.customer.contact_name %}Attn: {{ receipt.customer.contact_name }}<br>{% endif %}
           {% if receipt.customer.billing_address and receipt.customer.billing_address != 'N/A' %}{{ receipt.customer.billing_address|linebreaksbr }}<br>{% endif %}
           {% if receipt.customer.physical_address and receipt.customer.physical_address != 'N/A' and receipt.customer.physical_address != receipt.customer.billing_address %}{{ receipt.customer.physical_address|linebreaksbr }}<br>{% endif %}
-          {% if receipt.customer.phone %}Tel: {{ receipt.customer.phone }} &bull; {% endif %}Email: {{ receipt.customer.email|default:"N/A" }}<br>
+          {% if receipt.customer.phone %}Tel: {{ receipt.customer.phone }}<br>{% endif %}{{ receipt.customer.email|default:"N/A" }}<br>
           {% if receipt.customer.vat_number %}Client VAT No: <strong>{{ receipt.customer.vat_number }}</strong>{% endif %}
         </div>
       </td>
