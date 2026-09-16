@@ -150,6 +150,10 @@
     <!-- 2. Validity Date & Status Grid -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
+        <label class="form-label text-xs font-bold text-slate-800">Reference Number / Ref #</label>
+        <input type="text" name="reference_number" value="{{ quote.reference_number|default:'' }}" class="form-input text-xs font-mono" placeholder="Optional PO or originating reference">
+      </div>
+      <div>
         <label class="form-label text-xs font-bold text-slate-800">Valid Until Date</label>
         <input type="date" name="valid_until" x-model="validUntil" class="form-input text-xs font-mono font-semibold">
       </div>

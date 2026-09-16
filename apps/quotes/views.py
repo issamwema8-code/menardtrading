@@ -215,6 +215,7 @@ class CreateQuotationView(PermissionRequiredMixin, View):
         with transaction.atomic():
             quote = Quotation.objects.create(
                 customer=customer,
+                reference_number=request.POST.get('reference_number', '').strip(),
                 valid_until=timezone.now().date() + timezone.timedelta(days=valid_days),
                 notes=notes,
                 vat_rate=vat_rate,
@@ -303,6 +304,7 @@ class QuotationDataAPIView(PermissionRequiredMixin, View):
             'success': True,
             'id': quote.id,
             'quote_number': quote.quote_number,
+            'reference_number': quote.reference_number or (quote.purchase_order.po_number if quote.purchase_order else ''),
             'customer_id': quote.customer_id,
             'customer_name': quote.customer.company_name,
             'customer_email': quote.customer.email,
@@ -374,6 +376,9 @@ class UpdateQuotationView(PermissionRequiredMixin, View):
 
             if 'notes' in request.POST:
                 quote.notes = request.POST.get('notes', '')
+
+            if 'reference_number' in request.POST:
+                quote.reference_number = request.POST.get('reference_number', '').strip()
 
             if request.POST.get('valid_until'):
                 try:

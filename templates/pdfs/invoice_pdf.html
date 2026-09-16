@@ -324,7 +324,7 @@
           </tr>
           <tr>
             <td class="meta-card-label">REF #</td>
-            <td class="meta-card-value font-mono">{{ invoice.po_number|default:"—" }}</td>
+            <td class="meta-card-value font-mono">{{ invoice.display_reference_number|default:"—" }}</td>
           </tr>
           {% if invoice.job %}
           <tr>

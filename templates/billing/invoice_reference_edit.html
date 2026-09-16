@@ -1,0 +1,13 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block title %}Edit Invoice Reference{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+  <div class="page-header-card"><h1 class="page-title">Edit Invoice Reference</h1><p class="page-description">Correct the originating PO or reference without changing the invoice number.</p></div>
+  <form method="post" class="surface-card p-6 space-y-5">
+    {% csrf_token %}
+    <div><label class="form-label">Invoice Number</label><div class="form-input bg-slate-50 font-mono">{{ invoice.invoice_number }}</div></div>
+    <div><label class="form-label">Reference Number / Ref #</label><input type="text" name="reference_number" value="{{ invoice.reference_number }}" class="form-input font-mono" placeholder="Optional PO or originating reference"><p class="text-xs text-slate-500 mt-1">This value is editable and will be used as the source of truth on regenerated documents.</p></div>
+    <div class="flex justify-end gap-3"><a href="{% url 'invoice_preview' invoice.id %}" class="btn-outline">Cancel</a><button type="submit" class="btn-primary">Save Reference</button></div>
+  </form>
+</div>
+{% endblock %}

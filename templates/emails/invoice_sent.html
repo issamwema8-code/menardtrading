@@ -19,6 +19,12 @@
       <td class="info-label">Invoice Type:</td>
       <td class="info-value">{{ invoice.get_invoice_type_display }}</td>
     </tr>
+    {% if invoice.display_reference_number %}
+    <tr>
+      <td class="info-label">Reference #:</td>
+      <td class="info-value">{{ invoice.display_reference_number }}</td>
+    </tr>
+    {% endif %}
     {% if invoice.job %}
     <tr>
       <td class="info-label">Job / Consignment:</td>

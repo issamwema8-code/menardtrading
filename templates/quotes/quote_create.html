@@ -168,6 +168,7 @@
   <!-- Top Breadcrumb & Header Bar -->
   <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm">
     <div>
+
       <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-1">
         <a href="{% url 'quotes_list' %}" class="hover:text-slate-900 transition flex items-center gap-1">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
@@ -251,6 +252,11 @@
         @submit="if (!selectedId) { $event.preventDefault(); dropdownOpen = true; if (window.Swal) { Swal.fire({ icon: 'warning', title: 'Client Required', text: 'Please select or add a client to create this quotation.', timer: 2500, showConfirmButton: false, toast: true, position: 'top-end' }); } return false; }"
         class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-7 space-y-6">
     {% csrf_token %}
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 mb-6">
+      <label class="form-label">Reference Number / Ref #</label>
+      <input type="text" name="reference_number" class="form-input font-mono" placeholder="Optional client PO or originating reference">
+      <p class="text-[11px] text-slate-500 mt-1">This remains editable and is carried into invoices created from this quotation.</p>
+    </div>
 
     <!-- 1. Client Selection & Fast Add -->
     <div class="space-y-1.5">

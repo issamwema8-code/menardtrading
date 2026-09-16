@@ -307,6 +307,14 @@ EMAIL_HOST_PASSWORD = EMAIL_CONFIGS['support']['EMAIL_HOST_PASSWORD']
 DEFAULT_FROM_EMAIL = EMAIL_CONFIGS['support']['DEFAULT_FROM_EMAIL']
 SERVER_EMAIL = EMAIL_CONFIGS['support']['EMAIL_HOST_USER']
 
+# Incoming orders mailbox (separate from Brevo SMTP credentials)
+IMAP_HOST = config('IMAP_HOST', default='mail.menardtrading.com')
+IMAP_PORT = config('IMAP_PORT', default=993, cast=int)
+IMAP_USER = config('IMAP_USER', default='orders@menardtrading.com')
+IMAP_PASSWORD = config('IMAP_PASSWORD', default=config('EMAIL_PASSWORD', default=''))
+IMAP_SYNC_SINCE_DATE = config('IMAP_SYNC_SINCE_DATE', default='') or None
+IMAP_ONLY_UNSEEN = config('IMAP_ONLY_UNSEEN', default=False, cast=bool)
+
 BASE_URL = config('BASE_URL', default='https://menardtrading.com')
 
 # Webhook Security

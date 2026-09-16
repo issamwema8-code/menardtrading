@@ -316,10 +316,10 @@
             <td class="meta-card-label">PAYMENT TERMS</td>
             <td class="meta-card-value">{{ quote.customer.get_payment_terms_display|default:"30 Days Net" }}</td>
           </tr>
-          {% if quote.purchase_order %}
+          {% if quote.display_reference_number %}
           <tr>
-            <td class="meta-card-label">PO REF</td>
-            <td class="meta-card-value font-mono">{{ quote.purchase_order.po_number }}</td>
+            <td class="meta-card-label">REF #</td>
+            <td class="meta-card-value font-mono">{{ quote.display_reference_number }}</td>
           </tr>
           {% endif %}
         </table>

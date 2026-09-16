@@ -121,6 +121,12 @@
           <input type="number" name="due_days" x-model="dueDays" min="0" class="form-input font-mono" placeholder="30">
         </div>
 
+        <div class="space-y-1.5 md:col-span-2">
+          <label class="form-label">Reference Number / Ref #</label>
+          <input type="text" name="reference_number" class="form-input font-mono" placeholder="Optional client PO or originating reference">
+          <p class="text-[11px] text-slate-500">Optional for direct invoices. PO-linked invoices inherit the originating PO automatically.</p>
+        </div>
+
         <!-- VAT Rate Selection -->
         <div class="space-y-1.5">
           <label class="form-label">VAT Treatment</label>

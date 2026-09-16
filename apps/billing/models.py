@@ -55,6 +55,12 @@ class Invoice(models.Model):
         default=generate_invoice_number,
         db_index=True
     )
+    reference_number = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        help_text='Editable originating PO or document reference number.'
+    )
     job = models.ForeignKey(
         LogisticsJob,
         on_delete=models.CASCADE,
@@ -105,7 +111,16 @@ class Invoice(models.Model):
 
     @property
     def po_number(self):
-        """Returns the associated Purchase Order reference number if available."""
+        """Backward-compatible alias for the originating PO reference."""
+        return self.display_reference_number
+
+    @property
+    def display_reference_number(self):
+        return self.reference_number or self.upstream_po_number
+
+    @property
+    def upstream_po_number(self):
+        """Returns an upstream PO number without overwriting a manual reference."""
         if self.job and self.job.quote and self.job.quote.purchase_order and self.job.quote.purchase_order.po_number:
             return self.job.quote.purchase_order.po_number
         if self.quote and self.quote.purchase_order and self.quote.purchase_order.po_number:
@@ -119,6 +134,10 @@ class Invoice(models.Model):
 
     def save(self, *args, **kwargs):
         is_new = self._state.adding
+        if is_new and not self.reference_number:
+            upstream_reference = self.quote.reference_number if self.quote and self.quote.reference_number else self.upstream_po_number
+            if upstream_reference:
+                self.reference_number = upstream_reference
         if is_new:
             try:
                 from apps.accounts.models import CompanySettings

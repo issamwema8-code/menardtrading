@@ -1,6 +1,7 @@
 import os
 import email
 import imaplib
+import socket
 import logging
 from decimal import Decimal
 from django.utils import timezone
@@ -44,11 +45,11 @@ def sync_orders_mailbox(since_date=None, only_unseen=None):
     host = getattr(settings, 'IMAP_HOST', 'mail.menardtrading.com')
     port = getattr(settings, 'IMAP_PORT', 993)
     user = getattr(settings, 'IMAP_USER', 'orders@menardtrading.com')
-    password = getattr(settings, 'EMAIL_PASSWORD', '')
+    password = getattr(settings, 'IMAP_PASSWORD', '')
 
     if not password:
-        logger.warning("IMAP sync skipped: EMAIL_PASSWORD is not configured in settings/environment.")
-        return {'status': 'skipped', 'message': 'EMAIL_PASSWORD not set', 'synced_count': 0, 'orders': []}
+        logger.warning("IMAP sync skipped: IMAP_PASSWORD is not configured in settings/environment.")
+        return {'status': 'error', 'error': 'IMAP_PASSWORD is not configured. Add the orders mailbox password to .env.', 'synced_count': 0, 'orders': []}
 
     # Determine search criteria
     since_val = since_date or getattr(settings, 'IMAP_SYNC_SINCE_DATE', None)
@@ -234,11 +235,11 @@ def sync_orders_mailbox(since_date=None, only_unseen=None):
             'orders': created_orders
         }
 
-    except Exception as e:
-        logger.error(f"IMAP sync failed: {e}")
+    except (imaplib.IMAP4.error, socket.gaierror, TimeoutError, OSError) as e:
+        logger.error(f"IMAP sync failed: {e}", exc_info=True)
         return {
             'status': 'error',
-            'error': str(e),
+            'error': f'Could not connect or authenticate to {host}:{port} as {user}: {e}',
             'synced_count': 0,
             'orders': []
         }

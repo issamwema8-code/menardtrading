@@ -34,6 +34,12 @@ class Quotation(models.Model):
         default=generate_quote_number,
         db_index=True
     )
+    reference_number = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        help_text='Editable client PO or other originating reference number.'
+    )
     purchase_order = models.OneToOneField(
         PurchaseOrder,
         on_delete=models.SET_NULL,
@@ -77,8 +83,14 @@ class Quotation(models.Model):
         from menard_core.formatters import format_money
         return f"{self.quote_number} - {self.customer.company_name} ({format_money(self.total_amount, 'R')})"
 
+    @property
+    def display_reference_number(self):
+        return self.reference_number or (self.purchase_order.po_number if self.purchase_order else '')
+
     def save(self, *args, **kwargs):
         is_new = self._state.adding
+        if is_new and not self.reference_number and self.purchase_order_id:
+            self.reference_number = self.purchase_order.po_number
         if is_new:
             try:
                 from apps.accounts.models import CompanySettings

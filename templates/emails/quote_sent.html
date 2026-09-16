@@ -16,6 +16,12 @@
       <td class="info-label">Quotation Number:</td>
       <td class="info-value">#{{ quote.quote_number }}</td>
     </tr>
+    {% if quote.display_reference_number %}
+    <tr>
+      <td class="info-label">Reference #:</td>
+      <td class="info-value">{{ quote.display_reference_number }}</td>
+    </tr>
+    {% endif %}
     <tr>
       <td class="info-label">Client:</td>
       <td class="info-value">{{ quote.customer.company_name }}</td>

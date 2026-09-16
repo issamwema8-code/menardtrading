@@ -40,6 +40,7 @@ class IssueInvoiceActionView(PermissionRequiredMixin, View):
                     quote=job.quote,
                     customer=job.customer,
                     invoice_type=Invoice.InvoiceType.FULL,
+                    reference_number=job.quote.reference_number or (job.quote.purchase_order.po_number if job.quote.purchase_order else ''),
                     due_date=due_date,
                     notes="Standard Full Invoice for transport consignment."
                 )
@@ -60,6 +61,7 @@ class IssueInvoiceActionView(PermissionRequiredMixin, View):
                     quote=job.quote,
                     customer=job.customer,
                     invoice_type=Invoice.InvoiceType.PARTIAL_DEPOSIT,
+                    reference_number=job.quote.reference_number or (job.quote.purchase_order.po_number if job.quote.purchase_order else ''),
                     due_date=due_date,
                     notes=f"{pct}% Mobilization deposit."
                 )
@@ -82,6 +84,7 @@ class IssueInvoiceActionView(PermissionRequiredMixin, View):
                     quote=job.quote,
                     customer=job.customer,
                     invoice_type=Invoice.InvoiceType.PARTIAL_BALANCE,
+                    reference_number=job.quote.reference_number or (job.quote.purchase_order.po_number if job.quote.purchase_order else ''),
                     due_date=due_date,
                     notes=f"Final balance invoice upon Proof of Delivery for Job #{job.job_number}."
                 )
@@ -101,6 +104,7 @@ class IssueInvoiceActionView(PermissionRequiredMixin, View):
                     quote=job.quote,
                     customer=job.customer,
                     invoice_type=Invoice.InvoiceType.ADD_ON,
+                    reference_number=job.quote.reference_number or (job.quote.purchase_order.po_number if job.quote.purchase_order else ''),
                     due_date=due_date,
                     notes="Supplementary charge for route additions / waiting time."
                 )
@@ -240,6 +244,29 @@ class InvoicePDFDownloadView(PermissionRequiredMixin, View):
         return response
 
 
+class EditInvoiceReferenceView(PermissionRequiredMixin, View):
+    permission_required = 'invoices.create'
+
+    def get(self, request, pk):
+        invoice = get_object_or_404(Invoice, pk=pk)
+        return render(request, 'billing/invoice_reference_edit.html', {'invoice': invoice, 'active_tab': 'billing'})
+
+    def post(self, request, pk):
+        invoice = get_object_or_404(Invoice, pk=pk)
+        invoice.reference_number = request.POST.get('reference_number', '').strip()
+        invoice.save(update_fields=['reference_number', 'updated_at'])
+        log_audit_event(
+            request=request,
+            user=request.user,
+            action='INVOICE_REFERENCE_UPDATED',
+            resource_type='Invoice',
+            resource_id=invoice.invoice_number,
+            details={'reference_number': invoice.reference_number},
+        )
+        messages.success(request, f'Invoice #{invoice.invoice_number} reference updated.')
+        return redirect('invoice_preview', pk=invoice.pk)
+
+
 class ReceiptPDFDownloadView(PermissionRequiredMixin, View):
     permission_required = 'receipts.download'
 
@@ -314,6 +341,7 @@ class CreateDirectInvoiceView(PermissionRequiredMixin, View):
             inv = Invoice.objects.create(
                 customer=customer,
                 invoice_type=invoice_type,
+                reference_number=request.POST.get('reference_number', '').strip(),
                 due_date=due_date,
                 vat_rate=settings_vat,
                 notes=notes,
