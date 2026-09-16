@@ -1,0 +1,46 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+<h1 class="doc-heading" style="color: #991b1b;">Regarding Your Purchase Order</h1>
+
+<p class="lead-p">Dear Valued Client,</p>
+
+<p class="lead-p">
+  Thank you for contacting Menard Trading CC. We received your email regarding <strong>"{{ subject|default:"Logistics Order" }}"</strong>, but we were unable to open or read the attached purchase order document.
+</p>
+
+<div class="info-card red-border" style="background-color: #fef2f2;">
+  <div style="padding: 14px 18px;">
+    <div style="font-weight: 700; color: #991b1b; font-size: 13px; margin-bottom: 4px;">Document Notice:</div>
+    <div style="font-size: 13px; color: #7f1d1d; line-height: 1.5;">
+      {{ error_message|default:"The attached file could not be opened or is missing key consignment information." }}
+    </div>
+  </div>
+</div>
+
+<p class="lead-p">
+  To help us prepare your quotation promptly, please reply to <a href="mailto:{{ branding.orders_email|default:'orders@menardtrading.com' }}" style="color: #b47828; font-weight: 600; text-decoration: none;">{{ branding.orders_email|default:'orders@menardtrading.com' }}</a> with your Purchase Order attached as a standard PDF file, ensuring the following details are clear:
+</p>
+
+<div class="info-card" style="border-left-color: #b47828; padding: 14px 18px;">
+  <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #334155; line-height: 1.8;">
+    <li>Collection (origin) and delivery addresses</li>
+    <li>Cargo description and estimated weight (tons)</li>
+    <li>Preferred loading or delivery dates</li>
+  </ul>
+</div>
+
+<p class="lead-p">
+  Our operations team will review your document and send your quotation as soon as it is received.
+</p>
+
+<div class="notice-box">
+  Please do not reply to this notification address. For assistance, contact our team directly at <a href="mailto:{{ branding.orders_email|default:'orders@menardtrading.com' }}" style="color: #b47828; font-weight: 600; text-decoration: none;">{{ branding.orders_email|default:'orders@menardtrading.com' }}</a>.
+</div>
+
+<div class="signoff">
+  Kind regards,<br>
+  <strong>Menard Trading CC</strong><br>
+  <span style="color: #b47828; font-size: 11px; font-weight: 700; letter-spacing: 1px;">ALWAYS ON TIME</span>
+</div>
+{% endblock %}

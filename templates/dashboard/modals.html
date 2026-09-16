@@ -1,0 +1,227 @@
+<!-- ============================================================ -->
+<!-- GLOBAL MODALS                                                -->
+<!-- ============================================================ -->
+
+<!-- Global JSON Data Scripts for Clean Alpine Component Hydration -->
+<script id="global-customers-data" type="application/json">{{ global_customers_json|default:'[]'|safe }}</script>
+<script id="global-payment-terms-data" type="application/json">{{ global_payment_terms_json|default:'[]'|safe }}</script>
+<script id="global-orders-data" type="application/json">{{ global_purchase_orders_json|default:'[]'|safe }}</script>
+<script>
+  window.getGlobalCustomers = function() {
+    try {
+      const el = document.getElementById('global-customers-data');
+      return el ? JSON.parse(el.textContent || '[]') : [];
+    } catch(e) { return []; }
+  };
+  window.getGlobalPaymentTerms = function() {
+    try {
+      const el = document.getElementById('global-payment-terms-data');
+      return el ? JSON.parse(el.textContent || '[]') : [];
+    } catch(e) { return []; }
+  };
+  window.getGlobalPurchaseOrders = function() {
+    try {
+      const el = document.getElementById('global-orders-data');
+      return el ? JSON.parse(el.textContent || '[]') : [];
+    } catch(e) { return []; }
+  };
+</script>
+
+<!-- MODAL 1: UPLOAD PURCHASE ORDER (PDF) -->
+<div x-show="activeModal === 'upload_po_modal'" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-3 sm:p-4 md:p-6 overflow-y-auto" x-cloak>
+  <div @click.away="activeModal = null" class="bg-white rounded-2xl p-4 sm:p-7 max-w-lg w-full shadow-2xl space-y-4 sm:space-y-5 border border-slate-200 my-auto max-h-[94vh] overflow-y-auto">
+    <div class="flex justify-between items-start border-b border-slate-100 pb-4">
+      <div>
+        <h3 class="font-extrabold text-lg text-slate-900">Upload Purchase Order</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Upload a PDF to create an order and draft quotation automatically.</p>
+      </div>
+      <button @click="activeModal = null" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition text-lg font-bold leading-none">&times;</button>
+    </div>
+
+    <form method="POST" action="{% url 'upload_purchase_order' %}" enctype="multipart/form-data" class="space-y-4">
+      {% csrf_token %}
+      
+      <div>
+        <label class="form-label">Purchase Order (PDF) <span class="text-rose-500">*</span></label>
+        <input type="file" name="po_file" accept=".pdf" required class="w-full border border-slate-300 rounded-xl p-2.5 bg-slate-50 text-xs text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#fdf8f0] file:text-[#b47828] hover:file:bg-amber-100 cursor-pointer transition">
+      </div>
+
+      <div>
+        <label class="form-label">PO Number <span class="text-slate-400 font-normal">(Optional &mdash; auto-detected if blank)</span></label>
+        <input type="text" name="po_number" placeholder="e.g. PO-2026-9901" class="form-input">
+      </div>
+
+      <div>
+        <label class="form-label">Client Email <span class="text-slate-400 font-normal">(Optional)</span></label>
+        <input type="email" name="sender_email" placeholder="e.g. logistics@clientcompany.co.za" class="form-input">
+      </div>
+
+      <div>
+        <div class="flex justify-between items-center mb-1">
+          <label class="form-label mb-0">Client <span class="text-slate-400 font-normal">(Optional)</span></label>
+          <button type="button" @click="activeModal = 'create_customer_modal'" class="text-xs font-bold text-[#b47828] hover:text-[#8a5818] flex items-center gap-1 hover:underline transition cursor-pointer">
+            <svg class="w-3.5 h-3.5 text-[#b47828]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <span>+ Client</span>
+          </button>
+        </div>
+        <select name="customer_id" class="form-input font-medium">
+          <option value="">-- Auto-detect from PDF --</option>
+          {% for c in global_customers %}
+          <option value="{{ c.id }}">{{ c.company_name }} ({{ c.email }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="flex flex-col-reverse sm:flex-row sm:justify-end items-stretch sm:items-center gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-slate-100">
+        <button type="button" @click="activeModal = null" class="btn-outline">Cancel</button>
+        <button type="submit" class="btn-primary">
+          <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+          <span>Upload &amp; Create Quote</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL 2: REGISTER NEW CUSTOMER -->
+<div x-show="activeModal === 'create_customer_modal'" 
+     x-data="{
+       paymentTerms: window.getGlobalPaymentTerms(),
+       selectedTerm: '50_DEPOSIT_50_POD',
+       showAddTerm: false,
+       newTermName: '',
+       isAddingTerm: false,
+       termError: '',
+       async addCustomTerm() {
+         if (!this.newTermName.trim()) {
+           this.termError = 'Please enter a payment term name.';
+           return;
+         }
+         this.isAddingTerm = true;
+         this.termError = '';
+         try {
+           const csrf = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+           const res = await fetch('{% url 'create_payment_term_option' %}', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf },
+             body: JSON.stringify({ name: this.newTermName.trim() })
+           });
+           const data = await res.json();
+           if (data.success && data.term) {
+             const newT = data.term;
+             if (!this.paymentTerms.some(t => t.code === newT.code)) {
+               this.paymentTerms.push(newT);
+             }
+             this.selectedTerm = newT.code;
+             this.newTermName = '';
+             this.showAddTerm = false;
+             if (window.Swal) {
+               Swal.fire({
+                 icon: 'success',
+                 title: 'Payment Term Added!',
+                 text: `${newT.name} is now available and selected.`,
+                 timer: 2000,
+                 showConfirmButton: false,
+                 toast: true,
+                 position: 'top-end'
+               });
+             }
+           } else {
+             this.termError = data.error || 'Failed to add payment term.';
+           }
+         } catch (e) {
+           this.termError = 'Network error saving payment term.';
+         } finally {
+           this.isAddingTerm = false;
+         }
+       }
+     }"
+     style="display: none;"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-3 sm:p-4 md:p-6 overflow-y-auto" x-cloak>
+  <div @click.away="activeModal = null" class="bg-white rounded-2xl p-4 sm:p-7 max-w-lg w-full shadow-2xl space-y-4 sm:space-y-5 border border-slate-200 my-auto max-h-[94vh] overflow-y-auto">
+    <div class="flex justify-between items-start border-b border-slate-100 pb-4">
+      <div>
+        <h3 class="font-extrabold text-lg text-slate-900">Add Client</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Enter client details and default payment terms.</p>
+      </div>
+      <button @click="activeModal = null" class="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition text-lg font-bold leading-none">&times;</button>
+    </div>
+
+    <form method="POST" action="{% url 'create_customer' %}" class="space-y-4">
+      {% csrf_token %}
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div>
+          <label class="form-label">Company Name <span class="text-rose-500">*</span></label>
+          <input type="text" name="company_name" required placeholder="e.g. Sasol Mining &amp; Freight" class="form-input font-bold">
+        </div>
+        <div>
+          <label class="form-label">Contact Person <span class="text-rose-500">*</span></label>
+          <input type="text" name="contact_name" required placeholder="e.g. John Nkosi" class="form-input">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div>
+          <label class="form-label">Email Address <span class="text-rose-500">*</span></label>
+          <input type="email" name="email" required placeholder="john@client.co.za" class="form-input font-mono text-xs">
+        </div>
+        <div>
+          <label class="form-label">Phone Number</label>
+          <input type="text" name="phone" placeholder="+27 11 000 0000" class="form-input font-mono text-xs">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <div>
+          <label class="form-label">VAT Number</label>
+          <input type="text" name="vat_number" placeholder="4000000000" class="form-input font-mono text-xs">
+        </div>
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="form-label mb-0">Payment Terms <span class="text-rose-500">*</span></label>
+            <button type="button" @click="showAddTerm = !showAddTerm; if (showAddTerm) { $nextTick(() => $refs.newCustTermInput.focus()); }" 
+                    class="text-xs font-bold text-[#b47828] hover:text-[#8a5818] flex items-center gap-1 hover:underline cursor-pointer"
+                    title="Add custom payment term">
+              <svg class="w-3.5 h-3.5 text-[#b47828]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+              <span>+ Term</span>
+            </button>
+          </div>
+
+          <!-- Dynamic Add Term Inline Popover -->
+          <div x-show="showAddTerm" x-transition class="mb-2 p-2.5 bg-amber-50/90 border border-amber-200 rounded-xl space-y-1.5 shadow-sm">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-extrabold text-slate-800">+ Payment Term</span>
+              <button type="button" @click="showAddTerm = false" class="text-slate-400 hover:text-slate-600 text-xs font-bold leading-none">&times;</button>
+            </div>
+            <div x-show="termError" class="text-[11px] text-rose-600 font-medium" x-text="termError"></div>
+            <div class="flex gap-1.5">
+              <input type="text" x-ref="newCustTermInput" x-model="newTermName" @keydown.enter.prevent="addCustomTerm()" placeholder="e.g. 25% Deposit / 75% on Delivery or 60 Days Net" class="form-input text-xs py-1 flex-1">
+              <button type="button" @click="addCustomTerm()" :disabled="isAddingTerm" class="btn-primary text-xs py-1 px-2.5 shrink-0">
+                <span x-text="isAddingTerm ? 'Saving...' : 'Save'"></span>
+              </button>
+            </div>
+          </div>
+
+          <select name="payment_terms" x-model="selectedTerm" class="form-input font-semibold text-xs">
+            <template x-for="t in paymentTerms" :key="t.code">
+              <option :value="t.code" x-text="t.name" :selected="selectedTerm === t.code"></option>
+            </template>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="form-label">Address</label>
+        <textarea name="physical_address" rows="2" placeholder="e.g. Depot 4, Elandsfontein Logistics Park, Germiston" class="form-input"></textarea>
+      </div>
+
+      <div class="flex flex-col-reverse sm:flex-row sm:justify-end items-stretch sm:items-center gap-2 sm:gap-3 pt-3 sm:pt-4 border-t border-slate-100">
+        <button type="button" @click="activeModal = null" class="btn-outline">Cancel</button>
+        <button type="submit" class="btn-secondary">
+          <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          <span>Save Client</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

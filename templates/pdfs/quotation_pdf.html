@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Quotation {{ quote.quote_number }} — Menard Trading CC</title>
+  <style>
+    @page {
+      size: a4 portrait;
+      margin: 1.2cm;
+      margin-top: 1.2cm;
+      margin-bottom: 0cm;
+      @frame content_frame {
+        left: 1.2cm;
+        right: 1.2cm;
+        top: 1.2cm;
+        bottom: 7.5cm;
+      }
+      @frame footer_frame {
+        -pdf-frame-content: doc_bottom_section;
+        left: 1.2cm;
+        right: 1.2cm;
+        bottom: 0.8cm;
+        height: 6.5cm;
+      }
+    }
+    body {
+      font-family: Helvetica, Arial, sans-serif;
+      font-size: 9.5pt;
+      color: #1e293b;
+      line-height: 1.45;
+      margin: 0;
+      padding: 0;
+      background-color: #ffffff;
+    }
+    .header-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 12px;
+    }
+    .brand-title {
+      font-size: 11.5pt;
+      font-weight: 600;
+      color: #000000;
+      letter-spacing: 0.25px;
+      text-transform: uppercase;
+      line-height: 1.15;
+      margin: 0;
+      padding: 0;
+      white-space: nowrap;
+    }
+    .brand-subtitle {
+      font-size: 5.8pt;
+      color: #b47828;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2.75px;
+      margin-top: 2px;
+      line-height: 1;
+    }
+    .company-meta {
+      font-size: 8pt;
+      color: #64748b;
+      margin-top: 5px;
+      line-height: 1.35;
+    }
+    .doc-type {
+      text-align: right;
+      font-size: 22pt;
+      font-weight: bold;
+      color: #0f172a;
+      letter-spacing: 0.5px;
+    }
+    .quote-badge {
+      display: inline-block;
+      background-color: #b47828;
+      color: #ffffff;
+      font-size: 7.5pt;
+      font-weight: bold;
+      padding: 3px 8px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+    .meta-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    .party-title {
+      font-size: 8pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: #64748b;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 2px;
+    }
+    .party-box {
+      font-size: 9pt;
+      color: #334155;
+      line-height: 1.4;
+    }
+    .meta-card {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #f8fafc;
+      border: 1px solid #cbd5e1;
+    }
+    .meta-card td {
+      padding: 5px 8px;
+      border: 1px solid #e2e8f0;
+      font-size: 8.5pt;
+    }
+    .meta-card-label {
+      background-color: #f1f5f9;
+      font-weight: bold;
+      color: #475569;
+      text-transform: uppercase;
+      font-size: 7.5pt;
+      width: 38%;
+    }
+    .meta-card-value {
+      font-weight: bold;
+      color: #0f172a;
+    }
+    .logistics-box {
+      background-color: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-left: 3px solid #0f172a;
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-size: 8pt;
+      color: #334155;
+      margin-bottom: 15px;
+      line-height: 1.4;
+    }
+    .logistics-box table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .logistics-box td {
+      padding: 2px 4px;
+      font-size: 8.5pt;
+    }
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      margin-bottom: 16px;
+    }
+    .items-table th {
+      background-color: #B47828 !important;
+      color: #ffffff !important;
+      text-align: left;
+      padding: 7px 9px;
+      font-size: 8pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border: 1px solid #B47828 !important;
+    }
+    .items-table thead tr {
+      background-color: #B47828 !important;
+    }
+    .items-table td {
+      padding: 7px 9px;
+      border-bottom: 1px solid #e2e8f0;
+      border-left: 1px solid #f1f5f9;
+      border-right: 1px solid #f1f5f9;
+      font-size: 9pt;
+      vertical-align: middle;
+    }
+    .items-table tr:nth-child(even) td {
+      background-color: #fafbfc;
+    }
+    .text-right {
+      text-align: right;
+    }
+    .text-center {
+      text-align: center;
+    }
+    .font-mono {
+      font-family: Courier, monospace;
+    }
+    .footer-split-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    .totals-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .totals-table td {
+      padding: 5px 8px;
+      font-size: 8.5pt;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .totals-label {
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 7.5pt;
+      color: #64748b;
+      text-align: right;
+      padding-right: 10px;
+    }
+    .totals-value {
+      font-weight: bold;
+      text-align: right;
+      color: #0f172a;
+      width: 45%;
+    }
+    .vat-rate-row td {
+      background-color: #B47828 !important;
+      color: #ffffff !important;
+      font-weight: bold;
+    }
+    .vat-rate-row .totals-label,
+    .vat-rate-row .totals-value {
+      color: #ffffff !important;
+    }
+    .total-row td {
+      background-color: #B47828 !important;
+      color: #ffffff !important;
+      font-weight: bold;
+      font-size: 10pt;
+      padding: 7px 8px;
+    }
+    .total-row .totals-label {
+      color: #ffffff !important;
+    }
+    .total-row .totals-value {
+      color: #ffffff !important;
+    }
+    .terms-box {
+      background-color: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-left: 3px solid #b47828;
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-size: 7.5pt;
+      color: #475569;
+      line-height: 1.4;
+    }
+    .doc-bottom-section {
+      margin-top: 25px;
+    }
+    .doc-footer {
+      margin-top: 20px;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+      font-size: 7.5pt;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+<div class="doc-page-wrapper">
+  <div class="doc-content-body">
+  <!-- Header -->
+  <table class="header-table">
+    <tr>
+      <td style="width: 58%; vertical-align: top;">
+        {% include 'pdfs/components/document_brand_header.html' %}
+        <div class="company-meta">
+          {{ branding.company_address|default:"P O BOX 497-19001, RUNDU - NAMIBIA" }}<br>
+          {% if branding.company_reg_number or branding.tax_number or branding.vat_number %}
+          Company Reg: <strong>{{ branding.company_reg_number|default:"CC/2022/03892" }}</strong> &bull; Tax No: <strong>{{ branding.tax_number|default:branding.vat_number|default:"13009715-11" }}</strong><br>
+          {% endif %}
+          Email: {{ branding.quotes_email|default:branding.support_email|default:"quotes@menardtrading.com" }}{% if branding.telephone and branding.mobile %} &bull; Tel: {{ branding.telephone }} &bull; Mob: {{ branding.mobile }}{% elif branding.phone %} &bull; Tel: {{ branding.phone }}{% endif %}
+        </div>
+      </td>
+      <td style="width: 42%; text-align: right; vertical-align: top;">
+        <div class="doc-type">QUOTATION</div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Metadata & Parties Grid -->
+  <table class="meta-table">
+    <tr>
+      <!-- PREPARED FOR Block -->
+      <td style="width: 52%; vertical-align: top; padding-right: 15px;">
+        <div class="party-title">PREPARED FOR</div>
+        <div class="party-box">
+          <strong style="font-size: 10pt; color: #0f172a;">{{ quote.customer.company_name }}</strong><br>
+          {% if quote.customer.contact_name %}Attn: {{ quote.customer.contact_name }}<br>{% endif %}
+          {% if quote.customer.billing_address and quote.customer.billing_address != 'N/A' %}{{ quote.customer.billing_address|linebreaksbr }}<br>{% endif %}
+          {% if quote.customer.physical_address and quote.customer.physical_address != 'N/A' and quote.customer.physical_address != quote.customer.billing_address %}{{ quote.customer.physical_address|linebreaksbr }}<br>{% endif %}
+          {% if quote.customer.phone %}Tel: {{ quote.customer.phone }} &bull; {% endif %}Email: {{ quote.customer.email|default:"N/A" }}<br>
+          {% if quote.customer.vat_number %}Client VAT No: <strong>{{ quote.customer.vat_number }}</strong>{% endif %}
+        </div>
+      </td>
+
+      <!-- Quote Key-Value Matrix -->
+      <td style="width: 48%; vertical-align: top;">
+        <table class="meta-card">
+          <tr>
+            <td class="meta-card-label">QUOTE #</td>
+            <td class="meta-card-value font-mono">{{ quote.quote_number }}</td>
+          </tr>
+          <tr>
+            <td class="meta-card-label">DATE</td>
+            <td class="meta-card-value">{{ quote.created_at|date:"d M Y" }}</td>
+          </tr>
+          <tr>
+            <td class="meta-card-label">VALID UNTIL</td>
+            <td class="meta-card-value">{{ quote.valid_until|date:"d M Y"|default:"14 Days from issue" }}</td>
+          </tr>
+          <tr>
+            <td class="meta-card-label">PAYMENT TERMS</td>
+            <td class="meta-card-value">{{ quote.customer.get_payment_terms_display|default:"30 Days Net" }}</td>
+          </tr>
+          {% if quote.purchase_order %}
+          <tr>
+            <td class="meta-card-label">PO REF</td>
+            <td class="meta-card-value font-mono">{{ quote.purchase_order.po_number }}</td>
+          </tr>
+          {% endif %}
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Logistics & Route Specifications Box -->
+  {% if quote.purchase_order %}
+  <div class="logistics-box">
+    <table style="width: 100%;">
+      <tr>
+        <td style="width: 50%;">
+          <strong>Collection (Origin):</strong> {{ quote.purchase_order.pickup_location|default:"Specified Collection Point" }}
+        </td>
+        <td style="width: 50%;">
+          <strong>Delivery (Destination):</strong> {{ quote.purchase_order.delivery_location|default:"Specified Delivery Destination" }}
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <strong>Cargo Description:</strong> {{ quote.purchase_order.cargo_description|default:"Commercial Freight" }}
+        </td>
+        <td>
+          <strong>Payload Weight:</strong> {{ quote.purchase_order.weight_tons|default:"As Stated" }} Tons
+        </td>
+      </tr>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Line Items Table -->
+  <table class="items-table">
+    <thead>
+      <tr style="background-color: #B47828;">
+        <th style="width: 56%; background-color: #B47828; color: #ffffff;">DESCRIPTION</th>
+        <th style="width: 10%; text-align: center; background-color: #B47828; color: #ffffff;">QTY</th>
+        <th style="width: 17%; text-align: right; background-color: #B47828; color: #ffffff;">UNIT PRICE</th>
+        <th style="width: 17%; text-align: right; background-color: #B47828; color: #ffffff;">AMOUNT (N$)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in quote.line_items.all %}
+      <tr>
+        <td>
+          <strong style="color: #0f172a;">{{ item.description }}</strong>
+        </td>
+        <td class="text-center font-mono">{{ item.quantity }}</td>
+        <td class="text-right font-mono">N$ {{ item.unit_price|money }}</td>
+        <td class="text-right font-mono" style="font-weight: bold; color: #0f172a;">N$ {{ item.total_price|money }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td>
+          <strong style="color: #0f172a;">Dedicated Long-Haul Freight Consignment</strong>
+          <div style="font-size: 8pt; color: #64748b; margin-top: 2px;">Cross-border/national transport with dedicated tautliner/flatbed fleet.</div>
+        </td>
+        <td class="text-center font-mono">1</td>
+        <td class="text-right font-mono">N$ {{ quote.subtotal|money }}</td>
+        <td class="text-right font-mono" style="font-weight: bold; color: #0f172a;">N$ {{ quote.subtotal|money }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div> <!-- end .doc-content-body -->
+
+  <!-- Bottom Split: Terms & Approvals (Left) vs Summary Totals (Right) -->
+  <div id="doc_bottom_section" class="doc-bottom-section">
+    <table class="footer-split-table">
+      <tr>
+        <!-- Terms & Notes -->
+        <td style="width: 52%; vertical-align: top; padding-right: 15px;">
+          <div class="terms-box">
+            <strong style="color: #0f172a; text-transform: uppercase; font-size: 8pt; display: block; margin-bottom: 3px;">Transport Terms &amp; Scope:</strong>
+            &bull; Quotation covers point-to-point freight transit, standard border/toll processing, and professional driver allowances.<br>
+            &bull; Free loading/offloading time: 48 hours at each bay. Demurrage charged thereafter at standard tariff.<br>
+            &bull; Rates are subject to standard Menard Trading CC Conditions of Carriage.<br>
+            &bull; <strong>To approve this quote</strong>, click "Approve" in your client email portal or reply with formal Purchase Order.
+          </div>
+        </td>
+
+        <!-- Totals Summary Table -->
+        <td style="width: 48%; vertical-align: top;">
+          <table class="totals-table">
+            <tr>
+              <td class="totals-label">SUBTOTAL</td>
+              <td class="totals-value font-mono">N$ {{ quote.subtotal|money }}</td>
+            </tr>
+            <tr class="vat-rate-row" style="background-color: #B47828;">
+              <td class="totals-label" style="background-color: #B47828; color: #ffffff;">VAT RATE</td>
+              <td class="totals-value font-mono" style="background-color: #B47828; color: #ffffff;">{{ quote.vat_rate|money }}%</td>
+            </tr>
+            <tr>
+              <td class="totals-label">VAT / TAX AMOUNT</td>
+              <td class="totals-value font-mono">N$ {{ quote.vat_amount|money }}</td>
+            </tr>
+            <tr class="total-row" style="background-color: #B47828;">
+              <td class="totals-label" style="background-color: #B47828; color: #ffffff;">TOTAL ESTIMATE</td>
+              <td class="totals-value font-mono" style="background-color: #B47828; color: #ffffff;">N$ {{ quote.total_amount|money }}</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Footer -->
+    <div class="doc-footer">
+      {{ branding.brand_name|default:branding.company_name|default:"MENARD TRADING CC" }} &bull; {{ branding.tagline|default:"ALWAYS ON TIME" }}<br>
+      {{ branding.company_address|default:"P O BOX 497-19001, RUNDU - NAMIBIA" }} &bull; Email: {{ branding.support_email|default:"support@menardtrading.com" }} &bull; Tel: {{ branding.phone|default:"+264 81 445 5188" }}
+    </div>
+  </div> <!-- end .doc-bottom-section -->
+</div> <!-- end .doc-page-wrapper -->
+
+</body>
+</html>

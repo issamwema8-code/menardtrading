@@ -1,0 +1,274 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+
+{% block title %}Merge Purchase Orders &mdash; Menard Trading CC{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6" x-data="{
+  primaryId: '{{ primary_id }}',
+  secondaryId: '{{ secondary_id }}',
+  primaryData: null,
+  secondaryData: null,
+  combinedPoNumber: '',
+  cargoDescription: '',
+  weightTons: '',
+  volumeCbm: '',
+  quantityPallets: '',
+  specialInstructions: '',
+  loadingPrimary: false,
+  loadingSecondary: false,
+  isSubmitting: false,
+
+  async fetchPo(id, isPrimary) {
+    if (!id) {
+      if (isPrimary) this.primaryData = null;
+      else this.secondaryData = null;
+      this.recalculateMerged();
+      return;
+    }
+    if (isPrimary) this.loadingPrimary = true;
+    else this.loadingSecondary = true;
+
+    try {
+      const res = await fetch(`/orders/${id}/data/`);
+      const data = await res.json();
+      if (data.success) {
+        if (isPrimary) {
+          this.primaryData = data;
+        } else {
+          this.secondaryData = data;
+        }
+        this.recalculateMerged();
+      }
+    } catch (err) {
+      console.error('Failed to fetch PO data:', err);
+    } finally {
+      if (isPrimary) this.loadingPrimary = false;
+      else this.loadingSecondary = false;
+    }
+  },
+
+  recalculateMerged() {
+    if (this.primaryData) {
+      this.combinedPoNumber = this.primaryData.po_number;
+    }
+    
+    // Combine cargo
+    let cargo = [];
+    if (this.primaryData && this.primaryData.cargo_description) {
+      cargo.push(this.primaryData.cargo_description);
+    }
+    if (this.secondaryData && this.secondaryData.cargo_description) {
+      cargo.push(`[Merged from PO #${this.secondaryData.po_number}]: ${this.secondaryData.cargo_description}`);
+    }
+    this.cargoDescription = cargo.join('\n');
+
+    // Combine weight
+    let w1 = this.primaryData ? (parseFloat(this.primaryData.weight_tons) || 0) : 0;
+    let w2 = this.secondaryData ? (parseFloat(this.secondaryData.weight_tons) || 0) : 0;
+    let totalW = w1 + w2;
+    this.weightTons = totalW > 0 ? totalW.toFixed(2) : '';
+
+    // Combine volume
+    let v1 = this.primaryData ? (parseFloat(this.primaryData.volume_cbm) || 0) : 0;
+    let v2 = this.secondaryData ? (parseFloat(this.secondaryData.volume_cbm) || 0) : 0;
+    let totalV = v1 + v2;
+    this.volumeCbm = totalV > 0 ? totalV.toFixed(2) : '';
+
+    // Combine pallets
+    let p1 = this.primaryData ? (parseInt(this.primaryData.quantity_pallets) || 0) : 0;
+    let p2 = this.secondaryData ? (parseInt(this.secondaryData.quantity_pallets) || 0) : 0;
+    let totalP = p1 + p2;
+    this.quantityPallets = totalP > 0 ? totalP : '';
+
+    // Combine instructions
+    let instr = [];
+    if (this.primaryData && this.primaryData.special_instructions) {
+      instr.push(this.primaryData.special_instructions);
+    }
+    if (this.secondaryData && this.secondaryData.special_instructions) {
+      instr.push(`[Merged from PO #${this.secondaryData.po_number}]: ${this.secondaryData.special_instructions}`);
+    }
+    this.specialInstructions = instr.join('\n');
+  },
+
+  init() {
+    if (this.primaryId) this.fetchPo(this.primaryId, true);
+    if (this.secondaryId) this.fetchPo(this.secondaryId, false);
+  }
+}">
+
+  <!-- Breadcrumbs & Navigation Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-1">
+        <a href="{% url 'orders_list' %}" class="hover:text-slate-900 inline-flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+          <span>Back to Orders</span>
+        </a>
+        <span>/</span>
+        <span class="text-slate-900 font-bold">Merge Purchase Orders</span>
+      </div>
+      <h1 class="page-title text-2xl">Merge & Consolidate Purchase Orders</h1>
+      <p class="page-description">Combine two purchase orders into a single consolidated master order with merged cargo, weights, and quotations.</p>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <a href="{% url 'orders_list' %}" class="btn-outline">Cancel</a>
+      <button type="submit" form="mergeOrderForm" class="btn-primary" :disabled="isSubmitting || !primaryId || !secondaryId || primaryId === secondaryId">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+        <span x-text="isSubmitting ? 'Merging Orders...' : 'Merge & Consolidate Orders'">Merge & Consolidate Orders</span>
+      </button>
+    </div>
+  </div>
+
+  <form id="mergeOrderForm" method="POST" action="{% url 'merge_purchase_orders' %}" @submit="isSubmitting = true" class="space-y-6">
+    {% csrf_token %}
+
+    <!-- 1. Selection Grid (Primary vs Secondary) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      
+      <!-- Primary Master PO Card -->
+      <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center justify-center">1</span>
+            <h3 class="text-sm font-bold text-slate-900">Primary (Master) PO</h3>
+          </div>
+          <span class="badge-emerald text-[10px]">Retained & Updated</span>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="form-label">Select Primary Purchase Order *</label>
+          <select name="primary_po_id" x-model="primaryId" @change="fetchPo(primaryId, true)" required class="form-input text-xs">
+            <option value="">-- Choose Master PO --</option>
+            {% for order in orders %}
+            <option value="{{ order.id }}">
+              #{{ order.po_number }} &mdash; {{ order.customer.company_name|default:order.raw_email_sender }} ({{ order.created_at|date:"d M Y" }})
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Primary Preview -->
+        <template x-if="primaryData">
+          <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-200/80 space-y-2 text-xs">
+            <div class="flex justify-between font-mono">
+              <span class="text-slate-500">PO Number:</span>
+              <span class="font-bold text-slate-800" x-text="'#' + primaryData.po_number"></span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Client:</span>
+              <span class="font-bold text-slate-800" x-text="primaryData.customer_name"></span>
+            </div>
+            <div class="flex justify-between font-mono">
+              <span class="text-slate-500">Weight / Volume:</span>
+              <span class="text-slate-700" x-text="(primaryData.weight_tons ? primaryData.weight_tons + ' T' : '-') + ' / ' + (primaryData.volume_cbm ? primaryData.volume_cbm + ' CBM' : '-')"></span>
+            </div>
+            <div class="text-slate-600 pt-1 border-t border-slate-200/60">
+              <span class="text-slate-500 block text-[10px] uppercase font-bold">Cargo:</span>
+              <span class="line-clamp-2" x-text="primaryData.cargo_description || 'No description'"></span>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- Secondary PO Card -->
+      <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center">2</span>
+            <h3 class="text-sm font-bold text-slate-900">Secondary (Merged) PO</h3>
+          </div>
+          <span class="badge-rose text-[10px]">Merged & Archived</span>
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="form-label">Select Secondary Purchase Order *</label>
+          <select name="secondary_po_id" x-model="secondaryId" @change="fetchPo(secondaryId, false)" required class="form-input text-xs">
+            <option value="">-- Choose Secondary PO to Merge --</option>
+            {% for order in orders %}
+            <option value="{{ order.id }}" :disabled="primaryId == '{{ order.id }}'">
+              #{{ order.po_number }} &mdash; {{ order.customer.company_name|default:order.raw_email_sender }} ({{ order.created_at|date:"d M Y" }})
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Secondary Preview -->
+        <template x-if="secondaryData">
+          <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-200/80 space-y-2 text-xs">
+            <div class="flex justify-between font-mono">
+              <span class="text-slate-500">PO Number:</span>
+              <span class="font-bold text-slate-800" x-text="'#' + secondaryData.po_number"></span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Client:</span>
+              <span class="font-bold text-slate-800" x-text="secondaryData.customer_name"></span>
+            </div>
+            <div class="flex justify-between font-mono">
+              <span class="text-slate-500">Weight / Volume:</span>
+              <span class="text-slate-700" x-text="(secondaryData.weight_tons ? secondaryData.weight_tons + ' T' : '-') + ' / ' + (secondaryData.volume_cbm ? secondaryData.volume_cbm + ' CBM' : '-')"></span>
+            </div>
+            <div class="text-slate-600 pt-1 border-t border-slate-200/60">
+              <span class="text-slate-500 block text-[10px] uppercase font-bold">Cargo:</span>
+              <span class="line-clamp-2" x-text="secondaryData.cargo_description || 'No description'"></span>
+            </div>
+          </div>
+        </template>
+      </div>
+
+    </div>
+
+    <!-- 2. Consolidated Details Form -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-5">
+      <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700 pb-2 border-b border-slate-100 flex items-center gap-2">
+        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+        <span>Consolidated Order Specifications</span>
+      </h3>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="md:col-span-2 space-y-1.5">
+          <label class="form-label">Consolidated PO Reference #</label>
+          <input type="text" name="combined_po_number" x-model="combinedPoNumber" class="form-input font-mono" placeholder="e.g. PO-CONSOLIDATED-01">
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="form-label">Total Weight (Tons)</label>
+          <input type="number" step="0.01" min="0" name="weight_tons" x-model="weightTons" class="form-input font-mono" placeholder="0.00">
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="form-label">Total Volume (CBM)</label>
+          <input type="number" step="0.01" min="0" name="volume_cbm" x-model="volumeCbm" class="form-input font-mono" placeholder="0.00">
+        </div>
+
+        <div class="space-y-1.5">
+          <label class="form-label">Total Pallets</label>
+          <input type="number" min="0" name="quantity_pallets" x-model="quantityPallets" class="form-input font-mono" placeholder="0">
+        </div>
+
+        <div class="md:col-span-4 space-y-1.5">
+          <label class="form-label">Consolidated Cargo Description</label>
+          <textarea name="cargo_description" x-model="cargoDescription" rows="4" class="form-input" placeholder="Consolidated cargo breakdown..."></textarea>
+        </div>
+
+        <div class="md:col-span-4 space-y-1.5">
+          <label class="form-label">Consolidated Special Instructions & Handling</label>
+          <textarea name="special_instructions" x-model="specialInstructions" rows="3" class="form-input" placeholder="Consolidated instructions..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions Toolbar -->
+    <div class="flex items-center justify-end gap-3 pt-2">
+      <a href="{% url 'orders_list' %}" class="btn-outline">Cancel</a>
+      <button type="submit" class="btn-primary" :disabled="isSubmitting || !primaryId || !secondaryId || primaryId === secondaryId">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+        <span x-text="isSubmitting ? 'Merging Orders...' : 'Merge & Consolidate Orders'">Merge & Consolidate Orders</span>
+      </button>
+    </div>
+  </form>
+
+</div>
+{% endblock %}

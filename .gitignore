@@ -1,0 +1,39 @@
+
+
+.env
+venv/
+__pycache__/
+*.pyc
+db.sqlite3
+media/
+staticfiles/
+*.log
+menardprod.zip
+
+# Secrets
+.env
+
+# Python environment and cache
+venv/
+__pycache__/
+*.pyc
+
+# Production data and generated files
+db.sqlite3
+media/
+staticfiles/
+*.log
+
+# Large deployment archive
+menardprod.zip
+
+.env
+venv/
+__pycache__/
+*.pyc
+db.sqlite3
+media/
+staticfiles/
+*.log
+menardprod.zip
+.git-production-history/

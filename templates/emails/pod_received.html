@@ -1,0 +1,56 @@
+{% extends "emails/base_email.html" %}
+
+{% block content %}
+<h1 class="doc-heading">Proof of Delivery – Job #{{ job.job_number }}</h1>
+
+<p class="lead-p">Dear {{ job.customer.contact_name|default:job.customer.company_name }},</p>
+
+<p class="lead-p">
+  We are pleased to confirm that delivery for Job <strong>#{{ job.job_number }}</strong> has been completed successfully, and the signed Proof of Delivery (POD) has been received by our operations team.
+</p>
+
+<div class="info-card green-border">
+  <table class="info-table">
+    <tr>
+      <td class="info-label">Job Reference:</td>
+      <td class="info-value">#{{ job.job_number }}</td>
+    </tr>
+    {% if job.quote and job.quote.purchase_order %}
+    <tr>
+      <td class="info-label">Purchase Order:</td>
+      <td class="info-value">#{{ job.quote.purchase_order.po_number }}</td>
+    </tr>
+    {% endif %}
+    {% if job.vehicle_registration %}
+    <tr>
+      <td class="info-label">Vehicle:</td>
+      <td class="info-value">{{ job.vehicle_registration }}</td>
+    </tr>
+    {% endif %}
+    {% if job.driver_name %}
+    <tr>
+      <td class="info-label">Driver:</td>
+      <td class="info-value">{{ job.driver_name }}</td>
+    </tr>
+    {% endif %}
+    <tr>
+      <td class="info-label">Delivery Status:</td>
+      <td class="info-value" style="color: #16a34a; font-weight: 700;">Delivered &bull; POD Confirmed</td>
+    </tr>
+  </table>
+</div>
+
+<p class="lead-p">
+  Thank you for choosing Menard Trading CC as your logistics and transport partner.
+</p>
+
+<div class="notice-box">
+  For any consignment documentation or billing enquiries, please contact our logistics team at <a href="mailto:{{ branding.orders_email|default:'orders@menardtrading.com' }}" style="color: #b47828; font-weight: 600; text-decoration: none;">{{ branding.orders_email|default:'orders@menardtrading.com' }}</a>.
+</div>
+
+<div class="signoff">
+  Kind regards,<br>
+  <strong>Menard Trading CC Logistics</strong><br>
+  <span style="color: #b47828; font-size: 11px; font-weight: 700; letter-spacing: 1px;">ALWAYS ON TIME</span>
+</div>
+{% endblock %}

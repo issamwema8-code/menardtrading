@@ -1,0 +1,205 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+
+{% block title %}Record Business Expense &mdash; Menard Trading CC{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6" x-data="{
+  subtotal: 0,
+  vatRate: '15.00',
+  customVat: '',
+  isSubmitting: false,
+
+  get activeVatRate() {
+    if (this.vatRate === 'custom') {
+      return parseFloat(this.customVat) || 0;
+    }
+    return parseFloat(this.vatRate) || 0;
+  },
+  get vatAmount() {
+    const sub = parseFloat(this.subtotal) || 0;
+    return sub * (this.activeVatRate / 100);
+  },
+  get totalAmount() {
+    const sub = parseFloat(this.subtotal) || 0;
+    return sub + this.vatAmount;
+  },
+  formatMoney(val) {
+    return Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+}">
+
+  <!-- Breadcrumbs & Navigation Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-1">
+        <a href="{% url 'accounting:expenses' %}" class="hover:text-slate-900 inline-flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+          <span>Back to Expenses</span>
+        </a>
+        <span>/</span>
+        <span class="text-slate-900 font-bold">Record Expense</span>
+      </div>
+      <h1 class="page-title text-2xl">Record Business Expense</h1>
+      <p class="page-description">Log operational and administrative expenses, calculate claimable VAT, and attach receipts.</p>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <a href="{% url 'accounting:expenses' %}" class="btn-outline">Cancel</a>
+      <button type="submit" form="createExpenseForm" class="btn-primary" :disabled="isSubmitting">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        <span x-text="isSubmitting ? 'Recording Expense...' : 'Save Expense'">Save Expense</span>
+      </button>
+    </div>
+  </div>
+
+  <form id="createExpenseForm" method="POST" action="{% url 'accounting:expenses_create' %}" enctype="multipart/form-data" @submit="isSubmitting = true" class="space-y-6">
+    {% csrf_token %}
+
+    <!-- 1. Expense Categorization & Vendor -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-5">
+      <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700 pb-2 border-b border-slate-100 flex items-center gap-2">
+        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+        <span>Expense Category &amp; Payee</span>
+      </h3>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Category -->
+        <div class="space-y-1.5">
+          <label class="form-label">Expense Category *</label>
+          <select name="category" required class="form-input">
+            <option value="">-- Select Category --</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}">{{ cat.name }} ({{ cat.code }})</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Vendor (Optional) -->
+        <div class="space-y-1.5">
+          <label class="form-label">Vendor / Supplier (Optional)</label>
+          <select name="vendor" class="form-input">
+            <option value="">-- Unlinked / One-off Payee --</option>
+            {% for v in vendors %}
+            <option value="{{ v.id }}">{{ v.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Payee -->
+        <div class="space-y-1.5">
+          <label class="form-label">Payee Name</label>
+          <input type="text" name="payee" placeholder="e.g. Engen Rundu, Municipality, TransNamib" class="form-input">
+        </div>
+
+        <!-- Date -->
+        <div class="space-y-1.5">
+          <label class="form-label">Expense Date *</label>
+          <input type="date" name="date" value="{{ default_date|date:'Y-m-d' }}" required class="form-input font-mono">
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Financials & VAT Calculation -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-5">
+      <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700 pb-2 border-b border-slate-100 flex items-center gap-2">
+        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span>Financials &amp; Amounts</span>
+      </h3>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <!-- Subtotal -->
+        <div class="space-y-1.5">
+          <label class="form-label">Subtotal (Excl. VAT) *</label>
+          <input type="number" step="0.01" min="0.01" name="subtotal" x-model="subtotal" required class="form-input font-mono" placeholder="0.00">
+        </div>
+
+        <!-- VAT Treatment -->
+        <div class="space-y-1.5">
+          <label class="form-label">VAT Rate</label>
+          <select x-model="vatRate" class="form-input">
+            <option value="15.00">15.00% (Standard Claimable VAT)</option>
+            <option value="0.00">0.00% (Zero-Rated / Exempt)</option>
+            <option value="custom">Custom VAT %</option>
+          </select>
+        </div>
+
+        <!-- Payment Method -->
+        <div class="space-y-1.5">
+          <label class="form-label">Payment Method</label>
+          <select name="payment_method" class="form-input">
+            <option value="EFT_BANK_TRANSFER">EFT Bank Transfer</option>
+            <option value="CREDIT_CARD">Credit Card / Debit Card</option>
+            <option value="CASH">Cash / Petty Cash</option>
+            <option value="CHEQUE">Cheque</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+
+        <!-- Custom VAT Input -->
+        <div class="space-y-1.5 sm:col-span-3" x-show="vatRate === 'custom'">
+          <label class="form-label">Custom VAT Rate (%)</label>
+          <input type="number" step="0.01" min="0" max="100" x-model="customVat" class="form-input font-mono sm:w-1/3" placeholder="e.g. 16.5">
+        </div>
+
+        <!-- Hidden input for effective VAT rate -->
+        <input type="hidden" name="vat_rate" :value="activeVatRate">
+      </div>
+
+      <!-- Live Calculation Summary -->
+      <div class="bg-slate-50/80 rounded-xl p-4 border border-slate-200/80 space-y-2 font-mono text-xs max-w-sm ml-auto">
+        <div class="flex justify-between text-slate-600">
+          <span>Subtotal (Excl. VAT):</span>
+          <span class="font-bold">N$ <span x-text="formatMoney(subtotal)"></span></span>
+        </div>
+        <div class="flex justify-between text-slate-600">
+          <span>VAT (<span x-text="activeVatRate.toFixed(2)"></span>%):</span>
+          <span class="font-bold text-emerald-600">N$ <span x-text="formatMoney(vatAmount)"></span></span>
+        </div>
+        <div class="flex justify-between text-slate-900 font-black text-sm pt-2 border-t border-slate-200">
+          <span>Total Expense:</span>
+          <span class="text-[#b47828]">N$ <span x-text="formatMoney(totalAmount)"></span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Description, Receipt & Notes -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-5">
+      <h3 class="text-sm font-bold uppercase tracking-wider text-slate-700 pb-2 border-b border-slate-100 flex items-center gap-2">
+        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+        <span>Description &amp; Attachment</span>
+      </h3>
+
+      <div class="space-y-4">
+        <div>
+          <label class="form-label">Expense Description *</label>
+          <textarea name="description" rows="2" required placeholder="Describe the business purpose or itemized expense..." class="form-input"></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="form-label">Receipt / POP Attachment</label>
+            <input type="file" name="receipt_file" accept=".pdf,.png,.jpg,.jpeg" class="form-input text-xs py-1.5">
+            <span class="text-[10px] text-slate-400 mt-1 block">PDF, PNG, or JPG (max 10MB)</span>
+          </div>
+
+          <div>
+            <label class="form-label">Additional Notes</label>
+            <textarea name="notes" rows="2" placeholder="Internal remarks or approval reference..." class="form-input"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions Toolbar -->
+    <div class="flex items-center justify-end gap-3 pt-2">
+      <a href="{% url 'accounting:expenses' %}" class="btn-outline">Cancel</a>
+      <button type="submit" class="btn-primary" :disabled="isSubmitting">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        <span x-text="isSubmitting ? 'Recording Expense...' : 'Save Expense'">Save Expense</span>
+      </button>
+    </div>
+  </form>
+
+</div>
+{% endblock %}

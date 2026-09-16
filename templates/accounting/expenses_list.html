@@ -1,0 +1,181 @@
+{% extends "dashboard/base_dashboard.html" %}
+{% load static %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Page Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+    <div>
+      <h1 class="text-xl font-semibold text-slate-900 tracking-tight">Business Expenses</h1>
+      <p class="text-xs text-slate-500 mt-0.5">Track, categorize, and verify all operational and administrative expenses</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="{% url 'accounting:expense_categories' %}" class="btn-secondary text-xs">
+        <svg class="w-3.5 h-3.5 text-slate-500 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
+        <span>Manage Categories</span>
+      </a>
+      {% if can_create_expenses %}
+      <a href="{% url 'accounting:expenses_create' %}" class="btn-primary text-xs">
+        <svg class="w-3.5 h-3.5 text-slate-950 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        <span>Add Expense</span>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Metric Summary Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="card p-4 border-l-4 border-slate-800">
+      <span class="text-xs text-slate-500 font-medium">Total Expenses in Period</span>
+      <p class="text-xl font-bold text-slate-900 mt-1 font-mono">N$ {{ total_spent|money }}</p>
+      <span class="text-[11px] text-slate-400 mt-1 block">Includes claimable input VAT</span>
+    </div>
+
+    <div class="card p-4 border-l-4 border-amber-500">
+      <span class="text-xs text-slate-500 font-medium">Subtotal (Excl. VAT)</span>
+      <p class="text-xl font-bold text-slate-900 mt-1 font-mono">N$ {{ total_subtotal|money }}</p>
+      <span class="text-[11px] text-slate-400 mt-1 block">Net operating &amp; direct cost</span>
+    </div>
+
+    <div class="card p-4 border-l-4 border-emerald-500">
+      <span class="text-xs text-slate-500 font-medium">Claimable Input VAT</span>
+      <p class="text-xl font-bold text-emerald-600 mt-1 font-mono">N$ {{ total_vat|money }}</p>
+      <span class="text-[11px] text-slate-400 mt-1 block">15% VAT on valid receipts</span>
+    </div>
+  </div>
+
+  <!-- Filters & Search Bar -->
+  <div class="card p-4 bg-slate-50 border border-slate-200">
+    <form method="GET" action="{% url 'accounting:expenses' %}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+      
+      <!-- Search Query -->
+      <div>
+        <label class="block text-[11px] font-medium text-slate-600 mb-1">Search Expenses</label>
+        <input 
+          type="text" 
+          name="search" 
+          value="{{ search_query }}" 
+          placeholder="Ref, payee, notes..." 
+          class="form-input text-xs py-1.5 w-full bg-white border-slate-300 text-slate-900"
+        >
+      </div>
+
+      <!-- Category Filter -->
+      <div>
+        <label class="block text-[11px] font-medium text-slate-600 mb-1">Category</label>
+        <select name="category" class="form-input text-xs py-1.5 w-full bg-white border-slate-300 text-slate-900">
+          <option value="">All Categories</option>
+          {% for cat in categories %}
+          <option value="{{ cat.id }}" {% if selected_category|stringformat:"s" == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Start Date -->
+      <div>
+        <label class="block text-[11px] font-medium text-slate-600 mb-1">From Date</label>
+        <input 
+          type="date" 
+          name="start_date" 
+          value="{{ start_date|date:'Y-m-d' }}" 
+          class="form-input text-xs py-1.5 w-full bg-white border-slate-300 text-slate-900"
+        >
+      </div>
+
+      <!-- End Date -->
+      <div>
+        <label class="block text-[11px] font-medium text-slate-600 mb-1">To Date</label>
+        <input 
+          type="date" 
+          name="end_date" 
+          value="{{ end_date|date:'Y-m-d' }}" 
+          class="form-input text-xs py-1.5 w-full bg-white border-slate-300 text-slate-900"
+        >
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-2">
+        <button type="submit" class="btn-primary text-xs py-1.5 px-3 flex-1 justify-center">
+          Filter
+        </button>
+        <a href="{% url 'accounting:expenses' %}" class="btn-secondary text-xs py-1.5 px-3 justify-center">
+          Reset
+        </a>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- Expenses Table -->
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs text-left">
+        <thead class="bg-slate-100 text-slate-700 text-[11px] uppercase tracking-wider border-b border-slate-200">
+          <tr>
+            <th class="py-3 px-3.5 text-center w-12">S/No.</th>
+            <th class="py-3 px-3.5">Ref #</th>
+            <th class="py-3 px-3.5">Date</th>
+            <th class="py-3 px-3.5">Category</th>
+            <th class="py-3 px-3.5">Payee / Vendor</th>
+            <th class="py-3 px-3.5">Description</th>
+            <th class="py-3 px-3.5">Method</th>
+            <th class="py-3 px-3.5 text-right">Subtotal</th>
+            <th class="py-3 px-3.5 text-right">VAT (15%)</th>
+            <th class="py-3 px-3.5 text-right">Total</th>
+            <th class="py-3 px-3.5 text-center">Status</th>
+            <th class="py-3 px-3.5 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for exp in expenses %}
+          <tr class="hover:bg-slate-50 {% if exp.status == 'VOID' %}opacity-50 line-through bg-slate-50/50{% endif %}">
+            <td class="py-3 px-3.5 text-center font-mono text-slate-400 font-semibold text-xs">{{ forloop.counter }}</td>
+            <td class="py-3 px-3.5 font-mono font-semibold text-slate-900">{{ exp.expense_number }}</td>
+            <td class="py-3 px-3.5 font-mono text-slate-600">{{ exp.date|date:"Y-m-d" }}</td>
+            <td class="py-3 px-3.5 font-medium text-slate-800">{{ exp.category.name }}</td>
+            <td class="py-3 px-3.5 text-slate-700 font-medium">{{ exp.payee|default:exp.vendor.name|default:"-" }}</td>
+            <td class="py-3 px-3.5 text-slate-600 max-w-xs truncate">{{ exp.description }}</td>
+            <td class="py-3 px-3.5 text-slate-500">{{ exp.get_payment_method_display }}</td>
+            <td class="py-3 px-3.5 text-right font-mono text-slate-700">N$ {{ exp.subtotal|money }}</td>
+            <td class="py-3 px-3.5 text-right font-mono text-slate-500">N$ {{ exp.vat_amount|money }}</td>
+            <td class="py-3 px-3.5 text-right font-mono font-semibold text-slate-900">N$ {{ exp.total_amount|money }}</td>
+            <td class="py-3 px-3.5 text-center">
+              {% if exp.status == 'PAID' %}
+              <span class="badge-success text-[10px]">Paid</span>
+              {% elif exp.status == 'VOID' %}
+              <span class="badge-danger text-[10px]">Void</span>
+              {% else %}
+              <span class="badge-warning text-[10px]">{{ exp.get_status_display }}</span>
+              {% endif %}
+            </td>
+            <td class="py-3 px-3.5 text-right space-x-1">
+              {% if exp.receipt_file %}
+              <a href="{{ exp.receipt_file.url }}" target="_blank" class="p-1 rounded hover:bg-slate-200 text-slate-600 hover:text-slate-900 inline-block" title="View Receipt Attachment">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+              </a>
+              {% endif %}
+              {% if exp.status != 'VOID' %}
+              <form method="POST" action="{% url 'accounting:expenses_void' pk=exp.pk %}" class="inline-block" onsubmit="return confirm('Void this expense record?');">
+                {% csrf_token %}
+                <button type="submit" class="p-1 rounded hover:bg-rose-50 text-rose-500 hover:text-rose-700" title="Void Expense">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="12" class="py-8 text-center text-slate-400">
+              No expenses matching the criteria. Click <strong>"Add Expense"</strong> above to record a new business expense.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
