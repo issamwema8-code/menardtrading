@@ -22,6 +22,13 @@
     .total { font-size: 14pt; font-weight: bold; color: #0f172a; }
     .notes { margin-top: 22px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; }
     .footer { margin-top: 35px; color: #64748b; font-size: 8pt; border-top: 1px solid #dbe1e8; padding-top: 10px; }
+    .footer-attribution {
+      margin-top: 5px;
+      font-size: 6.8pt;
+      color: #94a3b8;
+      text-align: center;
+      letter-spacing: 0.08em;
+    }
   </style>
 </head>
 <body>
@@ -61,5 +68,6 @@
   <table style="width: 100%; margin-top: 18px;"><tr><td></td><td class="right total">Total: {{ po.currency }} {{ po.total_amount|floatformat:2 }}</td></tr></table>
   <div class="notes"><div class="label">Payment Terms and Instructions</div><div class="value">{{ po.payment_terms|default:"As agreed" }}<br>{{ po.special_instructions|default:po.notes|default:"Please confirm acceptance and advise of any issues before commencement."|linebreaksbr }}</div></div>
   <div class="footer">This Purchase Order is issued by {{ company.company_name|default:"Menard Trading CC" }} and represents a supplier/service commitment. It is not a customer sales invoice.</div>
+  <div class="footer-attribution">Developed by CoSMOS AI Labs</div>
 </body>
 </html>

@@ -144,6 +144,13 @@
             color: #64748b;
             text-align: center;
         }
+        .footer-attribution {
+            margin-top: 6px;
+            font-size: 7pt;
+            color: #94a3b8;
+            letter-spacing: 0.08em;
+            text-align: center;
+        }
         .bank-details {
             background-color: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -290,5 +297,6 @@
         Thank you for your business. &bull; {{ branding.brand_name|default:branding.company_name|default:"MENARD TRADING CC" }} &bull; {{ branding.tagline|default:"ALWAYS ON TIME" }}<br>
         {{ branding.company_address|default:"P O BOX 497-19001, RUNDU - NAMIBIA" }} &bull; Email: {{ branding.support_email|default:"support@menardtrading.com" }} &bull; Tel: {{ branding.phone|default:"+264 81 445 5188" }}
     </div>
+    <div class="footer-attribution">Developed by CoSMOS AI Labs</div>
 </body>
 </html>

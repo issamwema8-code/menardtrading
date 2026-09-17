@@ -2,6 +2,7 @@ from decimal import Decimal
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from django.template.loader import render_to_string
 from django.utils import timezone
 import datetime
 
@@ -116,6 +117,28 @@ class DocumentDesignSystemTestCase(TestCase):
             payment_date=timezone.now()
         )
 
+        self.po = PurchaseOrder.objects.create(
+            po_number='PO-2026-TEST01',
+            direction=PurchaseOrder.Direction.OUTGOING,
+            customer=self.customer,
+            supplier=self.customer,
+            issue_date=timezone.now().date(),
+            quantity=Decimal('1.00'),
+            unit_price=Decimal('2500.00'),
+            total_amount=Decimal('2500.00'),
+            currency='NAD',
+            payment_terms='As agreed',
+            notes='Supplier service confirmation.',
+            recipient_email='supplier@example.com',
+            load_reference='LOAD-PO-001',
+            pickup_location='Windhoek',
+            delivery_location='Walvis Bay',
+            cargo_description='Representative freight service',
+            status=PurchaseOrder.Status.DRAFT,
+            source=PurchaseOrder.Source.MANUAL_UPLOAD,
+            job=self.job
+        )
+
     def test_invoice_preview_view(self):
         """Test the canonical Invoice preview view."""
         url = reverse('invoice_preview', kwargs={'pk': self.invoice.id})
@@ -199,6 +222,45 @@ class DocumentDesignSystemTestCase(TestCase):
 
         receipt_pdf = generate_receipt_pdf(self.receipt)
         self.assertTrue(receipt_pdf.startswith(b'%PDF-'))
+
+    def test_generated_pdfs_include_cosmos_ai_labs_footer_attribution(self):
+        """Ensure the required footer attribution is present in the document templates used for PDFs."""
+        branding = {
+            'company_name': 'MENARD TRADING CC',
+            'brand_name': 'MENARD TRADING CC',
+            'tagline': 'ALWAYS ON TIME',
+            'company_address': 'P O BOX 497-19001, RUNDU - NAMIBIA',
+            'support_email': 'support@menardtrading.com',
+            'phone': '+264 81 445 5188',
+            'accounts_email': 'accounts@menardtrading.com',
+            'quotes_email': 'quotes@menardtrading.com',
+            'bank_details': {}
+        }
+
+        templates = [
+            ('pdfs/invoice_pdf.html', {'branding': branding, 'company': branding, 'invoice': self.invoice}),
+            ('pdfs/quotation_pdf.html', {'branding': branding, 'company': branding, 'quote': self.quote}),
+            ('pdfs/receipt_pdf.html', {'branding': branding, 'company': branding, 'receipt': self.receipt}),
+            ('pdfs/outgoing_purchase_order.html', {'branding': branding, 'company': branding, 'po': self.po}),
+            ('accounting/statement_pdf.html', {
+                'branding': branding,
+                'company': branding,
+                'customer': self.customer,
+                'statement': {
+                    'opening_balance': Decimal('0.00'),
+                    'total_invoiced': Decimal('0.00'),
+                    'total_paid': Decimal('0.00'),
+                    'closing_balance': Decimal('0.00'),
+                    'start_date': timezone.now().date(),
+                    'end_date': timezone.now().date(),
+                    'transactions': []
+                }
+            }),
+        ]
+
+        for template_name, context in templates:
+            html = render_to_string(template_name, context)
+            self.assertIn('Developed by CoSMOS AI Labs', html)
 
     def test_create_custom_multi_item_quotation(self):
         """Test creating a new standalone quotation with multiple line items."""
