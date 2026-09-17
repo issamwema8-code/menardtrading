@@ -123,6 +123,65 @@ def is_loopback_or_invalid_recipient(recipient: str) -> bool:
     return False
 
 
+DEPARTMENT_PURPOSE_MAP = {
+    # Financial, Billing, Invoicing, Quotes & Receipts -> accounts@menardtrading.com
+    'accounts': 'accounts',
+    'billing': 'accounts',
+    'invoicing': 'accounts',
+    'invoice': 'accounts',
+    'receipt': 'accounts',
+    'receipts': 'accounts',
+    'statement': 'accounts',
+    'statements': 'accounts',
+    'finance': 'accounts',
+    'financial': 'accounts',
+    'payment': 'accounts',
+    'quotes': 'quotes',
+    'quotation': 'quotes',
+    'quotations': 'quotes',
+
+    # Support -> support@menardtrading.com
+    'support': 'support',
+    'help': 'support',
+    'assistance': 'support',
+
+    # Info & General Enquiries -> info@menardtrading.com
+    'info': 'info',
+    'general': 'info',
+    'enquiry': 'info',
+    'enquiries': 'info',
+    'otp': 'info',
+    '2fa': 'info',
+    'auth': 'info',
+    'password_reset': 'info',
+
+    # Orders -> orders@menardtrading.com
+    'orders': 'orders',
+    'order': 'orders',
+    'po': 'orders',
+    'inbound_po': 'orders',
+
+    # Logistics & Operations -> logistics@menardtrading.com
+    'operations': 'operations',
+    'logistics': 'operations',
+    'dispatch': 'operations',
+    'pod': 'operations',
+
+    # No-Reply Automatic System Notifications
+    'no-reply': 'no-reply',
+    'noreply': 'no-reply',
+    'system': 'no-reply',
+}
+
+
+def resolve_department_key(department_or_purpose: str) -> str:
+    """
+    Centralized resolver that maps a business purpose or department key to an official EMAIL_CONFIGS channel.
+    """
+    key = str(department_or_purpose or '').strip().lower()
+    return DEPARTMENT_PURPOSE_MAP.get(key, key if key in getattr(settings, 'EMAIL_CONFIGS', {}) else 'info')
+
+
 def queue_departmental_email(
     department: str,
     recipient_list: list,
@@ -140,6 +199,8 @@ def queue_departmental_email(
     """
     from apps.orders.models import EmailQueueMessage
 
+    dept_key = resolve_department_key(department)
+
     if not isinstance(recipient_list, (list, tuple)):
         recipient_list = [recipient_list]
 
@@ -149,7 +210,7 @@ def queue_departmental_email(
         return None
 
     # Filter loopback for no-reply automatic replies
-    if department == 'no-reply':
+    if dept_key == 'no-reply':
         valid_recipients = [r for r in valid_recipients if not is_loopback_or_invalid_recipient(r)]
         if not valid_recipients:
             logger.warning(f"Skipping auto-reply to prevent loopback: {recipient_list}")
@@ -184,7 +245,7 @@ def queue_departmental_email(
                 raise AttachmentValidationError('Queued attachments require a filename and durable path.')
 
     queue_msg = EmailQueueMessage.objects.create(
-        department=department,
+        department=dept_key,
         recipient_list=valid_recipients,
         reply_to=clean_email(reply_to) if reply_to else '',
         subject=subject,
@@ -212,17 +273,19 @@ def send_departmental_email(
     bcc: list = None,
 ):
     """
-    Dispatches a transactional email via Brevo SMTP using departmental sender profiles.
+    Dispatches a transactional email using departmental sender profiles.
     
-    :param department: Key from EMAIL_CONFIGS ('orders', 'quotes', 'invoicing', 'operations', 'no-reply', 'info')
+    :param department: Purpose or channel key ('accounts', 'support', 'info', 'orders', 'quotes', 'invoicing', 'operations', 'no-reply')
     :param recipient_list: List of recipient email addresses
     :param subject: Email subject line
-    :param template_name: Relative template path (e.g., 'emails/quote_sent.html')
+    :param template_name: Relative template path (e.g., 'emails/invoice_sent.html')
     :param context: Template context dictionary
     :param attachments: List of tuples/dicts [(filename, content_bytes, mimetype)]
     :param reply_to: List of reply-to emails
     :return: (bool success, str message)
     """
+    dept_key = resolve_department_key(department)
+
     if not isinstance(recipient_list, (list, tuple)):
         recipient_list = [recipient_list]
 
@@ -231,12 +294,12 @@ def send_departmental_email(
         return False, "No valid recipient email addresses provided"
 
     # Filter loopback for no-reply automatic replies
-    if department == 'no-reply':
+    if dept_key == 'no-reply':
         clean_recipients = [r for r in clean_recipients if not is_loopback_or_invalid_recipient(r)]
         if not clean_recipients:
             return False, "Recipient is a loopback or system email; automated reply suppressed"
 
-    config = settings.EMAIL_CONFIGS.get(department, settings.EMAIL_CONFIGS.get('info', {}))
+    config = settings.EMAIL_CONFIGS.get(dept_key, settings.EMAIL_CONFIGS.get('info', {}))
     from_email = config.get('DEFAULT_FROM_EMAIL', settings.DEFAULT_FROM_EMAIL)
 
     try:
@@ -258,7 +321,7 @@ def send_departmental_email(
     try:
         from apps.orders.models import DocumentEmailDelivery
         if document_type and clean_recipients:
-            sender_address = settings.EMAIL_CONFIGS.get(department, {}).get('DEFAULT_FROM_EMAIL', settings.DEFAULT_FROM_EMAIL)
+            sender_address = config.get('DEFAULT_FROM_EMAIL', settings.DEFAULT_FROM_EMAIL)
             delivery = DocumentEmailDelivery.objects.create(
                 document_type=document_type,
                 document_id=document_id,
@@ -279,7 +342,7 @@ def send_departmental_email(
         # Render HTML and text versions
         text_content = strip_tags(html_content)
 
-        # Create explicit Brevo SMTP connection for this department
+        # Create explicit SMTP connection for this department
         connection = get_connection(
             backend=settings.EMAIL_BACKEND,
             host=config.get('EMAIL_HOST'),
@@ -300,10 +363,12 @@ def send_departmental_email(
         
         if not resolved_reply_to:
             # Default reply-to for no-reply is orders@menardtrading.com so customer replies go to operations
-            if department == 'no-reply':
+            if dept_key == 'no-reply':
                 resolved_reply_to = ['orders@menardtrading.com']
             else:
-                resolved_reply_to = [from_email]
+                # Clean address from from_email (e.g. accounts@menardtrading.com, support@menardtrading.com, info@menardtrading.com)
+                clean_from = clean_email(from_email)
+                resolved_reply_to = [clean_from] if clean_from else [from_email]
 
         email = EmailMultiAlternatives(
             subject=subject,
@@ -339,7 +404,7 @@ def send_departmental_email(
             delivery.status = DocumentEmailDelivery.Status.SENT
             delivery.sent_at = timezone.now()
             delivery.save(update_fields=['status', 'sent_at'])
-        logger.info(f"[{department.upper()}] Email successfully delivered to {clean_recipients} - Subject: {subject}")
+        logger.info(f"[{dept_key.upper()}] Email successfully delivered to {clean_recipients} - Subject: {subject}")
         return True, "Email dispatched successfully"
 
     except Exception as e:
@@ -348,5 +413,5 @@ def send_departmental_email(
             delivery.status = DocumentEmailDelivery.Status.ATTACHMENT_FAILED if isinstance(e, AttachmentValidationError) else DocumentEmailDelivery.Status.FAILED
             delivery.error_message = str(e)
             delivery.save(update_fields=['status', 'error_message'])
-        logger.error(f"[{department.upper()}] Failed to send email to {clean_recipients}: {str(e)}", exc_info=True)
+        logger.error(f"[{dept_key.upper()}] Failed to send email to {clean_recipients}: {str(e)}", exc_info=True)
         return False, str(e)

@@ -225,7 +225,7 @@
           {% if branding.company_reg_number or branding.tax_number or branding.vat_number %}
           Company Reg: <strong>{{ branding.company_reg_number|default:"CC/2022/03892" }}</strong> &bull; Tax No: <strong>{{ branding.tax_number|default:branding.vat_number|default:"13009715-11" }}</strong><br>
           {% endif %}
-          Email: {{ branding.billing_email|default:branding.accounts_email|default:"billing@menardtrading.com" }}<br>{% if branding.telephone and branding.mobile %}Tel: {{ branding.telephone }} &bull; Mob: {{ branding.mobile }}{% elif branding.phone %}Tel: {{ branding.phone }}{% endif %}
+          Email: {{ branding.accounts_email|default:"accounts@menardtrading.com" }}<br>{% if branding.telephone and branding.mobile %}Tel: {{ branding.telephone }} &bull; Mob: {{ branding.mobile }}{% elif branding.phone %}Tel: {{ branding.phone }}{% endif %}
         </div>
       </td>
       <td style="width: 42%; text-align: right; vertical-align: top;">

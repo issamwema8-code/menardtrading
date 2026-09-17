@@ -1,15 +1,16 @@
 import json
 from decimal import Decimal
 from unittest.mock import patch, MagicMock
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from django.urls import reverse
 from django.contrib.auth.models import User
 from django.conf import settings
 from apps.customers.models import Customer
 from apps.billing.models import Invoice, PaymentReceipt
 from apps.quotes.models import Quotation
+from apps.logistics.models import LogisticsJob
 from apps.accounts.models import SystemPermission, Role, UserProfile, CompanySettings
-from menard_core.brevo_email import send_departmental_email
+from menard_core.brevo_email import send_departmental_email, resolve_department_key, clean_email
 
 
 class EmailUXAndSenderTests(TestCase):
@@ -63,21 +64,104 @@ class EmailUXAndSenderTests(TestCase):
             total_amount=Decimal('10000.00'),
         )
 
-    def test_billing_sender_standardization_in_settings(self):
-        """Verify that billing/invoicing emails use Menard Trading CC <billing@menardtrading.com>."""
+        self.job = LogisticsJob.objects.create(
+            job_number='JOB-2026-9001',
+            quote=self.quote,
+            customer=self.customer,
+        )
+
+    def test_accounts_sender_standardization_in_settings(self):
+        """Verify that accounts, invoicing, billing, and quotes emails use Menard Trading CC <accounts@menardtrading.com>."""
+        accounts_cfg = settings.EMAIL_CONFIGS.get('accounts', {})
         invoicing_cfg = settings.EMAIL_CONFIGS.get('invoicing', {})
         billing_cfg = settings.EMAIL_CONFIGS.get('billing', {})
+        quotes_cfg = settings.EMAIL_CONFIGS.get('quotes', {})
         
-        self.assertEqual(invoicing_cfg.get('DEFAULT_FROM_EMAIL'), 'Menard Trading CC <billing@menardtrading.com>')
-        self.assertEqual(billing_cfg.get('DEFAULT_FROM_EMAIL'), 'Menard Trading CC <billing@menardtrading.com>')
-        self.assertEqual(settings.EMAIL_BRANDING.get('billing_email'), 'billing@menardtrading.com')
+        self.assertEqual(accounts_cfg.get('DEFAULT_FROM_EMAIL'), 'Menard Trading CC <accounts@menardtrading.com>')
+        self.assertEqual(invoicing_cfg.get('DEFAULT_FROM_EMAIL'), 'Menard Trading CC <accounts@menardtrading.com>')
+        self.assertEqual(billing_cfg.get('DEFAULT_FROM_EMAIL'), 'Menard Trading CC <accounts@menardtrading.com>')
+        self.assertEqual(quotes_cfg.get('DEFAULT_FROM_EMAIL'), 'Menard Trading CC <accounts@menardtrading.com>')
+        self.assertEqual(settings.EMAIL_BRANDING.get('accounts_email'), 'accounts@menardtrading.com')
+        self.assertEqual(settings.EMAIL_BRANDING.get('billing_email'), 'accounts@menardtrading.com')
 
-    def test_company_settings_branding_dict_uses_billing_email(self):
-        """Verify that CompanySettings defaults and branding dictionary return billing@menardtrading.com."""
+    def test_support_channel_independence_in_settings(self):
+        """Verify that support channel uses support@menardtrading.com and does NOT inherit billing/accounts sender."""
+        support_cfg = settings.EMAIL_CONFIGS.get('support', {})
+        self.assertEqual(support_cfg.get('DEFAULT_FROM_EMAIL'), 'Menard Trading CC <support@menardtrading.com>')
+        self.assertNotIn('billing@menardtrading.com', support_cfg.get('DEFAULT_FROM_EMAIL', ''))
+        self.assertNotIn('accounts@menardtrading.com', support_cfg.get('DEFAULT_FROM_EMAIL', ''))
+        self.assertEqual(settings.EMAIL_BRANDING.get('support_email'), 'support@menardtrading.com')
+
+    def test_info_channel_independence_in_settings(self):
+        """Verify that info channel uses info@menardtrading.com and does NOT inherit billing/accounts sender."""
+        info_cfg = settings.EMAIL_CONFIGS.get('info', {})
+        self.assertEqual(info_cfg.get('DEFAULT_FROM_EMAIL'), 'Menard Trading CC <info@menardtrading.com>')
+        self.assertNotIn('billing@menardtrading.com', info_cfg.get('DEFAULT_FROM_EMAIL', ''))
+        self.assertNotIn('accounts@menardtrading.com', info_cfg.get('DEFAULT_FROM_EMAIL', ''))
+
+    def test_company_settings_branding_dict_defaults(self):
+        """Verify that CompanySettings defaults and branding dictionary return proper channel addresses."""
         company_settings = CompanySettings.get_settings()
         branding = company_settings.as_branding_dict()
-        self.assertIn('billing@menardtrading.com', branding['accounts_email'])
-        self.assertIn('billing@menardtrading.com', branding['billing_email'])
+        self.assertEqual(branding['accounts_email'], 'accounts@menardtrading.com')
+        self.assertEqual(branding['billing_email'], 'accounts@menardtrading.com')
+        self.assertEqual(branding['support_email'], 'support@menardtrading.com')
+        self.assertEqual(branding['quotes_email'], 'accounts@menardtrading.com')
+        self.assertEqual(branding['orders_email'], 'orders@menardtrading.com')
+
+    def test_department_purpose_resolver(self):
+        """Verify resolve_department_key maps commercial/financial purposes to accounts and support to support."""
+        self.assertEqual(resolve_department_key('accounts'), 'accounts')
+        self.assertEqual(resolve_department_key('invoicing'), 'accounts')
+        self.assertEqual(resolve_department_key('billing'), 'accounts')
+        self.assertEqual(resolve_department_key('receipt'), 'accounts')
+        self.assertEqual(resolve_department_key('financial'), 'accounts')
+        self.assertEqual(resolve_department_key('support'), 'support')
+        self.assertEqual(resolve_department_key('help'), 'support')
+        self.assertEqual(resolve_department_key('info'), 'info')
+        self.assertEqual(resolve_department_key('otp'), 'info')
+        self.assertEqual(resolve_department_key('orders'), 'orders')
+        self.assertEqual(resolve_department_key('operations'), 'operations')
+        self.assertEqual(resolve_department_key('logistics'), 'operations')
+
+    @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+    def test_departmental_email_dispatch_headers(self):
+        """Verify each department dispatches with exact From and Reply-To headers and attachments."""
+        from django.core import mail
+        cases = [
+            ('accounts', 'emails/invoice_sent.html', {'invoice': self.invoice},
+             'Menard Trading CC <accounts@menardtrading.com>', ['accounts@menardtrading.com'],
+             [('INV-2026-9001.pdf', b'%PDF-1.7\nvalid', 'application/pdf')]),
+            ('support', 'emails/po_received_noreply.html', {'po': None, 'customer_name': 'David'},
+             'Menard Trading CC <support@menardtrading.com>', ['support@menardtrading.com'], None),
+            ('info', 'emails/two_factor_otp.html', {'user_name': 'David', 'otp_code': '123456'},
+             'Menard Trading CC <info@menardtrading.com>', ['info@menardtrading.com'], None),
+            ('orders', 'emails/po_received.html', {'po': None, 'customer_name': 'David'},
+             'Menard Trading Orders <orders@menardtrading.com>', ['orders@menardtrading.com'], None),
+            ('operations', 'emails/pod_received.html', {'job': self.job},
+             'Menard Trading Logistics <logistics@menardtrading.com>', ['logistics@menardtrading.com'], None),
+            ('no-reply', 'emails/po_received_noreply.html', {'po': None, 'customer_name': 'David'},
+             'Menard Trading No-Reply <no-reply@menardtrading.com>', ['orders@menardtrading.com'], None),
+        ]
+
+        for dept, tpl, ctx, expected_from, expected_reply_to, attachments in cases:
+            mail.outbox.clear()
+            success, msg = send_departmental_email(
+                department=dept,
+                recipient_list=['client@example.com'],
+                subject=f'Test {dept}',
+                template_name=tpl,
+                context=ctx,
+                attachments=attachments,
+            )
+            self.assertTrue(success, f"Failed for {dept}: {msg}")
+            self.assertEqual(len(mail.outbox), 1, f"No email sent for {dept}")
+            sent_msg = mail.outbox[0]
+            self.assertEqual(sent_msg.from_email, expected_from, f"Mismatch From for {dept}")
+            self.assertEqual(sent_msg.reply_to, expected_reply_to, f"Mismatch Reply-To for {dept}")
+            if attachments:
+                self.assertEqual(len(sent_msg.attachments), len(attachments))
+                self.assertEqual(sent_msg.attachments[0][0], attachments[0][0])
 
     @patch('apps.billing.views.send_departmental_email', return_value=(True, 'Delivered'))
     def test_send_invoice_email_with_custom_recipient_and_composer_data(self, mock_send):
@@ -164,3 +248,16 @@ class EmailUXAndSenderTests(TestCase):
         self.assertIn('The invoice document could not be prepared', messages[0].message)
         self.assertNotIn('Traceback', messages[0].message)
         self.assertNotIn('Exception', messages[0].message)
+
+    def test_webmail_menu_item_present_in_dashboard(self):
+        """Verify Webmail link is rendered in user menu with correct URL, target, and descriptions."""
+        response = self.client.get(reverse('dashboard_overview'))
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode('utf-8')
+        self.assertIn('https://cosmos-ai-labs.com:8090/snappymail/', content)
+        self.assertIn('target="_blank"', content)
+        self.assertIn('rel="noopener noreferrer"', content)
+        self.assertIn('Webmail', content)
+        self.assertIn('Access your Menard Trading email account', content)
+
+

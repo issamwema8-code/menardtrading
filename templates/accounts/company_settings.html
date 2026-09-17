@@ -492,14 +492,14 @@
           </div>
 
           <div>
-            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Accounts &amp; Billing Email</label>
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-2">Accounts &amp; Financial Email</label>
             <input 
               type="email" 
               name="accounts_email" 
               value="{{ company_settings.accounts_email }}" 
               {% if not can_edit %}disabled{% endif %}
               class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm text-slate-900 focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition"
-              placeholder="billing@menardtrading.com"
+              placeholder="accounts@menardtrading.com"
             >
           </div>
 

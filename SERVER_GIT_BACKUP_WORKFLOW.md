@@ -417,3 +417,22 @@ git log --oneline --decorate --all -10
 git check-ignore -v path/to/file
 git ls-files | grep -E '(^|/)(venv|media|staticfiles)/|\.env$|menardprod\.zip'
 ```
+
+
+# 1. Navigate to the project directory & activate venv
+cd /home/menardtrading.com/public_html/menardtrading/
+source venv/bin/activate
+
+# 2. Fetch and pull the latest code from GitHub
+git fetch origin main
+git pull origin main
+
+# 3. Apply database migrations (payment terms snapshot, email delivery logs)
+python manage.py migrate
+
+# 4. Collect static files
+python manage.py collectstatic --noinput
+
+# 5. Restart application process / web server
+touch /home/menardtrading.com/public_html/menardtrading/menard_core/wsgi.py
+

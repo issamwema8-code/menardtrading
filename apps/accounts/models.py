@@ -343,8 +343,8 @@ class CompanySettings(models.Model):
     mobile = models.CharField(max_length=50, blank=True, default="+264 81 445 5188", help_text="Direct / Mobile number")
     email = models.EmailField(blank=True, default="support@menardtrading.com", help_text="General company email")
     orders_email = models.EmailField(blank=True, default="orders@menardtrading.com", help_text="Orders & POs mailbox")
-    quotes_email = models.EmailField(blank=True, default="billing@menardtrading.com", help_text="Quotations mailbox")
-    accounts_email = models.EmailField(blank=True, default="billing@menardtrading.com", help_text="Accounts & Billing mailbox")
+    quotes_email = models.EmailField(blank=True, default="accounts@menardtrading.com", help_text="Quotations mailbox")
+    accounts_email = models.EmailField(blank=True, default="accounts@menardtrading.com", help_text="Accounts & Financial mailbox")
     website = models.URLField(blank=True, default="https://menardtrading.com", help_text="Official company website URL")
     
     # Logo & Assets
@@ -413,8 +413,8 @@ class CompanySettings(models.Model):
                 mobile="+264 81 445 5188",
                 email="support@menardtrading.com",
                 orders_email="orders@menardtrading.com",
-                quotes_email="billing@menardtrading.com",
-                accounts_email="billing@menardtrading.com",
+                quotes_email="accounts@menardtrading.com",
+                accounts_email="accounts@menardtrading.com",
                 website="https://menardtrading.com",
                 bank_name="FNB NAMIBIA",
                 account_name="MENARD TRADING CC",
@@ -481,7 +481,10 @@ class CompanySettings(models.Model):
         vat_rate_val = self.vat_rate if self.vat_rate is not None else Decimal('0.00')
         pct_str = f"{vat_rate_val:.2f}%" if (vat_rate_val % 1 != 0) else f"{int(vat_rate_val)}%"
 
-        billing_mail = self.accounts_email or 'billing@menardtrading.com'
+        accounts_mail = self.accounts_email or 'accounts@menardtrading.com'
+        support_mail = self.email or 'support@menardtrading.com'
+        orders_mail = self.orders_email or 'orders@menardtrading.com'
+        quotes_mail = self.quotes_email or accounts_mail
 
         return {
             'brand_name': self.company_name or 'MENARD TRADING CC',
@@ -501,11 +504,12 @@ class CompanySettings(models.Model):
             'vat_rate': vat_rate_val,
             'vat_percentage': pct_str,
             'company_reg_number': self.company_reg_number or 'CC/2022/03892',
-            'support_email': billing_mail,
-            'orders_email': self.orders_email or self.email or 'orders@menardtrading.com',
-            'quotes_email': self.quotes_email or billing_mail,
-            'accounts_email': billing_mail,
-            'billing_email': billing_mail,
+            'support_email': support_mail,
+            'orders_email': orders_mail,
+            'quotes_email': quotes_mail,
+            'accounts_email': accounts_mail,
+            'billing_email': accounts_mail,
+            'info_email': 'info@menardtrading.com',
             'phone': self.phone or self.mobile or '',
             'telephone': self.phone or '',
             'mobile': self.mobile or '',
