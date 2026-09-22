@@ -81,11 +81,17 @@ class CreateOutgoingPurchaseOrderView(PermissionRequiredMixin, View):
                     payment_terms=request.POST.get('payment_terms', '').strip(),
                 )
 
-            source_po = PurchaseOrder.objects.filter(
-                pk=request.POST.get('source_purchase_order'),
-                direction=PurchaseOrder.Direction.INCOMING,
-            ).first() or None
-            job = LogisticsJob.objects.filter(pk=request.POST.get('job_id')).first() if request.POST.get('job_id') else None
+            source_po_id = request.POST.get('source_purchase_order', '').strip()
+            source_po = (
+                PurchaseOrder.objects.filter(
+                    pk=source_po_id,
+                    direction=PurchaseOrder.Direction.INCOMING,
+                ).first()
+                if source_po_id
+                else None
+            )
+            job_id = request.POST.get('job_id', '').strip()
+            job = LogisticsJob.objects.filter(pk=job_id).first() if job_id else None
             po = PurchaseOrder.objects.create(
                 po_number=generate_outgoing_po_number(),
                 direction=PurchaseOrder.Direction.OUTGOING,

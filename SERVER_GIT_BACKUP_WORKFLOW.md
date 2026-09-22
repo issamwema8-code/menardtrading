@@ -436,3 +436,4 @@ python manage.py collectstatic --noinput
 # 5. Restart application process / web server
 touch /home/menardtrading.com/public_html/menardtrading/menard_core/wsgi.py
 
+chmod +x /home/menardtrading.com/public_html/menardtrading/venv/bin/gunicorn
