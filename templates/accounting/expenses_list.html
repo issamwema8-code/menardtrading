@@ -134,7 +134,7 @@
             <td class="py-3 px-3.5 font-mono font-semibold text-slate-900">{{ exp.expense_number }}</td>
             <td class="py-3 px-3.5 font-mono text-slate-600">{{ exp.date|date:"Y-m-d" }}</td>
             <td class="py-3 px-3.5 font-medium text-slate-800">{{ exp.category.name }}</td>
-            <td class="py-3 px-3.5 text-slate-700 font-medium">{{ exp.payee|default:exp.vendor.name|default:"-" }}</td>
+            <td class="py-3 px-3.5 text-slate-700 font-medium">{{ exp.display_payee }}</td>
             <td class="py-3 px-3.5 text-slate-600 max-w-xs truncate">{{ exp.description }}</td>
             <td class="py-3 px-3.5 text-slate-500">{{ exp.get_payment_method_display }}</td>
             <td class="py-3 px-3.5 text-right font-mono text-slate-700">N$ {{ exp.subtotal|money }}</td>

@@ -166,6 +166,14 @@ class Expense(models.Model):
         payee_name = self.vendor.name if self.vendor else (self.payee or 'Payee')
         return f"{self.expense_number} - {self.category.name} ({format_money(self.total_amount, 'R')}) to {payee_name}"
 
+    @property
+    def display_payee(self):
+        if self.payee:
+            return self.payee
+        if self.vendor:
+            return self.vendor.name
+        return '-'
+
     def save(self, *args, **kwargs):
         # Automatically calculate VAT and total if subtotal provided
         if self.subtotal is not None:

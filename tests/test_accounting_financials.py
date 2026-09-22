@@ -269,3 +269,21 @@ class AccountingFinancialsTests(TestCase):
             resp = self.client.get(reverse('accounting:reports_export'), {'report': report_type})
             self.assertEqual(resp.status_code, 200)
             self.assertEqual(resp['Content-Type'], 'text/csv')
+
+    def test_expense_create_and_render_with_payee_only(self):
+        """Test creating an expense with payee only (no vendor) and rendering expenses list."""
+        self.client.force_login(self.admin_user)
+        # POST to create expense
+        create_resp = self.client.post(reverse('accounting:expenses_create'), {
+            'category': self.fuel_cat.id,
+            'payee': 'Total Service Station',
+            'vendor': '',
+            'date': timezone.now().date().isoformat(),
+            'subtotal': '500.00',
+            'vat_rate': '15.00',
+            'payment_method': 'EFT_BANK_TRANSFER',
+            'description': 'Fuel for truck N1234WB',
+        }, follow=True)
+        self.assertEqual(create_resp.status_code, 200)
+        self.assertContains(create_resp, 'Total Service Station')
+        self.assertContains(create_resp, 'Fuel for truck N1234WB')

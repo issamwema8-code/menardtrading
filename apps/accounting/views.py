@@ -141,7 +141,7 @@ class CreateExpenseView(PermissionRequiredMixin, View):
 
         if not category_id or not description or not subtotal_str:
             messages.error(request, "Category, description, and subtotal amount are required.")
-            return redirect('accounting-expenses')
+            return redirect('accounting:expenses')
 
         category = get_object_or_404(ExpenseCategory, pk=category_id)
         vendor = Vendor.objects.filter(pk=vendor_id).first() if vendor_id else None
@@ -151,7 +151,7 @@ class CreateExpenseView(PermissionRequiredMixin, View):
             vat_rate = Decimal(vat_rate_str)
         except Exception:
             messages.error(request, "Invalid numeric format for expense amounts.")
-            return redirect('accounting-expenses')
+            return redirect('accounting:expenses')
 
         expense_date = date.fromisoformat(expense_date_str) if expense_date_str else timezone.now().date()
 
@@ -184,7 +184,7 @@ class CreateExpenseView(PermissionRequiredMixin, View):
 
         from menard_core.formatters import format_money
         messages.success(request, f"Expense '{expense.expense_number}' ({format_money(expense.total_amount, 'R')}) recorded successfully.")
-        return redirect('accounting-expenses')
+        return redirect('accounting:expenses')
 
 
 class VoidExpenseView(PermissionRequiredMixin, View):
@@ -194,7 +194,7 @@ class VoidExpenseView(PermissionRequiredMixin, View):
         expense = get_object_or_404(Expense, pk=pk)
         if expense.status == Expense.Status.VOID:
             messages.warning(request, "This expense is already marked as void.")
-            return redirect('accounting-expenses')
+            return redirect('accounting:expenses')
 
         expense.status = Expense.Status.VOID
         expense.save(update_fields=['status', 'updated_at'])
@@ -208,7 +208,7 @@ class VoidExpenseView(PermissionRequiredMixin, View):
         )
 
         messages.success(request, f"Expense '{expense.expense_number}' has been voided.")
-        return redirect('accounting-expenses')
+        return redirect('accounting:expenses')
 
 
 class ExpenseCategoriesView(PermissionRequiredMixin, View):
@@ -231,11 +231,11 @@ class ExpenseCategoriesView(PermissionRequiredMixin, View):
 
         if not name:
             messages.error(request, "Category name is required.")
-            return redirect('accounting-categories')
+            return redirect('accounting:expense_categories')
 
         if ExpenseCategory.objects.filter(name__iexact=name).exists():
             messages.error(request, f"A category named '{name}' already exists.")
-            return redirect('accounting-categories')
+            return redirect('accounting:expense_categories')
 
         cat = ExpenseCategory.objects.create(
             name=name,
@@ -245,7 +245,7 @@ class ExpenseCategoriesView(PermissionRequiredMixin, View):
             is_system=False
         )
         messages.success(request, f"Expense category '{cat.name}' created.")
-        return redirect('accounting-categories')
+        return redirect('accounting:expense_categories')
 
 
 # ============================================================
@@ -329,7 +329,7 @@ class CreateSupplierBillView(PermissionRequiredMixin, View):
             due_date = date.fromisoformat(due_date_str) if due_date_str else issue_date + timedelta(days=30)
         except Exception:
             messages.error(request, "Invalid dates or amount formats.")
-            return redirect('accounting-payables')
+            return redirect('accounting:payables')
 
         vat_amount = (subtotal * (vat_rate / Decimal('100.00'))).quantize(Decimal('0.01'))
         total_amount = subtotal + vat_amount
@@ -353,7 +353,7 @@ class CreateSupplierBillView(PermissionRequiredMixin, View):
 
         from menard_core.formatters import format_money
         messages.success(request, f"Supplier Bill '{bill.bill_number}' for {vendor.name} ({format_money(bill.total_amount, 'R')}) created.")
-        return redirect('accounting-payables')
+        return redirect('accounting:payables')
 
 
 class RecordBillPaymentView(PermissionRequiredMixin, View):
@@ -372,11 +372,11 @@ class RecordBillPaymentView(PermissionRequiredMixin, View):
             amount = Decimal(amount_str)
             if amount <= 0 or amount > bill.balance_due:
                 messages.error(request, f"Payment must be between R0.01 and the remaining balance of {format_money(bill.balance_due, 'R')}.")
-                return redirect('accounting-payables')
+                return redirect('accounting:payables')
             payment_date = date.fromisoformat(payment_date_str) if payment_date_str else timezone.now().date()
         except Exception:
             messages.error(request, "Invalid payment amount or date.")
-            return redirect('accounting-payables')
+            return redirect('accounting:payables')
 
         payment = SupplierBillPayment.objects.create(
             bill=bill,
@@ -389,7 +389,7 @@ class RecordBillPaymentView(PermissionRequiredMixin, View):
         )
 
         messages.success(request, f"Payment of {format_money(payment.amount_paid, 'R')} recorded for Bill '{bill.bill_number}'.")
-        return redirect('accounting-payables')
+        return redirect('accounting:payables')
 
 
 # ============================================================
