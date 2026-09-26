@@ -73,3 +73,15 @@ def generate_receipt_pdf(receipt) -> bytes:
         filename = f"{receipt.receipt_number}.pdf"
         receipt.receipt_pdf.save(filename, ContentFile(pdf_bytes), save=True)
     return pdf_bytes
+
+
+def generate_purchase_order_pdf(purchase_order) -> bytes:
+    """
+    Generates and saves the PDF file for a Purchase Order (outgoing service/supplier order).
+    """
+    pdf_bytes = render_html_to_pdf_bytes('pdfs/outgoing_purchase_order.html', {'po': purchase_order})
+    if pdf_bytes:
+        filename = f"{purchase_order.po_number.replace('/', '_')}.pdf"
+        purchase_order.po_file.save(filename, ContentFile(pdf_bytes), save=True)
+    return pdf_bytes
+

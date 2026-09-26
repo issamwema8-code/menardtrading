@@ -1,73 +1,444 @@
 {% load static %}
+{% load menard_tags %}
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
+  <title>Purchase Order {{ po.po_number }} — {{ branding.brand_name|default:branding.company_name|default:"Menard Trading CC" }}</title>
   <style>
-    @page { size: a4; margin: 18mm; }
-    body { font-family: Helvetica, Arial, sans-serif; color: #172033; font-size: 10pt; }
-    .header { border-bottom: 3px solid #b47828; padding-bottom: 12px; margin-bottom: 22px; }
-    .brand { color: #b47828; font-size: 19pt; font-weight: bold; letter-spacing: 1px; }
-    .muted { color: #64748b; }
-    .title { color: #0f172a; font-size: 18pt; font-weight: bold; text-align: right; }
-    .meta { width: 100%; }
-    .meta td { vertical-align: top; width: 50%; }
-    .box { border: 1px solid #dbe1e8; padding: 12px; margin-top: 18px; min-height: 100px; }
-    .label { color: #64748b; font-size: 8pt; font-weight: bold; text-transform: uppercase; }
-    .value { margin-top: 3px; }
-    table.lines { width: 100%; border-collapse: collapse; margin-top: 25px; }
-    .lines th { background: #b47828; color: white; text-align: left; padding: 9px; font-size: 9pt; }
-    .lines td { border-bottom: 1px solid #e2e8f0; padding: 10px 9px; vertical-align: top; }
-    .right { text-align: right; }
-    .total { font-size: 14pt; font-weight: bold; color: #0f172a; }
-    .notes { margin-top: 22px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; }
-    .footer { margin-top: 35px; color: #64748b; font-size: 8pt; border-top: 1px solid #dbe1e8; padding-top: 10px; }
-    .footer-attribution {
+    @page {
+      size: a4 portrait;
+      margin: 1.2cm;
+      margin-top: 1.2cm;
+      margin-bottom: 0cm;
+      @frame content_frame {
+        left: 1.2cm;
+        right: 1.2cm;
+        top: 1.2cm;
+        bottom: 7.5cm;
+      }
+      @frame footer_frame {
+        -pdf-frame-content: doc_bottom_section;
+        left: 1.2cm;
+        right: 1.2cm;
+        bottom: 0.8cm;
+        height: 6.5cm;
+      }
+    }
+    body {
+      font-family: Helvetica, Arial, sans-serif;
+      font-size: 9.5pt;
+      color: #1e293b;
+      line-height: 1.45;
+      margin: 0;
+      padding: 0;
+      background-color: #ffffff;
+    }
+    .header-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 12px;
+    }
+    .brand-title {
+      font-size: 11.5pt;
+      font-weight: 600;
+      color: #000000;
+      letter-spacing: 0.25px;
+      text-transform: uppercase;
+      line-height: 1.15;
+      margin: 0;
+      padding: 0;
+      white-space: nowrap;
+    }
+    .brand-subtitle {
+      font-size: 5.8pt;
+      color: #b47828;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2.75px;
+      margin-top: 2px;
+      line-height: 1;
+    }
+    .company-meta {
+      font-size: 8pt;
+      color: #64748b;
       margin-top: 5px;
+      line-height: 1.35;
+    }
+    .doc-type {
+      text-align: right;
+      font-size: 16pt;
+      font-weight: bold;
+      color: #0f172a;
+      letter-spacing: 0.25px;
+      white-space: nowrap;
+    }
+    .po-badge {
+
+      display: inline-block;
+      background-color: #b47828;
+      color: #ffffff;
+      font-size: 7.5pt;
+      font-weight: bold;
+      padding: 3px 8px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+    .meta-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    .party-title {
+      font-size: 8pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: #64748b;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 2px;
+    }
+    .party-box {
+      font-size: 9pt;
+      color: #334155;
+      line-height: 1.4;
+    }
+    .meta-card {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #f8fafc;
+      border: 1px solid #cbd5e1;
+    }
+    .meta-card td {
+      padding: 5px 8px;
+      border: 1px solid #e2e8f0;
+      font-size: 8.5pt;
+    }
+    .meta-card-label {
+      background-color: #f1f5f9;
+      font-weight: bold;
+      color: #475569;
+      text-transform: uppercase;
+      font-size: 7.5pt;
+      width: 38%;
+    }
+    .meta-card-value {
+      font-weight: bold;
+      color: #0f172a;
+    }
+    .logistics-box {
+      background-color: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-left: 3px solid #0f172a;
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-size: 8pt;
+      color: #334155;
+      margin-bottom: 15px;
+      line-height: 1.4;
+    }
+    .logistics-box table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .logistics-box td {
+      padding: 2px 4px;
+      font-size: 8.5pt;
+    }
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      margin-bottom: 16px;
+    }
+    .items-table th {
+      background-color: #B47828 !important;
+      color: #ffffff !important;
+      text-align: left;
+      padding: 7px 9px;
+      font-size: 8pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border: 1px solid #B47828 !important;
+    }
+    .items-table thead tr {
+      background-color: #B47828 !important;
+    }
+    .items-table td {
+      padding: 7px 9px;
+      border-bottom: 1px solid #e2e8f0;
+      border-left: 1px solid #f1f5f9;
+      border-right: 1px solid #f1f5f9;
+      font-size: 9pt;
+      vertical-align: middle;
+    }
+    .items-table tr:nth-child(even) td {
+      background-color: #fafbfc;
+    }
+    .text-right {
+      text-align: right;
+    }
+    .text-center {
+      text-align: center;
+    }
+    .font-mono {
+      font-family: Courier, monospace;
+    }
+    .footer-split-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    .totals-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .totals-table td {
+      padding: 5px 8px;
+      font-size: 8.5pt;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .totals-label {
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 7.5pt;
+      color: #64748b;
+      text-align: right;
+      padding-right: 10px;
+    }
+    .totals-value {
+      font-weight: bold;
+      text-align: right;
+      color: #0f172a;
+      width: 45%;
+    }
+    .total-row td {
+      background-color: #B47828 !important;
+      color: #ffffff !important;
+      font-weight: bold;
+      font-size: 10pt;
+      padding: 7px 8px;
+    }
+    .total-row .totals-label {
+      color: #ffffff !important;
+    }
+    .total-row .totals-value {
+      color: #ffffff !important;
+    }
+    .terms-box {
+      background-color: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-left: 3px solid #b47828;
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-size: 7.5pt;
+      color: #475569;
+      line-height: 1.4;
+    }
+    .doc-bottom-section {
+      margin-top: 25px;
+    }
+    .doc-footer {
+      margin-top: 20px;
+      padding-top: 10px;
+      border-top: 1px solid #e2e8f0;
+      text-align: center;
+      font-size: 7.5pt;
+      color: #94a3b8;
+    }
+    .doc-attribution {
+      margin-top: 4px;
       font-size: 6.8pt;
       color: #94a3b8;
-      text-align: center;
       letter-spacing: 0.08em;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <table class="meta"><tr>
-      <td><div class="brand">{{ company.company_name|default:"MENARD TRADING CC" }}</div><div class="muted">Transport, logistics and procurement services</div></td>
-      <td><div class="title">PURCHASE ORDER</div><div class="right">{{ po.po_number }}<br>{{ po.issue_date|date:"d M Y" }}</div></td>
-    </tr></table>
-  </div>
-
-  <table class="meta"><tr>
-    <td><div class="label">Issued To</div><div class="box">
-      <strong>{{ po.supplier.company_name|default:"Service Provider" }}</strong><br>
-      {% if po.supplier.contact_name %}Attn: {{ po.supplier.contact_name }}<br>{% endif %}
-      {{ po.supplier.billing_address|default:po.supplier.physical_address|linebreaksbr }}<br>
-      {% if po.supplier.phone %}Tel: {{ po.supplier.phone }} &bull; {% endif %}Email: {{ po.recipient_email }}
-    </div></td>
-    <td style="padding-left: 12px;"><div class="label">Load Reference</div><div class="box">
-      <strong>{{ po.load_reference|default:"Not specified" }}</strong><br>
-      {% if po.source_purchase_order %}Client PO: {{ po.source_purchase_order.po_number }}<br>{% endif %}
-      {% if po.job %}Job: {{ po.job.job_number }}{% endif %}
-    </div></td>
-  </tr></table>
-
-  <table class="lines">
-    <tr><th>Description</th><th>Pickup</th><th>Delivery</th><th class="right">Qty</th><th class="right">Rate</th><th class="right">Amount</th></tr>
+<div class="doc-page-wrapper">
+  <div class="doc-content-body">
+  <!-- Header -->
+  <table class="header-table">
     <tr>
-      <td>{{ po.cargo_description|default:"Transport or service charge"|linebreaksbr }}</td>
-      <td>{{ po.pickup_location|default:"-"|linebreaksbr }}</td>
-      <td>{{ po.delivery_location|default:"-"|linebreaksbr }}</td>
-      <td class="right">{{ po.quantity }}</td>
-      <td class="right">{{ po.currency }} {{ po.unit_price|floatformat:2 }}</td>
-      <td class="right">{{ po.currency }} {{ po.total_amount|floatformat:2 }}</td>
+      <td style="width: 52%; vertical-align: top;">
+        {% include 'pdfs/components/document_brand_header.html' %}
+        <div class="company-meta">
+          {{ branding.company_address|default:company.company_address|default:"P O BOX 497-19001, RUNDU - NAMIBIA" }}<br>
+          {% if branding.company_reg_number or branding.tax_number or branding.vat_number or company.company_reg_number or company.vat_number %}
+          Company Reg: <strong>{{ branding.company_reg_number|default:company.company_reg_number|default:"CC/2022/03892" }}</strong> &bull; Tax No: <strong>{{ branding.tax_number|default:branding.vat_number|default:company.vat_number|default:"13009715-11" }}</strong><br>
+          {% endif %}
+          Email: {{ branding.orders_email|default:branding.support_email|default:branding.accounts_email|default:"orders@menardtrading.com" }}<br>{% if branding.telephone and branding.mobile %}Tel: {{ branding.telephone }} &bull; Mob: {{ branding.mobile }}{% elif branding.phone %}Tel: {{ branding.phone }}{% endif %}
+        </div>
+      </td>
+      <td style="width: 48%; text-align: right; vertical-align: top; white-space: nowrap;">
+        <div class="doc-type" style="white-space: nowrap; font-size: 16pt;">PURCHASE ORDER</div>
+        <div class="po-badge">{{ po.get_status_display }}</div>
+      </td>
     </tr>
   </table>
 
-  <table style="width: 100%; margin-top: 18px;"><tr><td></td><td class="right total">Total: {{ po.currency }} {{ po.total_amount|floatformat:2 }}</td></tr></table>
-  <div class="notes"><div class="label">Payment Terms and Instructions</div><div class="value">{{ po.payment_terms|default:"As agreed" }}<br>{{ po.special_instructions|default:po.notes|default:"Please confirm acceptance and advise of any issues before commencement."|linebreaksbr }}</div></div>
-  <div class="footer">This Purchase Order is issued by {{ company.company_name|default:"Menard Trading CC" }} and represents a supplier/service commitment. It is not a customer sales invoice.</div>
-  <div class="footer-attribution">Developed by CoSMOS AI Labs</div>
+
+  <!-- Metadata & Parties Grid -->
+  <table class="meta-table">
+    <tr>
+      <!-- ISSUED TO / SERVICE PROVIDER Block -->
+      <td style="width: 52%; vertical-align: top; padding-right: 15px;">
+        <div class="party-title">ISSUED TO / SERVICE PROVIDER</div>
+        <div class="party-box">
+          <strong style="font-size: 10pt; color: #0f172a;">{{ po.supplier.company_name|default:po.recipient_email|default:"Service Provider" }}</strong><br>
+          {% if po.supplier.contact_name and po.supplier.contact_name != po.supplier.company_name %}Attn: {{ po.supplier.contact_name }}<br>{% endif %}
+          {% if po.supplier.physical_address and po.supplier.physical_address != 'N/A' %}{{ po.supplier.physical_address|linebreaksbr }}<br>{% elif po.supplier.billing_address and po.supplier.billing_address != 'N/A' %}{{ po.supplier.billing_address|linebreaksbr }}<br>{% endif %}
+          {% if po.supplier.vat_number %}Provider VAT / Tax No: <strong>{{ po.supplier.vat_number }}</strong><br>{% endif %}
+          {% if po.recipient_email %}Email: {{ po.recipient_email }}<br>{% elif po.supplier.email %}Email: {{ po.supplier.email }}<br>{% endif %}
+          {% if po.supplier.phone and po.supplier.phone != 'N/A' %}Tel: {{ po.supplier.phone }}{% endif %}
+        </div>
+      </td>
+
+      <!-- PO Key-Value Matrix -->
+      <td style="width: 48%; vertical-align: top;">
+        <table class="meta-card">
+          <tr>
+            <td class="meta-card-label">PO NUMBER</td>
+            <td class="meta-card-value font-mono">{{ po.po_number }}</td>
+          </tr>
+          <tr>
+            <td class="meta-card-label">ISSUE DATE</td>
+            <td class="meta-card-value">{{ po.issue_date|date:"d M Y" }}</td>
+          </tr>
+          <tr>
+            <td class="meta-card-label">LOAD REF</td>
+            <td class="meta-card-value font-mono">{{ po.load_reference|default:"Not specified" }}</td>
+          </tr>
+          {% if po.source_purchase_order %}
+          <tr>
+            <td class="meta-card-label">CLIENT PO</td>
+            <td class="meta-card-value font-mono">{{ po.source_purchase_order.po_number }}</td>
+          </tr>
+          {% endif %}
+          {% if po.job %}
+          <tr>
+            <td class="meta-card-label">JOB REF</td>
+            <td class="meta-card-value font-mono">{{ po.job.job_number }}</td>
+          </tr>
+          {% endif %}
+          <tr>
+            <td class="meta-card-label">PAYMENT TERMS</td>
+            <td class="meta-card-value">{{ po.payment_terms|default:"As agreed" }}</td>
+          </tr>
+          <tr>
+            <td class="meta-card-label">STATUS</td>
+            <td class="meta-card-value">{{ po.get_status_display }}</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Logistics & Route Specifications Box -->
+  {% if po.pickup_location or po.delivery_location or po.cargo_description %}
+  <div class="logistics-box">
+    <table style="width: 100%;">
+      <tr>
+        <td style="width: 50%;">
+          <strong>Collection (Pickup):</strong> {{ po.pickup_location|default:"Specified collection location" }}
+        </td>
+        <td style="width: 50%;">
+          <strong>Delivery (Destination):</strong> {{ po.delivery_location|default:"Specified delivery destination" }}
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <strong>Cargo / Service Summary:</strong> {{ po.cargo_description|default:"Transport / Logistics Service" }}
+        </td>
+        <td>
+          {% if po.weight_tons %}<strong>Weight:</strong> {{ po.weight_tons }} Tons{% elif po.job %}<strong>Logistics Job:</strong> {{ po.job.job_number }}{% else %}<strong>Commitment:</strong> Official Supplier Purchase Order{% endif %}
+        </td>
+      </tr>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- Line Items Table -->
+  <table class="items-table">
+    <thead>
+      <tr style="background-color: #B47828;">
+        <th style="width: 48%; background-color: #B47828; color: #ffffff;">DESCRIPTION / SERVICE</th>
+        <th style="width: 20%; background-color: #B47828; color: #ffffff;">ROUTE / SCOPE</th>
+        <th style="width: 8%; text-align: center; background-color: #B47828; color: #ffffff;">QTY</th>
+        <th style="width: 12%; text-align: right; background-color: #B47828; color: #ffffff;">RATE</th>
+        <th style="width: 12%; text-align: right; background-color: #B47828; color: #ffffff;">AMOUNT ({{ po.currency|default:"NAD" }})</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <strong style="color: #0f172a;">{{ po.cargo_description|default:"Transport, logistics, or procurement service charge"|linebreaksbr }}</strong>
+        </td>
+        <td style="font-size: 8pt; color: #475569;">
+          {% if po.pickup_location and po.delivery_location %}
+            {{ po.pickup_location }} &rarr; {{ po.delivery_location }}
+          {% elif po.pickup_location %}
+            From: {{ po.pickup_location }}
+          {% elif po.delivery_location %}
+            To: {{ po.delivery_location }}
+          {% else %}
+            -
+          {% endif %}
+        </td>
+        <td class="text-center font-mono">{{ po.quantity|money }}</td>
+        <td class="text-right font-mono">{{ po.currency|default:"NAD" }} {{ po.unit_price|money }}</td>
+        <td class="text-right font-mono" style="font-weight: bold; color: #0f172a;">{{ po.currency|default:"NAD" }} {{ po.total_amount|money }}</td>
+      </tr>
+    </tbody>
+  </table>
+  </div> <!-- end .doc-content-body -->
+
+  <!-- Bottom Split: Terms & Instructions (Left) vs Summary Totals (Right) -->
+  <div id="doc_bottom_section" class="doc-bottom-section">
+    <table class="footer-split-table">
+      <tr>
+        <!-- Terms & Instructions -->
+        <td style="width: 52%; vertical-align: top; padding-right: 15px;">
+          <div class="terms-box">
+            <strong style="color: #0f172a; text-transform: uppercase; font-size: 8pt; display: block; margin-bottom: 3px;">Payment Terms &amp; Instructions:</strong>
+            &bull; <strong>Payment Terms:</strong> {{ po.payment_terms|default:"Strictly as per approved service agreement / invoice submission." }}<br>
+            &bull; <strong>Instructions:</strong> {{ po.special_instructions|default:po.notes|default:"Please confirm acceptance and advise of any issues before commencement. Submit signed POD & Tax Invoice referencing this PO number for prompt settlement."|linebreaksbr }}<br>
+            &bull; <em>This Purchase Order is issued by {{ branding.brand_name|default:branding.company_name|default:company.company_name|default:"Menard Trading CC" }} and represents an official supplier/service commitment.</em>
+          </div>
+        </td>
+
+        <!-- Totals Summary Table -->
+        <td style="width: 48%; vertical-align: top;">
+          <table class="totals-table">
+            <tr>
+              <td class="totals-label">SUBTOTAL</td>
+              <td class="totals-value font-mono">{{ po.currency|default:"NAD" }} {{ po.total_amount|money }}</td>
+            </tr>
+            <tr class="total-row" style="background-color: #B47828;">
+              <td class="totals-label" style="background-color: #B47828; color: #ffffff;">TOTAL ORDER VALUE</td>
+              <td class="totals-value font-mono" style="background-color: #B47828; color: #ffffff;">{{ po.currency|default:"NAD" }} {{ po.total_amount|money }}</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Footer -->
+    <div class="doc-footer">
+      {{ branding.brand_name|default:branding.company_name|default:"MENARD TRADING CC" }} &bull; {{ branding.tagline|default:"ALWAYS ON TIME" }}<br>
+      {{ branding.company_address|default:"P O BOX 497-19001, RUNDU - NAMIBIA" }} &bull; Email: {{ branding.orders_email|default:branding.support_email|default:branding.accounts_email|default:"orders@menardtrading.com" }} &bull; Tel: {{ branding.phone|default:"+264 81 445 5188" }}
+    </div>
+    <div class="doc-attribution">Developed by CoSMOS AI Labs</div>
+
+  </div> <!-- end .doc-bottom-section -->
+</div> <!-- end .doc-page-wrapper -->
+
 </body>
 </html>

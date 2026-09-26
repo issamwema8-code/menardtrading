@@ -13,12 +13,13 @@ from apps.accounts.permissions import PermissionRequiredMixin
 from apps.orders.models import PurchaseOrder, OrderCommunication
 from apps.customers.models import Customer
 from apps.orders.services import process_inbound_purchase_order
-from apps.orders.outgoing import generate_outgoing_po_number, parse_decimal, send_outgoing_po
+from apps.orders.outgoing import generate_outgoing_po_number, parse_decimal, send_outgoing_po, generate_outgoing_po_pdf
 from apps.logistics.models import LogisticsJob
 from apps.accounts.audit import log_audit_event
 from menard_core.brevo_email import send_departmental_email
 
 logger = logging.getLogger(__name__)
+
 
 
 def extract_clean_email(raw_address: str) -> str:
@@ -115,6 +116,7 @@ class CreateOutgoingPurchaseOrderView(PermissionRequiredMixin, View):
                 created_by=request.user,
                 updated_by=request.user,
             )
+            generate_outgoing_po_pdf(po)
             log_audit_event(
                 request=request, user=request.user, action='OUTGOING_PURCHASE_ORDER_CREATED',
                 resource_type='PurchaseOrder', resource_id=po.po_number,
@@ -129,6 +131,36 @@ class CreateOutgoingPurchaseOrderView(PermissionRequiredMixin, View):
             'incoming_orders': PurchaseOrder.objects.filter(direction=PurchaseOrder.Direction.INCOMING).order_by('-created_at')[:100],
             'jobs': LogisticsJob.objects.select_related('customer').exclude(status=LogisticsJob.Status.CLOSED).order_by('-created_at')[:100],
         }, status=400)
+
+
+class PurchaseOrderPreviewView(PermissionRequiredMixin, View):
+    """
+    Renders an in-browser A4 preview of the official Purchase Order document,
+    complete with Menard Trading CC company details and branding.
+    """
+    permission_required = 'orders.view'
+
+    def get(self, request, pk):
+        po = get_object_or_404(PurchaseOrder, pk=pk)
+        return render(request, 'documents/purchase_order_preview.html', {
+            'po': po,
+            'active_tab': 'orders',
+        })
+
+
+class PurchaseOrderPDFDownloadView(PermissionRequiredMixin, View):
+    """
+    Renders and streams the official PDF document for a Purchase Order with company details and branding.
+    """
+    permission_required = 'orders.view'
+
+    def get(self, request, pk):
+        po = get_object_or_404(PurchaseOrder, pk=pk)
+        pdf_bytes = generate_outgoing_po_pdf(po)
+        response = HttpResponse(pdf_bytes or (po.po_file.read() if po.po_file else b""), content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{po.po_number}.pdf"'
+        return response
+
 
 
 class SendOutgoingPurchaseOrderView(PermissionRequiredMixin, View):

@@ -234,6 +234,7 @@ class DocumentDesignSystemTestCase(TestCase):
             'phone': '+264 81 445 5188',
             'accounts_email': 'accounts@menardtrading.com',
             'quotes_email': 'quotes@menardtrading.com',
+            'orders_email': 'orders@menardtrading.com',
             'bank_details': {}
         }
 

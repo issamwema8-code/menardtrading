@@ -25,6 +25,8 @@ from apps.orders.views import (
     CreateOutgoingPurchaseOrderView,
     SendOutgoingPurchaseOrderView,
     UpdateOutgoingPurchaseOrderStatusView,
+    PurchaseOrderPreviewView,
+    PurchaseOrderPDFDownloadView,
 )
 from apps.customers.views import (
     CustomersListView,
@@ -142,6 +144,8 @@ urlpatterns = [
     path('orders/create/', CreateOutgoingPurchaseOrderView.as_view(), name='create_outgoing_purchase_order'),
     path('orders/merge/', MergePurchaseOrdersView.as_view(), name='merge_purchase_orders'),
     path('orders/<int:pk>/data/', PurchaseOrderDataAPIView.as_view(), name='po_data_api'),
+    path('orders/<int:pk>/preview/', PurchaseOrderPreviewView.as_view(), name='purchase_order_preview'),
+    path('orders/<int:pk>/pdf/', PurchaseOrderPDFDownloadView.as_view(), name='purchase_order_pdf_download'),
     path('orders/<int:pk>/', PurchaseOrderDetailView.as_view(), name='purchase_order_detail'),
     path('orders/<int:pk>/reply/', ReplyPurchaseOrderView.as_view(), name='reply_purchase_order'),
     path('orders/<int:pk>/send/', SendOutgoingPurchaseOrderView.as_view(), name='send_outgoing_purchase_order'),

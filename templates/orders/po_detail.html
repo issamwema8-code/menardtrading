@@ -24,11 +24,18 @@
       <div class="flex flex-wrap items-center gap-2.5">
         {% if po.direction == 'OUTGOING' %}
         <span class="badge-gold">{{ po.get_status_display }}</span>
+        <a href="{% url 'purchase_order_preview' po.id %}" class="btn-outline flex items-center gap-1.5" title="Preview Official Purchase Order">
+          <svg class="w-4 h-4 text-[#b47828]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+          <span>Preview PO</span>
+        </a>
+        <a href="{% url 'purchase_order_pdf_download' po.id %}" target="_blank" class="btn-outline flex items-center gap-1.5" title="Download Official PO PDF">
+          <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          <span>Download PDF</span>
+        </a>
         {% if po.status == 'DRAFT' %}<form method="post" action="{% url 'send_outgoing_purchase_order' po.id %}">{% csrf_token %}<button class="btn-primary" type="submit">Send PO</button></form>{% endif %}
         {% if po.status == 'SENT' or po.status == 'VIEWED' %}<form method="post" action="{% url 'update_outgoing_purchase_order_status' po.id %}">{% csrf_token %}<input type="hidden" name="status" value="ACCEPTED"><button class="btn-outline" type="submit">Mark Accepted</button></form><form method="post" action="{% url 'update_outgoing_purchase_order_status' po.id %}">{% csrf_token %}<input type="hidden" name="status" value="REJECTED"><button class="btn-outline text-rose-600" type="submit">Mark Rejected</button></form>{% endif %}
         {% if po.status == 'SENT' or po.status == 'VIEWED' or po.status == 'ACCEPTED' %}<form method="post" action="{% url 'update_outgoing_purchase_order_status' po.id %}">{% csrf_token %}<input type="hidden" name="status" value="COMPLETED"><button class="btn-outline" type="submit">Mark Completed</button></form>{% endif %}
         {% if po.status != 'CANCELLED' and po.status != 'COMPLETED' %}<form method="post" action="{% url 'update_outgoing_purchase_order_status' po.id %}">{% csrf_token %}<input type="hidden" name="status" value="CANCELLED"><button class="btn-outline text-rose-600" type="submit">Cancel PO</button></form>{% endif %}
-        {% if po.po_file %}<a href="{{ po.po_file.url }}" target="_blank" download class="btn-outline">Download PO</a>{% endif %}
         {% endif %}
         <button type="button" @click="$dispatch('open-merge-pos', { primaryId: '{{ po.id }}' })" class="btn-outline" title="Merge this PO with another client PO">
           <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
@@ -42,13 +49,14 @@
         </a>
         {% endif %}
         
-        {% if po.po_file %}
+        {% if po.po_file and po.direction != 'OUTGOING' %}
         <a href="{{ po.po_file.url }}" target="_blank" download class="btn-primary">
           <svg class="w-4 h-4 text-slate-950" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
           <span>Download PDF</span>
         </a>
         {% endif %}
       </div>
+
     </div>
   </div>
 
@@ -167,10 +175,39 @@
 
       {% if po.direction == 'OUTGOING' %}
       <div class="surface-card p-6 space-y-4">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3"><h3 class="font-bold text-slate-900">Outgoing PO Summary</h3><span class="badge-gold">{{ po.currency }} {{ po.total_amount|floatformat:2 }}</span></div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs"><div><span class="text-slate-400 block font-bold uppercase text-[10px]">Load Reference</span><span class="font-semibold">{{ po.load_reference|default:"Not specified" }}</span></div><div><span class="text-slate-400 block font-bold uppercase text-[10px]">Email Status</span><span class="font-semibold">{{ po.email_send_status|default:"Not sent" }}</span></div><div><span class="text-slate-400 block font-bold uppercase text-[10px]">Payment Terms</span><span class="font-semibold">{{ po.payment_terms|default:"As agreed" }}</span></div><div><span class="text-slate-400 block font-bold uppercase text-[10px]">Sent At</span><span class="font-mono">{{ po.sent_at|date:"d M Y H:i"|default:"Not sent" }}</span></div></div>
-        {% if po.supporting_attachment %}<a href="{{ po.supporting_attachment.url }}" target="_blank" download class="btn-outline">Download Supporting Attachment</a>{% endif %}
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div class="flex items-center gap-2">
+            <svg class="w-5 h-5 text-[#b47828]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <h3 class="font-bold text-slate-900">Official Purchase Order Document</h3>
+          </div>
+          <span class="badge-gold font-mono">{{ po.currency }} {{ po.total_amount|money }}</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div><span class="text-slate-400 block font-bold uppercase text-[10px]">Load / Service Ref</span><span class="font-semibold text-slate-900">{{ po.load_reference|default:"Not specified" }}</span></div>
+          <div><span class="text-slate-400 block font-bold uppercase text-[10px]">Email Dispatch Status</span><span class="font-semibold text-slate-900">{{ po.email_send_status|default:"Not sent" }}</span></div>
+          <div><span class="text-slate-400 block font-bold uppercase text-[10px]">Payment Terms</span><span class="font-semibold text-slate-900">{{ po.payment_terms|default:"As agreed" }}</span></div>
+          <div><span class="text-slate-400 block font-bold uppercase text-[10px]">Dispatched At</span><span class="font-mono text-slate-900">{{ po.sent_at|date:"d M Y H:i"|default:"Not sent yet" }}</span></div>
+        </div>
+
+        <div class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <h4 class="text-xs font-bold text-slate-900">Official Menard Branded Document</h4>
+            <p class="text-[11px] text-slate-600 mt-0.5">Generated with Menard Trading CC letterhead, company details, registration, and procurement terms.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <a href="{% url 'purchase_order_preview' po.id %}" class="btn-primary text-xs py-2 px-3.5">
+              <span>Preview Document &rarr;</span>
+            </a>
+            <a href="{% url 'purchase_order_pdf_download' po.id %}" target="_blank" class="btn-outline text-xs py-2 px-3">
+              <span>Download PDF</span>
+            </a>
+          </div>
+        </div>
+
+        {% if po.supporting_attachment %}<a href="{{ po.supporting_attachment.url }}" target="_blank" download class="btn-outline text-xs">Download Supporting Attachment</a>{% endif %}
       </div>
+
       {% else %}
       <!-- Email Details -->
       <div class="surface-card p-6 space-y-4">
